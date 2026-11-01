@@ -19,6 +19,11 @@ study charge blocks recovery. Scientific/provider/scoring files must match the p
 permitted source migration files are `amem_repro/{checkpoint,runner,phases,forecast,budget}.py`.
 Their current hashes and the changed-file list bind to the new approval; old hashes stay intact.
 
+The eligible parent receipt is pinned to SHA256
+`a3d90514404a454cb894e9c716ffaccb26a1b054364aa8c8f3cd1f4509d7a231`.
+Historical attempt/logical IDs through that parent's last request must exactly reproduce its frozen
+cumulative study charge/counts. Later child spending cannot mask missing earlier compatibility charges.
+
 A new child run ID, approval ID, output directory and lineage-specific cache identity are required.
 The ledger durably claims the parent receipt once, even if the child is interrupted before its first
 request. A second child cannot silently retry the same prefix; another recovery then requires a new
@@ -59,12 +64,24 @@ It is not spending authority or an extension of the consumed pilot allocation. R
 dollar ceiling separately, including USD0.806717 already incurred and USD8 contingency. An eventual
 approved copy must bind the final source, preflight, parent receipt/snapshot/events and explicit limits.
 
+Current local reviewed preparation is `artifacts/checkpoint-recovery-preflight-reviewed.json` and
+`artifacts/checkpoint-recovery-plan-reviewed.json`. Earlier preparation files remain historical; their
+source fingerprints are stale after review corrections. Preserve them rather than overwrite them.
+
 The future execution entrypoint is the existing `execute` command with the same `--checkpoint`,
 `--compatibility`, assets and preflight, plus a separately authorized approval file. Credentials are
 supplied privately through the environment. No execution command has been run during implementation.
 Optional saved-QA exports remain separate; local events/state/scoring/ledger are authoritative.
 
 ## Review and limits
+
+The 19 portable recovery tests pass; independent Standards and Spec reviews have no remaining
+material findings after the cache-reuse and historical-accounting corrections. The full offline suite
+passes **287 tests / 92 subtests**, with sockets disabled by the test suite. Actual runtime preflight
+passes with sockets disabled and the new unapproved plan verifies the preserved real parent. All four
+archived phase inventories and study charges remain unchanged. Evidence is in ignored local
+`artifacts/checkpoint-{prefix-tests,reviewed-full-suite}.txt` and
+`artifacts/checkpoint-recovery-preflight-reviewed.log`.
 
 Recovery tests use deterministic mocks and deny sockets. They must verify restore without encoding,
 stale index/duplicate links, interrupted versus uninterrupted construction/consolidation, inherited
