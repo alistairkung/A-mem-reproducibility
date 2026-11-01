@@ -11,7 +11,7 @@ from amem_repro import phases
 from amem_repro.adapter import create_deepseek_controller
 from amem_repro.author import make_agent_factory
 from amem_repro.budget import BudgetStop, ledger_summary
-from amem_repro.config import DEFAULT_CONFIG, fingerprint
+from amem_repro.config import DEFAULT_CONFIG, fingerprint, INDEX_STRING_POLICY, STRICT_PROVIDER_POLICY
 from amem_repro.manifests import build_manifest
 from amem_repro.measurements import TokenCounter
 from amem_repro.scoring import AuthorScorer, rescore_records
@@ -21,7 +21,7 @@ from test_scoring import dependencies
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def inputs():
+def inputs(policy=STRICT_PROVIDER_POLICY):
     manifest = build_manifest(ROOT / "data/locomo10.json", "smoke")
     sources = {"offline-test": "only"}
     binding = {
@@ -29,14 +29,16 @@ def inputs():
         "config_sha256": fingerprint(DEFAULT_CONFIG), "preflight_sha256": "b" * 64,
         "condition": "full", "repetition": 0, "population": "smoke",
         "model": "deepseek-flash", "endpoint": "https://api.deepseek.com/beta/chat/completions",
+        "provider_contract_policy": policy,
     }
     return DEFAULT_CONFIG, manifest, sources, binding
 
 
-def plan(tmp_path):
-    with patch.object(phases, "_phase_inputs", return_value=inputs()):
+def plan(tmp_path, policy=STRICT_PROVIDER_POLICY):
+    with patch.object(phases, "_phase_inputs", return_value=inputs(policy)):
         return phases.plan_phase("compatibility", {"assets": {"tokenizer_limitation": "test only"}},
-                                 tmp_path / "assets", root=tmp_path, run_id="offline-test")
+                                 tmp_path / "assets", root=tmp_path, run_id="offline-test",
+                                 provider_contract_policy=policy)
 
 
 def test_plan_is_not_permission_to_spend(tmp_path):
@@ -88,14 +90,21 @@ def test_missing_credentials_do_not_claim_approval_or_create_run_artifacts(tmp_p
 
 
 @pytest.mark.parametrize("rescore_failure", [False, True, "abort"])
-def test_complete_fixture_archives_original_outputs_and_cannot_restart(tmp_path, rescore_failure):
+@pytest.mark.parametrize("policy", [STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY])
+def test_complete_fixture_archives_original_outputs_and_cannot_restart(tmp_path, rescore_failure, policy):
     (tmp_path / "data").symlink_to(ROOT / "data", target_is_directory=True)
-    proposal = plan(tmp_path)
+    proposal = plan(tmp_path, policy)
     proposal.update(approved=True, approved_by="offline test", approved_at="2026-11-01T00:00:00Z")
     provider = Provider()
 
     def sdk_handler(request):
-        return httpx.Response(200, json=provider.complete(**json.loads(request.content)))
+        response = provider.complete(**json.loads(request.content))
+        function = response["choices"][0]["message"]["tool_calls"][0]["function"]
+        value = json.loads(function["arguments"])
+        if policy == INDEX_STRING_POLICY and "suggested_connections" in value:
+            value["suggested_connections"] = [str(i) for i in value["suggested_connections"]]
+            function["arguments"] = json.dumps(value)
+        return httpx.Response(200, json=response)
 
     def controller(**kwargs):
         return create_deepseek_controller(**kwargs, http_transport=httpx.MockTransport(sdk_handler))
@@ -121,7 +130,7 @@ def test_complete_fixture_archives_original_outputs_and_cannot_restart(tmp_path,
             raise RuntimeError("offline post-inference export/scoring failure")
         return rescore_records(*args, **kwargs)
 
-    with patch.object(phases, "_phase_inputs", return_value=inputs()), \
+    with patch.object(phases, "_phase_inputs", return_value=inputs(policy)), \
          patch("amem_repro.adapter.create_deepseek_controller", side_effect=controller), \
          patch("amem_repro.author.make_agent_factory", side_effect=factory), \
          patch.object(phases, "make_token_counter", return_value=TokenCounter(str.split, "offline", "test")), \
@@ -134,12 +143,21 @@ def test_complete_fixture_archives_original_outputs_and_cannot_restart(tmp_path,
             result = json.loads((tmp_path / "artifacts/runs/offline-test/phase.json").read_text())
         else:
             result = phases.execute_phase(proposal, {"assets": {}}, tmp_path / "assets", root=tmp_path)
-        expected_status = "incomplete" if rescore_failure == "abort" else "degraded" if rescore_failure else "complete"
+        expected_status = ("incomplete" if rescore_failure == "abort" else "degraded"
+                           if rescore_failure or policy == INDEX_STRING_POLICY else "complete")
         assert result["status"] == expected_status
         assert result["usable_for_next_phase"] is (rescore_failure != "abort")
         assert result["completed_questions"] == 4
         assert result["budget"]["physical_attempts"] == 44
         assert set(result["schema_outcomes"]) == {"metadata", "shared_decision", "query_keywords", "answer"}
+        assert result["provider_contract_policy"] == policy
+        expected_deviations = 17 if policy == INDEX_STRING_POLICY else 0
+        assert result["provider_contract_deviation_count"] == expected_deviations
+        assert result["validation_copy_transformed_item_count"] == (75 if expected_deviations else 0)
+        assert result["schema_outcomes"]["shared_decision"] == {
+            "raw_valid": 18 - expected_deviations, "accepted_with_deviation": expected_deviations,
+            "rejected": 0, "not_transmitted": 0,
+        }
         if rescore_failure != "abort":
             assert phases._verified_phase(tmp_path / "artifacts/runs/offline-test/phase.json", tmp_path) == result
         before = copy.deepcopy(provider.requests)
@@ -163,7 +181,7 @@ def test_complete_fixture_archives_original_outputs_and_cannot_restart(tmp_path,
         assert len(failures) == 1
         assert failures[0]["question_id"] == "conv-26:qa:0"
         assert failures[0]["scoring_policy"] == "author-corrected-v1"
-        assert summary["failures"][0]["question_id"] == "conv-26:qa:0"
+        assert failures[0] in summary["failures"]
     elif rescore_failure == "abort":
         aborts = [event for event in events if event["type"] == "run_abort"]
         assert len(aborts) == 1

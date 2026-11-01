@@ -42,7 +42,7 @@ def test_isdigit_does_not_guarantee_original_conversion_succeeds():
         author_module().as_index("²")
 
 
-def evolve(connections, *, positive=True, actions=None, counter=0):
+def evolve(connections, *, positive=True, actions=None, counter=0, controller_factory=None):
     module = author_module()
     decision = {
         "should_evolve": positive,
@@ -54,10 +54,11 @@ def evolve(connections, *, positive=True, actions=None, counter=0):
     }
     raw = json.dumps(decision)
     calls = []
+    controller = controller_factory(raw) if controller_factory else None
 
     def completion(prompt, **kwargs):
         calls.append((prompt, kwargs))
-        return raw
+        return controller.get_completion(prompt, **kwargs) if controller else raw
 
     module.LLMController = lambda *args, **kwargs: NS(llm=NS(get_completion=completion))
     system = module.AgenticMemorySystem()

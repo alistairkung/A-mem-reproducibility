@@ -7,6 +7,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import time
 from contextvars import ContextVar
 from datetime import datetime, timezone
@@ -18,7 +19,10 @@ from .contracts import (
     validate_arguments,
     validate_strict_schema,
 )
-from .config import reject_credentials
+from .config import (
+    reject_credentials, fingerprint, validate_provider_policy,
+    STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY,
+)
 
 MODEL = "deepseek-flash"
 BASE_URL = "https://api.deepseek.com/beta"
@@ -41,6 +45,56 @@ def _mapping(value):
 
 def _invalid_constant(value):
     raise AdapterError("Non-finite JSON constant")
+
+
+def _validation_copy_deviation(value, schema, stage, policy, arguments):
+    """Validate a temporary view; original arguments still go to the author parser."""
+    try:
+        validate_arguments(value, schema)
+        return None
+    except ContractError as raw_error:
+        if (policy != INDEX_STRING_POLICY or stage != "shared_decision"
+                or type(value) is not dict
+                or type(value.get("suggested_connections")) is not list):
+            raise
+        shadow = copy.deepcopy(value)
+        changes = []
+        for index, item in enumerate(shadow["suggested_connections"]):
+            if type(item) is str:
+                # Deliberately narrower than str.isdigit()/as_index: canonical
+                # unsigned ASCII decimals only, with no padding or whitespace.
+                if re.fullmatch(r"0|[1-9][0-9]*", item, flags=re.ASCII) is None:
+                    raise raw_error
+                try:
+                    converted = int(item)
+                except ValueError:
+                    raise raw_error from None
+                shadow["suggested_connections"][index] = converted
+                changes.append({"path": f"$.suggested_connections[{index}]",
+                                "original": item, "validation_copy": converted})
+        if not changes:
+            raise
+        # Every other field/item, required key and extra-key restriction remains strict.
+        validate_arguments(shadow, schema)
+        original_hash = hashlib.sha256(arguments.encode("utf-8")).hexdigest()
+        return {
+            "provider_contract_policy": policy,
+            "affected_field": "$.suggested_connections",
+            "raw_contract_violation": {
+                "kind": "schema_type_violation", "expected": "integer", "observed": "string",
+                "paths": [change["path"] for change in changes],
+            },
+            "raw_schema_valid": False,
+            "validation_copy_schema_valid": True,
+            "transformations": changes,
+            "original_arguments_sha256": original_hash,
+            "returned_arguments_sha256": original_hash,
+            "original_value_sha256": fingerprint(value),
+            "validation_copy_sha256": fingerprint(shadow),
+            "hash_encoding": "arguments:utf8; values:canonical-json-sha256",
+            "validation_copy_only": True,
+            "algorithm_input_modified": False,
+        }
 
 
 def _observed_payload(value, credential=None):
@@ -77,12 +131,15 @@ class DeepSeekController:
         observer: Callable[[dict], None] | None = None,
         stage: str | None = None,
         phase_permit=None,
+        provider_contract_policy=STRICT_PROVIDER_POLICY,
     ):
+        validate_provider_policy(provider_contract_policy)
         self.client = client
         self.model = MODEL
         self.observer = observer
         self.stage = stage
         self.phase_permit = phase_permit
+        self.provider_contract_policy = provider_contract_policy
         self.observer_errors = []
         self.contracts = load_author_contracts()
 
@@ -124,6 +181,10 @@ class DeepSeekController:
             "request_id": None,
             "error_type": None,
             "attempts": [],
+            "provider_contract_policy": self.provider_contract_policy,
+            "raw_schema_valid": None,
+            "validation_copy_schema_valid": None,
+            "compatibility_deviation": None,
         }
         token = _ATTEMPTS.set(event["attempts"])
         logical_token = None
@@ -188,7 +249,13 @@ class DeepSeekController:
                 raise AdapterError("Function arguments must be a JSON string")
             try:
                 value = json.loads(arguments, parse_constant=_invalid_constant)
-                validate_arguments(value, schema)
+                event["raw_schema_valid"] = False
+                deviation = _validation_copy_deviation(
+                    value, schema, stage, self.provider_contract_policy, arguments
+                )
+                event["raw_schema_valid"] = deviation is None
+                event["validation_copy_schema_valid"] = True if deviation else None
+                event["compatibility_deviation"] = deviation
             except (ValueError, TypeError) as error:
                 raise AdapterError(
                     "Function arguments violate the unchanged schema"
@@ -216,10 +283,12 @@ class DeepSeekController:
 def create_deepseek_controller(
     *, paid_authorized: bool = False, observer=None, http_transport=None,
     phase_permit=None,
+    provider_contract_policy=STRICT_PROVIDER_POLICY,
 ):
     """Explicit execution gate; implementation approval alone cannot create a live client."""
     if paid_authorized is not True:
         raise PermissionError("Separate paid execution authorization is required")
+    validate_provider_policy(provider_contract_policy)
     import httpx
 
     # The old MockTransport seam remains useful for offline SDK contracts. Real
@@ -233,6 +302,8 @@ def create_deepseek_controller(
 
         if not isinstance(phase_permit, PhasePermit):
             raise TypeError("A durable PhasePermit is required")
+        if phase_permit.binding.get("provider_contract_policy", STRICT_PROVIDER_POLICY) != provider_contract_policy:
+            raise ValueError("Provider-contract policy differs from phase approval")
         phase_permit.check_binding(phase_permit.binding)
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
@@ -242,6 +313,7 @@ def create_deepseek_controller(
     transport = _recording_transport(
         http_transport if http_transport is not None else httpx.HTTPTransport(retries=0),
         phase_permit,
+        provider_contract_policy,
     )
     client = OpenAI(
         api_key=api_key,
@@ -250,10 +322,11 @@ def create_deepseek_controller(
         max_retries=2,
         http_client=httpx.Client(transport=transport, timeout=120.0),
     )
-    return DeepSeekController(client, observer=observer, phase_permit=phase_permit)
+    return DeepSeekController(client, observer=observer, phase_permit=phase_permit,
+                              provider_contract_policy=provider_contract_policy)
 
 
-def _recording_transport(delegate, permit=None):
+def _recording_transport(delegate, permit=None, provider_contract_policy=STRICT_PROVIDER_POLICY):
     """Wrap SDK transport; retries remain entirely owned by the SDK."""
     import httpx
 
@@ -289,6 +362,7 @@ def _recording_transport(delegate, permit=None):
                             "stream": body.get("stream"),
                             "body_sha256": hashlib.sha256(request.content).hexdigest(),
                             "method": request.method,
+                            "provider_contract_policy": provider_contract_policy,
                         },
                     )
                     attempt["budget_attempt_id"] = budget_id

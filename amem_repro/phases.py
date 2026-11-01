@@ -19,7 +19,10 @@ import time
 import uuid
 from unittest.mock import patch
 
-from .config import fingerprint, load_config, source_fingerprint, reject_credentials
+from .config import (
+    fingerprint, load_config, source_fingerprint, reject_credentials,
+    STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY, validate_provider_policy,
+)
 from .manifests import expand_manifest
 from .preflight import (
     asset_environment, build_asset_report, make_token_counter,
@@ -155,7 +158,9 @@ def _verified_phase(path, root):
     return value
 
 
-def _phase_inputs(phase, receipt, asset_root, root, compatibility=None):
+def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
+                  provider_contract_policy=STRICT_PROVIDER_POLICY):
+    validate_provider_policy(provider_contract_policy)
     if phase not in PHASES:
         raise ValueError("Only separately approved compatibility and pilot phases are enabled")
     spec = PHASES[phase]
@@ -169,6 +174,7 @@ def _phase_inputs(phase, receipt, asset_root, root, compatibility=None):
         "condition": "full", "repetition": 0, "population": spec["population"],
         "model": config["model"]["id"],
         "endpoint": config["model"]["base_url"] + config["model"]["route"],
+        "provider_contract_policy": provider_contract_policy,
     }
     if phase == "pilot":
         if compatibility is None:
@@ -176,16 +182,20 @@ def _phase_inputs(phase, receipt, asset_root, root, compatibility=None):
         previous = _verified_phase(compatibility, root)
         if previous["phase"] != "compatibility":
             raise ValueError("The pilot requires a compatibility receipt")
-        for key in ("config_sha256", "source_sha256", "preflight_sha256", "model", "endpoint"):
-            if previous["binding"][key] != binding[key]:
+        for key in ("config_sha256", "source_sha256", "preflight_sha256", "model", "endpoint", "provider_contract_policy"):
+            if previous["binding"].get(key) != binding[key]:
                 raise ValueError("Compatibility provenance differs; stop for review")
         binding["compatibility_sha256"] = fingerprint(previous)
     return config, manifest, sources, binding
 
 
-def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibility=None):
+def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibility=None,
+               provider_contract_policy=STRICT_PROVIDER_POLICY):
     root = Path(root)
-    _, manifest, _, binding = _phase_inputs(phase, receipt, asset_root, root, compatibility)
+    _, manifest, _, binding = _phase_inputs(
+        phase, receipt, asset_root, root, compatibility,
+        provider_contract_policy=provider_contract_policy,
+    )
     run_id = run_id or f"{phase}-{uuid.uuid4().hex[:12]}"
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run_id must be a safe, unique local artifact name")
@@ -221,7 +231,11 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
     from .scoring import AuthorScorer, rescore_records
 
     root = Path(root)
-    config, manifest, sources, binding = _phase_inputs(approval["phase"], receipt, asset_root, root, compatibility)
+    provider_contract_policy = approval["binding"].get("provider_contract_policy", STRICT_PROVIDER_POLICY)
+    config, manifest, sources, binding = _phase_inputs(
+        approval["phase"], receipt, asset_root, root, compatibility,
+        provider_contract_policy=provider_contract_policy,
+    )
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", approval["run_id"]):
         raise ValueError("Invalid run identity")
     output = root / "artifacts/runs" / approval["run_id"]
@@ -238,13 +252,15 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
     _save(output / "preflight.json", receipt)
     clients = []
     versions, fingerprints, schema_outcomes = set(), set(), {}
+    deviations = {"completions": 0, "items": 0}
     if compatibility is not None:
         previous = _verified_phase(compatibility, root)
         versions.update(previous["returned_models"])
         fingerprints.update(previous["system_fingerprints"])
 
     def controller(observer):
-        c = create_deepseek_controller(paid_authorized=True, observer=observer, phase_permit=permit)
+        c = create_deepseek_controller(paid_authorized=True, observer=observer, phase_permit=permit,
+                                       provider_contract_policy=provider_contract_policy)
         clients.append(c.client)
         return c
 
@@ -252,8 +268,17 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         if event.get("type") != "generation":
             return
         stage = event["stage"]
-        schema_outcomes.setdefault(stage, {"valid": 0, "failed": 0})
-        schema_outcomes[stage]["failed" if event.get("error_type") else "valid"] += 1
+        schema_outcomes.setdefault(stage, {
+            "raw_valid": 0, "accepted_with_deviation": 0, "rejected": 0, "not_transmitted": 0,
+        })
+        if event.get("error_type"):
+            outcome = "rejected" if event.get("attempts") else "not_transmitted"
+        else:
+            outcome = "accepted_with_deviation" if event.get("compatibility_deviation") else "raw_valid"
+        schema_outcomes[stage][outcome] += 1
+        if event.get("compatibility_deviation"):
+            deviations["completions"] += 1
+            deviations["items"] += len(event["compatibility_deviation"]["transformations"])
         if event.get("returned_model"):
             versions.add(event["returned_model"])
         if event.get("system_fingerprint"):
@@ -273,6 +298,7 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
                 root / "data/locomo10.json", manifest, config,
                 output_dir=output, cache_root=root / "artifacts/cache", source_hashes=sources,
                 agent_factory=factory, scorer=scorer, observer=observe, run_id=approval["run_id"],
+                provider_contract_policy=provider_contract_policy,
             )
             events = [json.loads(line) for line in (output / "events.jsonl").read_text().splitlines()]
             # The two views consume saved predictions and cannot make model calls.
@@ -324,6 +350,9 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             "population": binding["population"],
             "conversation_ids": [c["original_id"] for c in manifest["conversations"]],
             "binding": binding, "status": summary["status"] if summary and error_type is None else "incomplete",
+            "provider_contract_policy": provider_contract_policy,
+            "provider_contract_deviation_count": deviations["completions"],
+            "validation_copy_transformed_item_count": deviations["items"],
             "expected_questions": manifest["totals"]["questions"],
             "completed_questions": summary["completed_questions"] if summary else 0,
             "error_type": error_type, "budget": budget,
@@ -342,11 +371,12 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
     return phase_result
 
 
-def forecast_pilot(path, *, root=ROOT):
+def forecast_pilot(path, *, root=ROOT, provider_contract_policy=STRICT_PROVIDER_POLICY):
     """Read cost evidence only; never select from quality results or execute a run."""
     from .budget import ledger_summary
     from .forecast import forecast_scope
 
+    validate_provider_policy(provider_contract_policy)
     root = Path(root)
     pilot = _verified_phase(path, root)
     if pilot["phase"] != "pilot":
@@ -357,13 +387,15 @@ def forecast_pilot(path, *, root=ROOT):
     reusable = (pilot["binding"]["source_sha256"] == current_sources
                 and pilot["binding"]["config_sha256"] == fingerprint(config)
                 and pilot["binding"]["manifest_sha256"] == fingerprint(manifest)
-                and pilot["binding"]["condition"] == "full" and pilot["binding"]["repetition"] == 0)
+                and pilot["binding"]["condition"] == "full" and pilot["binding"]["repetition"] == 0
+                and pilot["binding"].get("provider_contract_policy", STRICT_PROVIDER_POLICY) == provider_contract_policy)
     # Read generation records only. Do not read the saved scoring views or predictions.
     events = (json.loads(line) for line in (Path(path).parent / "events.jsonl").read_text().splitlines())
     generations = [event for event in events if event.get("type") == "generation"]
     result = forecast_scope(generations, pilot, ledger_summary(root / "artifacts/study-budget.sqlite"),
                             pilot_reusable=reusable)
     result["pilot_receipt_sha256"] = fingerprint(pilot)
+    result["provider_contract_policy"] = provider_contract_policy
     return result
 
 
@@ -379,6 +411,8 @@ def main():
     plan.add_argument("--assets", required=True)
     plan.add_argument("--preflight", required=True)
     plan.add_argument("--compatibility")
+    plan.add_argument("--provider-contract-policy", choices=(STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY),
+                      default=STRICT_PROVIDER_POLICY)
     plan.add_argument("--output", required=True)
     run = sub.add_parser("execute")
     run.add_argument("--approval", required=True)
@@ -387,6 +421,8 @@ def main():
     run.add_argument("--compatibility")
     forecast = sub.add_parser("forecast")
     forecast.add_argument("--pilot", required=True)
+    forecast.add_argument("--provider-contract-policy", choices=(STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY),
+                          default=STRICT_PROVIDER_POLICY)
     forecast.add_argument("--output", required=True)
     args = parser.parse_args()
     if args.command == "preflight":
@@ -395,7 +431,8 @@ def main():
         print(json.dumps({"ready": result["assets"]["ready"], "runtime": result["runtime"]["ok"]}))
     elif args.command == "plan":
         receipt = json.loads(Path(args.preflight).read_text())
-        result = plan_phase(args.phase, receipt, args.assets, run_id=args.run_id, compatibility=args.compatibility)
+        result = plan_phase(args.phase, receipt, args.assets, run_id=args.run_id,
+                            compatibility=args.compatibility, provider_contract_policy=args.provider_contract_policy)
         _save(args.output, result)
         print(json.dumps({"approved": False, "phase": args.phase, "limits": result["limits"]}))
     elif args.command == "execute":
@@ -403,7 +440,7 @@ def main():
         receipt = json.loads(Path(args.preflight).read_text())
         print(json.dumps(execute_phase(approval, receipt, args.assets, compatibility=args.compatibility)))
     else:
-        result = forecast_pilot(args.pilot)
+        result = forecast_pilot(args.pilot, provider_contract_policy=args.provider_contract_policy)
         _save(args.output, result)
         print(json.dumps({"recommended_population": result["recommended_population"],
                           "requires_main_execution_approval": True}))

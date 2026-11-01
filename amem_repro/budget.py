@@ -15,7 +15,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation, ROUND_CEILING, ROUND_FLOOR
 from pathlib import Path
 
-from .config import fingerprint, reject_credentials
+from .config import fingerprint, reject_credentials, validate_provider_policy, STRICT_PROVIDER_POLICY
 
 MICROS = Decimal(1_000_000)
 GLOBAL_USABLE_MICROS = 42_000_000  # USD 50 total less the USD 8 contingency.
@@ -64,6 +64,7 @@ def _validate(auth, binding):
         phase_max = {'compatibility':Decimal(2), 'pilot':Decimal(10), 'baseline':Decimal(42)}
         if phase not in phase_max or auth['binding'] != binding:
             raise BudgetStop('Approval phase or immutable binding mismatch')
+        validate_provider_policy(binding.get('provider_contract_policy', STRICT_PROVIDER_POLICY))
         for name in ('manifest_sha256', 'config_sha256', 'source_sha256', 'preflight_sha256'):
             digest = binding[name]
             if not isinstance(digest,str) or len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest):
@@ -211,6 +212,7 @@ class PhasePermit:
             if (not isinstance(request,dict) or request.get('model') != self.binding['model'] or request.get('endpoint') != self.binding['endpoint']
                 or type(request.get('max_tokens')) is not int or request['max_tokens'] != 1000
                 or request.get('stream') is not False or request.get('temperature') not in expected_temp
+                or request.get('provider_contract_policy', STRICT_PROVIDER_POLICY) != self.binding.get('provider_contract_policy', STRICT_PROVIDER_POLICY)
                 or request.get('thinking') not in ('disabled', {'type':'disabled'})):
                 self._halt(db,'Physical request differs from the frozen contract')
             try:

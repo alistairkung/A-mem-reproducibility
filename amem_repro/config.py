@@ -6,6 +6,15 @@ from pathlib import Path
 import subprocess
 
 AUTHOR_REVISION = "f9a173dec325d84fcc97e7828775c7b241c33466"
+STRICT_PROVIDER_POLICY = "strict-original-v1"
+INDEX_STRING_POLICY = "canonical-index-strings-v1"
+
+
+def validate_provider_policy(policy):
+    if type(policy) is not str or policy not in (STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY):
+        raise ValueError("Unknown provider-contract policy")
+
+
 DEFAULT_CONFIG = {
     "protocol_id": "amem-controlled-reproduction-v1",
     "model": {

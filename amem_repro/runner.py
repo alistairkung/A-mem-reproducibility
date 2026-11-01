@@ -19,7 +19,9 @@ from .artifacts import (
     snapshot_memory,
     restore_memory,
 )
-from .config import validate_config, source_fingerprint
+from .config import (
+    validate_config, source_fingerprint, STRICT_PROVIDER_POLICY, validate_provider_policy,
+)
 from .manifests import expand_manifest
 
 
@@ -62,6 +64,7 @@ def run_manifest(
     paid_authorized=False,
     run_id=None,
     token_counter=None,
+    provider_contract_policy=STRICT_PROVIDER_POLICY,
 ):
     """Run an approved manifest. Injected interfaces support deterministic offline contracts.
 
@@ -70,6 +73,7 @@ def run_manifest(
     inferred from environment credentials or the existence of a planning ticket.
     """
     validate_config(config)
+    validate_provider_policy(provider_contract_policy)
     if condition != "full":
         raise ValueError("Action gating is not implemented or authorized in T1–T4")
     if execution_type not in ("fresh_build", "cached_qa"):
@@ -100,7 +104,8 @@ def run_manifest(
     raw = json.loads(dataset_path.read_bytes())
     conversations = manifest["conversations"]
     expected = [q["question_id"] for c in conversations for q in c["questions"]]
-    ledger = RunLedger(output_dir, run_id or uuid.uuid4().hex, expected)
+    ledger = RunLedger(output_dir, run_id or uuid.uuid4().hex, expected,
+                       provider_contract_policy=provider_contract_policy)
     cache = CacheStore(cache_root)
     active = {}
     generations = []
@@ -113,6 +118,13 @@ def run_manifest(
         ledger.record(value)
         if value["type"] == "generation":
             generations.append(value)
+            if value.get("compatibility_deviation"):
+                ledger.record({
+                    "type": "failure", "kind": "provider_contract_deviation",
+                    "provider_contract_policy": provider_contract_policy,
+                    "compatibility_deviation": value["compatibility_deviation"],
+                    **active,
+                })
             if value.get("error_type"):
                 ledger.record(
                     {
@@ -156,6 +168,7 @@ def run_manifest(
             "source_hashes": source_hashes,
             "condition": condition,
             "repetition": repetition,
+            "provider_contract_policy": provider_contract_policy,
         }
     )
     try:
@@ -166,6 +179,7 @@ def run_manifest(
                 manifest["dataset_sha256"],
                 source_hashes,
                 repetition,
+                provider_contract_policy=provider_contract_policy,
             )
             identity["condition"] = condition
             build_id = cache.path_for(identity).name
@@ -311,6 +325,7 @@ def run_manifest(
                     "metrics": metrics,
                     "category": qa.category,
                     "scoring_policy": config["scoring_policies"][0],
+                    "provider_contract_policy": provider_contract_policy,
                     "metric_failures": copy.deepcopy(getattr(scorer, "failures", [])),
                 }
                 record(
