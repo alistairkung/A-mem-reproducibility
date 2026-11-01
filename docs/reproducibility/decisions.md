@@ -178,3 +178,23 @@ Preserve the rejected response and incomplete run. BLK-007 remains Investigating
 authorized live compatibility test succeeds; offline success does not establish provider compliance.
 No paid recovery, resumed fixture, conv-50 pilot, push or merge is authorized by this decision.
 See [implementation and offline verification](blk-007-compatibility-review.md).
+
+## Authorization — autonomous T5 baseline readiness
+
+The user subsequently authorized remaining T5 implementation, offline verification, specialist reviews,
+commits/pushes and merging PR #11 after all required checks pass. Resolve BLK-012 and other material
+engineering defects before paid execution; preserve frozen author behavior and D3a. This does not
+authorize T6–T8 or changes to algorithms, prompts, schemas, parsing/scoring, populations or settings.
+
+Exactly one **fresh** compatibility phase is authorized under `canonical-index-strings-v1`: the frozen
+18-turn/four-QA fixture, up to 44 logical calls, at most three attempts each and USD2 **additional**
+spending including failures/retries, within the study ceiling and USD8 contingency. Up to four extra
+schema probes are permitted if required; the planned fixture itself covers every schema, so the
+existing 44-call/132-attempt limits are retained and no probes are planned. Record a new immutable
+approval/source/preflight/run identity; never resume or overwrite the first failed fixture.
+
+Compatibility may succeed with degradation solely from fully audited D3a deviations. Investigate any
+other degradation; an incomplete/failed phase consumes this one authorization. Offline fixes may
+continue, but another paid phase needs a separate decision. After successful compatibility, verify
+runtime/assets/manifests/caches/results and prepare the exact unapproved 1,544-call conv-50 pilot plan
+and command. **Stop before the pilot or full benchmark**; both remain separately gated.

@@ -138,6 +138,8 @@ class PhasePermit:
         self.owner = uuid.uuid4().hex
         self.pid = os.getpid()
         self.reserve_micros = reserve
+        self._terminal_reason = None
+        self._halt_persistence_error = None
         with self._transaction(initialize=True) as db:
             if db.execute('SELECT 1 FROM phases WHERE approval_id=? OR run_id=?',
                           (self.approval_id, auth['run_id'])).fetchone():
@@ -163,6 +165,8 @@ class PhasePermit:
             db.close()
 
     def _phase(self, db, allow_halted=False):
+        if self._terminal_reason and not allow_halted:
+            raise BudgetStop(f'Phase stopped: {self._terminal_reason}')
         row = db.execute('SELECT owner,phase_cap,halted,auth_json FROM phases WHERE approval_id=?',
                          (self.approval_id,)).fetchone()
         if row is None:
@@ -237,6 +241,18 @@ class PhasePermit:
                               (logical_id,self.approval_id,request_hash,'reserved',self.reserve_micros,self.reserve_micros)).lastrowid
 
     def settle(self, attempt_id, usage):
+        try:
+            self._settle(attempt_id, usage)
+        except Exception as error:
+            # The transaction rolled back; retain the pre-send reservation.
+            # Accounting errors must never become SDK connection retries.
+            try:
+                self.stop('usage_settlement_failed')
+            except BudgetStop:
+                pass  # stop() has latched locally even if SQLite remains unavailable.
+            raise BudgetStop('Usage settlement failed; reservation retained') from error
+
+    def _settle(self, attempt_id, usage):
         with self._transaction() as db:
             self._phase(db,allow_halted=True)
             row = db.execute('SELECT status,reservation,usage_json FROM attempts WHERE id=? AND approval_id=?',
@@ -290,13 +306,25 @@ class PhasePermit:
 
     def stop(self, reason):
         # Reasons are categories supplied by orchestration, not raw provider error text.
-        with self._transaction() as db:
-            self._phase(db,allow_halted=True)
-            db.execute('UPDATE phases SET halted=COALESCE(halted,?) WHERE approval_id=?',
-                       (str(reason),self.approval_id))
+        self._terminal_reason = self._terminal_reason or str(reason)
+        try:
+            with self._transaction() as db:
+                self._phase(db,allow_halted=True)
+                db.execute('UPDATE phases SET halted=COALESCE(halted,?) WHERE approval_id=?',
+                           (self._terminal_reason,self.approval_id))
+            self._halt_persistence_error = None
+        except Exception as error:
+            self._halt_persistence_error = type(error).__name__
+            raise BudgetStop('Phase stopped locally; halt persistence failed') from error
 
     def summary(self):
-        return ledger_summary(self.path,self.approval_id)
+        result = ledger_summary(self.path,self.approval_id)
+        if self._terminal_reason:
+            result['halt_persisted'] = result['halted'] is not None
+            result['halted'] = result['halted'] or self._terminal_reason
+            if self._halt_persistence_error:
+                result['halt_persistence_error_type'] = self._halt_persistence_error
+        return result
 
 
 def ledger_summary(path, approval_id=None):

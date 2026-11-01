@@ -176,6 +176,10 @@ def test_complete_fixture_archives_original_outputs_and_cannot_restart(tmp_path,
     assert saved[0]["metric_failures"] == []
     summary = json.loads((events_path.parent / "summary.json").read_text())
     assert summary["status"] == result["status"]
+    assert summary["provider_contract_deviation_count"] == expected_deviations
+    notices = [e for e in events if e.get("kind") == "provider_contract_deviation"]
+    assert len(notices) == expected_deviations
+    assert all(notice in summary["failures"] for notice in notices)
     if rescore_failure is True:
         failures = [event for event in events if event.get("kind") == "metric_computation"]
         assert len(failures) == 1

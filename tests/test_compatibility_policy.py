@@ -199,6 +199,65 @@ def test_admitted_deviation_degrades_run_and_survives_cache_reuse(tmp_path):
                      output_dir=tmp_path / "wrong-policy", execution_type="cached_qa")
 
 
+@pytest.mark.parametrize("failure_stage", ["memory", "question"])
+def test_deviation_evidence_survives_later_memory_or_question_abort(tmp_path, failure_stage):
+    from pathlib import Path
+    from amem_repro.config import load_config
+    from amem_repro.manifests import build_manifest
+    from amem_repro.runner import run_manifest
+    from test_runner import Agent, score
+
+    root = Path(__file__).resolve().parents[1]
+    raw = " \n" + json.dumps(decision(), indent=2) + "\n "
+
+    def factory(config, observer):
+        agent = Agent()
+        add, answer = agent.add_memory, agent.answer_question
+        controller = DeepSeekController(Client(completion(raw)), observer=observer,
+                                        provider_contract_policy=POLICY)
+        questions = 0
+
+        def add_memory(*args, **kwargs):
+            if failure_stage == "memory" and agent.added:
+                raise RuntimeError("offline later memory failure")
+            if not agent.added:
+                controller.get_completion("unchanged", load_author_contracts()["shared_decision"])
+            return add(*args, **kwargs)
+
+        def answer_question(*args, **kwargs):
+            nonlocal questions
+            questions += 1
+            if failure_stage == "question" and questions == 2:
+                raise RuntimeError("offline later question failure")
+            return answer(*args, **kwargs)
+
+        agent.add_memory, agent.answer_question = add_memory, answer_question
+        return agent
+
+    output = tmp_path / "run"
+    with pytest.raises(RuntimeError, match=f"later {failure_stage} failure"):
+        run_manifest(root / "data/locomo10.json", build_manifest(root / "data/locomo10.json", "smoke"),
+                     load_config(), output_dir=output, cache_root=tmp_path / "cache",
+                     source_hashes={"wrapper": "test"}, agent_factory=factory, scorer=score,
+                     provider_contract_policy=POLICY)
+    events = [json.loads(line) for line in (output / "events.jsonl").read_text().splitlines()]
+    generation = next(e for e in events if e["type"] == "generation")
+    notice = next(e for e in events if e.get("kind") == "provider_contract_deviation")
+    summary = json.loads((output / "summary.json").read_text())
+    assert generation["output"] == raw
+    assert generation["raw_schema_valid"] is False
+    assert notice["compatibility_deviation"] == generation["compatibility_deviation"]
+    assert notice in summary["failures"]
+    assert summary["status"] == "incomplete"
+    assert summary["provider_contract_deviation_count"] == 1
+    assert summary["validation_copy_transformed_item_count"] == 2
+    assert summary["completed_questions"] == (1 if failure_stage == "question" else 0)
+    audit = notice["compatibility_deviation"]
+    assert audit["original_arguments_sha256"] == hashlib.sha256(raw.encode()).hexdigest()
+    assert audit["returned_arguments_sha256"] == audit["original_arguments_sha256"]
+    assert json.loads((output / "partial-memory.json").read_text())["complete"] is False
+
+
 def test_sdk_policy_is_bound_to_approval_and_never_enters_provider_payload(tmp_path):
     import httpx
     from unittest.mock import patch

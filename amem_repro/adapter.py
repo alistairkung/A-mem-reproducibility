@@ -396,7 +396,12 @@ def _recording_transport(delegate, permit=None, provider_contract_policy=STRICT_
                 if attempts is not None and transmitted:
                     attempts.append(attempt)
                 if budget_id is not None:
-                    permit.settle(budget_id, attempt["usage"])
+                    try:
+                        permit.settle(budget_id, attempt["usage"])
+                    except BaseException as error:
+                        attempt["error_type"] = type(error).__name__
+                        attempt["settlement_error_type"] = type(error.__cause__ or error).__name__
+                        raise
 
         def close(self):
             delegate.close()

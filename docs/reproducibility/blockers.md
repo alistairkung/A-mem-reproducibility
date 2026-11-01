@@ -17,11 +17,13 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-009](#blk-009) | Four-condition affordability lacks representative pilot evidence | Open | T5 scope decision, T8 | D10/D10a; counts; conservative spending ledger |
 | [BLK-010](#blk-010) | Released retrieval default differs from paper category settings | Accepted Limitation | T5, T8, interpretation | D6; runner default; paper Table 8 |
 | [BLK-011](#blk-011) | T5 execution is not connected to Langfuse tracing/export | Open | T5, T8 observability | Runtime call-path audit; verified synthetic trace |
+| [BLK-012](#blk-012) | Failed usage settlement triggers SDK regeneration | Resolved | T5 and later paid phases | Terminal settlement guard; SQLite fault/retry regressions |
 
 Before a paid run: **BLK-007 currently prevents compatibility acceptance and pilot progression**.
 BLK-001's query/answer contracts have not been exercised live. BLK-008 limits token-count claims;
 BLK-009 still requires a separately approved representative pilot and cost-only scope decision.
 BLK-011 requires actual runner wiring; a successful connection probe alone does not enable it.
+BLK-012's terminal settlement guard is verified offline; this does not authorize paid recovery.
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -273,3 +275,25 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Connectivity is verified; automatic paid-run tracing remains unwired. Keys/connection values are absent from records and `.env` is unchanged. No paid execution is authorized by this setup.
 - **Verification:** Synthetic observation `56d4b434cfe14653` is visible as `A-MEM/langfuse-configuration-smoke`, environment `configuration-preflight`. Verification of actual model-call capture, failure finalization and study-identity exports remains pending.
 - **Research significance:** Valid credentials and an installed observability SDK do not establish that the executed research path emits traces, especially when it fails before evaluation.
+
+## BLK-012
+
+- **ID:** BLK-012
+- **Title:** Failed usage settlement triggers SDK regeneration.
+- **Status:** Resolved
+- **First observed:** 2026-11-01, final narrow review of [PR #11](https://github.com/alistairkung/A-mem-reproducibility/pull/11), head `cc0b36c`.
+- **Category:** Cost
+- **Expected behaviour:** A local accounting failure after a received response preserves its maximum reservation and raw output, stops execution without another model request, and prevents unapproved continuation. Transport retries must not become semantic retries caused by local ledger failures.
+- **Observed behaviour:** Fault injection into the first settlement SQL update or commit after HTTP200 makes the SDK send a second request. It returns the second generated output; the phase remains unhalted and accepts a subsequent logical generation. The first maximum reservation is retained: no unsafe charge release was observed.
+- **Evidence:** [Transport settlement](../../amem_repro/adapter.py), `_recording_transport` line399 at `cc0b36c`; [SQLite transaction/settlement](../../amem_repro/budget.py); `test_failed_settlement_retains_charge_and_stops_without_sdk_regeneration` in [SDK budget tests](../../tests/test_adapter_budget.py). Safe local review artifacts: `artifacts/pr11-final-review/focused-pytest.txt` and `settlement-reproducer.json`.
+- **Root cause:** **Confirmed.** An ordinary `sqlite3.OperationalError` escapes the transport's `finally` block. The SDK interprets it as a connection failure and retries a generation whose response was already received. The exception bypasses the transport's error-recording handler; successful retry leaves no terminal phase stop. SQLite rollback itself conservatively preserves the original reservation.
+- **Impact:** Before correction, an unexpected second model output replaced the first, incurred another charge and changed the effective generation/failure process. Unknown reservations still counted toward the caps; no ceiling overrun was observed. This blocked paid execution and PR readiness until verified.
+- **Options considered:** Proposed only: retain the reservation/raw response, turn settlement failure into non-retryable `BudgetStop`, and prevent continued use of the permit even if persisting the stop fails. Retrying the completed generation or releasing its reservation is inappropriate. No production fix was made during the review.
+- **Resolution attempts:**
+  - 2026-11-01: inspect existing interruption, restart, unknown-usage, cap and SDK retry tests before adding cases. Independently reproduce both direct settlement-write failure and actual failed SQLite commit using HTTPX MockTransport; no live service or model request.
+  - 2026-11-01: add two failing fail-closed regressions. Both observe two transmissions where one is required; the initial charge remains reserved. Separate memory/question-abort tests and strengthened postprocessing assertions verify BLK-007 deviation persistence without modifying production code.
+  - 2026-11-01, approved focused P1 correction: `PhasePermit.settle` rolls back failed accounting, latches a terminal state, separately persists the halt and raises `BudgetStop` outside the SDK's `Exception` retry machinery. Attempt records retain the received payload plus error classes. No provider request policy or author code changed.
+  - 2026-11-01: both original update/commit regressions pass. Additional halt-write/commit fault cases reject continuation and old-approval restart even while SQLite cannot persist the halt; once writes recover, the original reason persists. Genuine 429/503/read-error retries still succeed under unchanged SDK limits and retain unknown reservations. Full offline suite: 247 tests and 71 subtests passed. Safe evidence: `artifacts/blk012-fix/{red.txt,focused.txt,full-pytest.txt}`.
+- **Final resolution or limitation:** Terminal accounting failures cannot regenerate a response or reuse the permit. The original reservation and response evidence survive; phase halt is committed separately. If SQLite remains unwritable, an irreversible local latch and the already-durable one-shot phase claim prevent continuation/restart; summaries explicitly report `halt_persisted:false` and the persistence error type. This does not pretend a failed halt write succeeded. Historical initial reproducer (two attempts, USD0.315785, no halt) and original paid-run evidence remain unchanged.
+- **Verification:** Update/commit fault tests prove one transmission, USD0.315773 retained reservation, original response, durable halt and denied continuation/restart. Halt-write/commit failure tests verify the local fallback and truthful persistence diagnostics; genuine transport/provider retry tests remain green. SQLite transaction and SDK integration tests run with sockets disabled; no paid request was used to verify the fix.
+- **Research significance:** Durable cost reservation and correct retry classification are separate requirements. A financially conservative ledger can still cause scientifically uncontrolled resampling when local accounting exceptions enter a provider's retry machinery.
