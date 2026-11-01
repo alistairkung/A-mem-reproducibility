@@ -2,10 +2,12 @@
 
 Protocol: [experimental-protocol.md](experimental-protocol.md).
 Decision record: [decisions.md](decisions.md).
-Created 1 November 2026; every issue is open and unstarted.
+Created 1 November 2026. T1–T4 are implemented offline and await review; T5–T8 remain unstarted.
+See [foundation validation and preflight](../../REPRODUCIBILITY.md).
 
-Issue creation is planning authorization only. Implementation, dependency installation, commits/pushes,
-paid API calls and paid recovery remain subject to separate user approval. A closed dependency does
+Issue creation alone is planning authorization. The user subsequently authorized T1–T4 implementation,
+offline tests and scoped commits on feature/reproducibility-foundation. Paid API calls, paid recovery,
+T5–T8 execution and merging into main remain subject to separate user approval. A closed dependency does
 not itself authorize a blocked ticket's execution. T5 and T8 require explicit paid-phase approvals.
 
 ## Tracker and dependency map

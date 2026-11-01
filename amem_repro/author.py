@@ -96,6 +96,7 @@ def make_agent_factory(
         validate_config(config)
         module = memory_module if memory_module is not None else _load_memory(root)
         controllers = []
+        measurement_errors = []
 
         def controller_binding(*args, **kwargs):
             controller = controller_factory(observer)
@@ -131,13 +132,26 @@ def make_agent_factory(
 
             return wrapped
 
-        agent.add_memory = offline_assets(agent.add_memory)
+        original_add = agent.add_memory
+
+        @wraps(original_add)
+        def measured_add(*args, **kwargs):
+            from .measurements import observe_actions
+
+            with _local_models_only(), observe_actions(root, observer) as errors:
+                try:
+                    return original_add(*args, **kwargs)
+                finally:
+                    measurement_errors.extend({"error_type": name} for name in errors)
+
+        agent.add_memory = offline_assets(measured_add)
         agent.answer_question = offline_assets(agent.answer_question)
         agent._repro_note_type = module.MemoryNote
         agent._repro_failure_counts = lambda: dict(module.FAILURES)
-        agent._repro_observer_errors = lambda: [
-            error for c in controllers for error in c.observer_errors
-        ]
+        agent._repro_observer_errors = (
+            lambda: [error for c in controllers for error in c.observer_errors]
+            + measurement_errors
+        )
         if token_counter is not None:
             from .measurements import observe_retrieval
 
@@ -145,7 +159,10 @@ def make_agent_factory(
                 context, event = observe_retrieval(
                     agent.memory_system, content, k, token_counter
                 )
-                observer(event)
+                try:
+                    observer(event)
+                except Exception as error:
+                    measurement_errors.append({"error_type": type(error).__name__})
                 return context
 
             agent.retrieve_memory = retrieve
