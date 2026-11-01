@@ -16,10 +16,12 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-008](#blk-008) | Local tokenizer equivalence to hosted DeepSeek is unverified | Open | T4, T5, T8 token reporting | Pinned tokenizer recipe; final preflight receipt |
 | [BLK-009](#blk-009) | Four-condition affordability lacks representative pilot evidence | Open | T5 scope decision, T8 | D10/D10a; counts; conservative spending ledger |
 | [BLK-010](#blk-010) | Released retrieval default differs from paper category settings | Accepted Limitation | T5, T8, interpretation | D6; runner default; paper Table 8 |
+| [BLK-011](#blk-011) | T5 execution is not connected to Langfuse tracing/export | Open | T5, T8 observability | Runtime call-path audit; verified synthetic trace |
 
 Before a paid run: **BLK-007 currently prevents compatibility acceptance and pilot progression**.
 BLK-001's query/answer contracts have not been exercised live. BLK-008 limits token-count claims;
 BLK-009 still requires a separately approved representative pilot and cost-only scope decision.
+BLK-011 requires actual runner wiring; a successful connection probe alone does not enable it.
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -184,6 +186,7 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01, approved fixture: ten physical requests, no retries; five metadata/four decision payloads valid and one decision invalid. Next metadata event was blocked before transmission, not an eleventh request.
   - 2026-11-01, offline investigation: verify serialized strict/beta/schema settings and independently confirm both type errors with `Draft202012Validator`; add rejection/unchanged-input regression.
   - 2026-11-01, archive check: artifact hash inventory verifies; follow-up suite records 132 tests/71 subtests passed. No recovery request or proposed repair was executed.
+  - 2026-11-01, focused offline investigation: reconstruct the exact pre-decision prompt and pass the raw response to the original parser. Its state and embedding documents match an integer-only control; both counters advance 3→4, while strict rejection stays 3. Added 38 characterization tests; branch suite 92 tests/32 subtests passes. See the [proposal and schema audit](blk-007-offline-investigation.md). A field-scoped validation-copy policy is proposed only; no adapter fix or model request was made. All nine original evidence files remain byte-identical.
 - **Final resolution or limitation:** **Unresolved.** Five notes/index rows preserved, zero of four QA completed; conservative peak-rate ledger cost USD0.005851, with no unknown charges. Response alias `deepseek-flash`, fingerprint `bc19ba97cbe016479903222bb1578db6`; immutable served weights not independently verified.
 - **Verification:** The rejection and spending stop are verified; provider compatibility is not. Future resolution must show unchanged-contract success under an explicitly authorized plan and document residual reliability limits. One successful replay alone cannot erase this failure.
 - **Research significance:** A documented strict API contract and HTTP success do not establish reliable schema compliance; preserving rejected outputs is essential to an honest reproduction diary.
@@ -248,3 +251,24 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Accepted deviation, not historical-setting recovery. All future arms retain identical approved settings.
 - **Verification:** Configuration/bridge tests verify k=10 and disabled refresh; retrieval tests preserve context and duplicate expansion. No evidence establishes the paper's exact Table 3 settings.
 - **Research significance:** Matching an algorithm name and a nominal k does not guarantee matching the model's effective context or published experimental setting.
+
+## BLK-011
+
+- **ID:** BLK-011
+- **Title:** T5 execution is not connected to Langfuse tracing/export.
+- **Status:** Open
+- **First observed:** 2026-11-01, user review of the incomplete T5 fixture.
+- **Category:** Infrastructure
+- **Expected behaviour:** The next approved run records construction failures and later QA experiments in the configured Langfuse project, without changing model/evaluation behavior.
+- **Observed behaviour:** No trace was sent by the first fixture. T4 has an optional saved-QA importer, but the T5 entrypoint invokes neither that exporter nor phase/generation tracing. The fixture produced no QA rows.
+- **Evidence:** [Reporting code](../../amem_repro/reporting.py), `502b376:amem_repro/phases.py`, [readiness record](langfuse-readiness.md), safe local `artifacts/blk007-offline-investigation/langfuse-verified.json` and synthetic trace `a8e18a92ccdc5a873f595010f1e3c283`.
+- **Root cause:** Confirmed missing runtime connection. Private project credentials are present and authentication/ingestion succeed; this is not an authentication-failure finding.
+- **Impact:** Local records remain available, but Langfuse cannot show actual construction/generation failures until the runner is wired. A future successful QA export alone would still omit pre-QA failures.
+- **Options considered:** Recommend an explicit observation-only phase/generation wrapper at existing seams plus the existing saved-QA exporter. Credentials alone, automatic SDK replacement during compatibility investigation, or fabricated historical traces were not adopted.
+- **Resolution attempts:**
+  - 2026-11-01: privately load the project's Langfuse settings; verify no different-project environment shadowing and successful CLI authentication.
+  - 2026-11-01: send/flush one synthetic configuration span with SDK 5.1.0; read it back and verify name, type, input/output and empty model usage. No LLM was invoked and no old benchmark data was exported.
+  - 2026-11-01: document the minimal runner connection and its offline checks for review. That runtime change is not implemented.
+- **Final resolution or limitation:** Connectivity is verified; automatic paid-run tracing remains unwired. Keys/connection values are absent from records and `.env` is unchanged. No paid execution is authorized by this setup.
+- **Verification:** Synthetic observation `56d4b434cfe14653` is visible as `A-MEM/langfuse-configuration-smoke`, environment `configuration-preflight`. Verification of actual model-call capture, failure finalization and study-identity exports remains pending.
+- **Research significance:** Valid credentials and an installed observability SDK do not establish that the executed research path emits traces, especially when it fails before evaluation.
