@@ -1,6 +1,8 @@
 # BLK-007: offline parser investigation and proposed compatibility policy
 
-Date: 1 November 2026, Hong Kong time. **Status: proposal for review; no compatibility fix implemented.**
+Date: 1 November 2026, Hong Kong time. **Historical investigation/proposal, before implementation.**
+The user subsequently approved the narrow policy for implementation and offline testing (D3a).
+See [the implementation review](blk-007-compatibility-review.md) for current evidence and limitations.
 BLK-007 remains Investigating. No paid request, fixture retry or pilot was executed during this work.
 The [frozen protocol](experimental-protocol.md), original prompts/schemas and author files are unchanged.
 
@@ -17,8 +19,8 @@ second conversion implementation on the algorithm's input path: the existing `as
 how links are interpreted and filtered.
 
 This changes the adapter's acceptance policy, not the wire schema. Raw output is still schema-invalid;
-it must never be described as strict-provider compliance. **D3's acceptance contract needs explicit
-approval before implementation.** Neither an implementation nor a live recovery is authorized by this
+it must never be described as strict-provider compliance. **At the time of this proposal, D3's acceptance
+contract needed explicit approval before implementation.** Neither implementation nor live recovery was authorized by this
 report. A newly approved run must use a new policy fingerprint/cache identity and a fresh build;
 the archived incomplete run must not be resumed or relabelled.
 

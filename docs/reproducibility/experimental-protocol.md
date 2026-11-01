@@ -74,6 +74,23 @@ Translate the original JSON-schema response contract into one forced strict func
 - Stop and report any required schema-semantic changes.
 
 Documentation supports this approach; live beta acceptance/reliability is unverified.
+
+### Approved BLK-007 provider-acceptance addendum (D3a)
+
+The separately approved `canonical-index-strings-v1` policy permits only canonical unsigned ASCII
+integer strings (`0|[1-9][0-9]*`, parseable by Python `int`) in the shared decision's
+`suggested_connections` list. The unchanged schema validates a temporary integer copy; the original
+argument string goes unchanged to the original parser. All other types/fields/contracts remain strict.
+The wire schema still requests integers, so an admitted response is recorded as a provider-contract
+violation, not strict compliance. No additional model call, index filtering or semantic retry is added.
+
+Bind the selected policy to phase approval, cache provenance and experiment/reporting identity. Use
+one policy across all arms. Record affected fields, transformations, exact argument hashes and canonical
+original/copy hashes. Affected completed runs are degraded; incomplete classification takes precedence.
+Cached-build deviations remain visible and are counted separately from new calls. Default strict
+rejection remains available. See [D3a](decisions.md#d3a--blk-007-validation-copy-compatibility-policy)
+and [offline verification](blk-007-compatibility-review.md). This addendum authorizes offline
+implementation/testing only; new live compatibility and subsequent paid phases need separate approval.
 See [strict tools](https://api-docs.deepseek.com/guides/tool_calls/) and
 [thinking mode](https://api-docs.deepseek.com/guides/thinking_mode/).
 

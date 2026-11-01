@@ -154,3 +154,27 @@ indices under the unchanged integer schema despite strict mode. The conservative
 USD0.005851, with no unknown charges. The run is incomplete and is not compatibility acceptance or
 a baseline result. This is observed evidence, not a revision of D3: preserve the contract and outputs,
 and obtain a separate decision before paid recovery or any semantic/protocol change.
+
+## D3a — BLK-007 validation-copy compatibility policy
+
+On 1 November 2026, after the offline investigation, the user explicitly approved implementation and
+offline testing of `canonical-index-strings-v1`. The default remains `strict-original-v1`.
+
+Only `shared_decision.suggested_connections[*]` may admit strings matching ASCII `0|[1-9][0-9]*`
+that Python `int` can parse. This is narrower than the frozen `as_index` tolerance. Validate an integer
+copy against the unchanged complete schema, then return the original argument string byte-for-byte.
+Do not convert booleans, signed/padded/Unicode/decimal strings, other fields or other schemas. Do not
+filter unshown indices, reorder/deduplicate links, rewrite prompts, alter parsers or add semantic retries.
+Original `as_index` and shown-neighbor checks retain those responsibilities.
+
+Record raw schema invalidity, the affected field/items, validation-copy transformation, raw/returned
+argument hashes, canonical original/copy hashes and policy ID. Accepted deviations mark a completed
+run degraded; aborted/missing-output runs remain incomplete. Count affected completions separately
+from transformed items and inherited cache deviations. Bind policy to approval, cache and reporting
+identity; every experimental arm must use the same reviewed policy. The integer wire schema, author
+algorithm, generation settings and scoring remain unchanged.
+
+Preserve the rejected response and incomplete run. BLK-007 remains Investigating until a separately
+authorized live compatibility test succeeds; offline success does not establish provider compliance.
+No paid recovery, resumed fixture, conv-50 pilot, push or merge is authorized by this decision.
+See [implementation and offline verification](blk-007-compatibility-review.md).

@@ -2,6 +2,10 @@
 
 Status: offline preparation implemented; the separately approved first compatibility attempt stopped
 on a provider schema violation. See the [attempt report](t5-compatibility-20261101.md).
+
+The user subsequently approved the BLK-007 validation-copy policy for implementation/offline tests
+only. See [D3a and verification](blk-007-compatibility-review.md). BLK-007 remains Investigating;
+no paid recovery/resume/pilot is authorized. Keep all original failed-run artifacts unchanged.
 Pilot, main execution and recovery remain separately gated.
 Issue: [T5 / #5](https://github.com/alistairkung/A-mem-reproducibility/issues/5).
 The [frozen protocol](experimental-protocol.md) and D1–D13 remain the research authority.
@@ -84,6 +88,13 @@ Plans contain `approved:false`. The implementer must obtain the user's explicit 
 phase and limits before recording approval identity/time and setting it true. Do not infer approval
 from credentials, issue state, implementation permission or a provisional allocation.
 
+The default provider policy is `strict-original-v1`. A future reviewed plan may explicitly select
+`--provider-contract-policy canonical-index-strings-v1` (D3a); execution takes the policy from the
+approved binding and offers no runtime override. After this source change, refresh preflight and use
+a unique new run ID and plan filename. Never overwrite/reuse the original fixture plan or approval.
+Changing policy invalidates cache identity and pilot-compatibility provenance. The wire integer schema
+and raw parser input remain unchanged; admitted violations are recorded and completed runs degraded.
+
 | Phase | Frozen workload | Logical ceiling | Physical ceiling | USD hard cap |
 | --- | --- | --- | --- | --- |
 | Compatibility | conv-26 session 1, 18 turns, original QA 0/1/2/4 | 44 | 132 | 2 |
@@ -152,6 +163,9 @@ After the separately approved pilot:
 .venv/bin/python -m amem_repro.phases forecast \
   --pilot artifacts/runs/<pilot-run-id>/phase.json --output artifacts/cost-forecast.json
 ```
+
+For D3a study planning, also pass `--provider-contract-policy canonical-index-strings-v1` to the
+forecast command. Policy must match to credit a pilot build; it is otherwise counted as overhead.
 
 The forecast reads generation usage and the shared ledger, not comparative quality. It requires all
 1,544 logical generations/204 QA and known physical-attempt usage. It includes already incurred costs,
