@@ -1,43 +1,191 @@
 {
-  "asset_manifest_version": 1,
-  "preparation_status": "not-downloaded-or-runtime-verified; T5 preflight must verify required local assets",
+  "asset_manifest_version": 2,
+  "preparation_status": "recipes pinned; local runtime readiness must be verified before paid execution",
   "assets": [
     {
+      "id": "sbert",
       "purpose": "retrieval and SBERT metrics",
       "repository": "sentence-transformers/all-MiniLM-L6-v2",
       "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
-      "status": "repository-metadata-pinned; local asset files not downloaded/verified"
+      "cache_aliases": [],
+      "files": [
+        {
+          "path": "1_Pooling/config.json",
+          "size": 190,
+          "git_blob": "d1514c3162bbe87b343f565fadc62e6c06f04f03"
+        },
+        {
+          "path": "config.json",
+          "size": 612,
+          "git_blob": "72b987fd805cfa2b58c4c8c952b274a11bfd5a00"
+        },
+        {
+          "path": "config_sentence_transformers.json",
+          "size": 116,
+          "git_blob": "fd1b291129c607e5d49799f87cb219b27f98acdf"
+        },
+        {
+          "path": "model.safetensors",
+          "size": 90868376,
+          "sha256": "53aa51172d142c89d9012cce15ae4d6cc0ca6895895114379cacb4fab128d9db"
+        },
+        {
+          "path": "modules.json",
+          "size": 349,
+          "git_blob": "952a9b81c0bfd99800fabf352f69c7ccd46c5e43"
+        },
+        {
+          "path": "sentence_bert_config.json",
+          "size": 53,
+          "git_blob": "59d594003bf59880a884c574bf88ef7555bb0202"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "size": 112,
+          "git_blob": "e7b0375001f109a6b8873d756ad4f7bbb15fbaa5"
+        },
+        {
+          "path": "tokenizer.json",
+          "size": 466247,
+          "git_blob": "cb202bfe2e3c98645018a6d12f182a434c9d3e02"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "size": 350,
+          "git_blob": "c79f2b6a0cea6f4b564fed1938984bace9d30ff0"
+        },
+        {
+          "path": "vocab.txt",
+          "size": 231508,
+          "git_blob": "fb140275c155a9c7c5a3b3e0e77a9e839594a938"
+        }
+      ]
     },
     {
-      "purpose": "BERTScore English default candidate",
+      "id": "bertscore",
+      "purpose": "BERTScore English default",
       "repository": "FacebookAI/roberta-large",
       "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59",
-      "status": "repository-metadata-pinned; verify installed bert-score default and local assets before T5"
+      "cache_aliases": [
+        "roberta-large"
+      ],
+      "files": [
+        {
+          "path": "config.json",
+          "size": 482,
+          "git_blob": "b92478606f827116a06a51500cdf1fccb3b96af1"
+        },
+        {
+          "path": "merges.txt",
+          "size": 456318,
+          "git_blob": "226b0752cac7789c48f0cb3ec53eda48b7be36cc"
+        },
+        {
+          "path": "model.safetensors",
+          "size": 1421700479,
+          "sha256": "047c85f0b96269cd62e6f732644f067004eebd95af5b5d35965ae2528f13bf38"
+        },
+        {
+          "path": "tokenizer.json",
+          "size": 1355863,
+          "git_blob": "ad0bcbeb288f0d1373d88e0762e66357f55b8311"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "size": 25,
+          "git_blob": "34ddbd64a4cd3f2d9d8a9120d3662d0bf91baead"
+        },
+        {
+          "path": "vocab.json",
+          "size": 898823,
+          "git_blob": "5606f48548d99a9829d10a96cd364b816b02cd21"
+        }
+      ]
     },
     {
-      "purpose": "DeepSeek context tokenizer candidate",
+      "id": "deepseek-tokenizer",
+      "purpose": "local context-token observation; hosted parity unverified",
       "repository": "deepseek-ai/DeepSeek-V4.1-Flash",
       "revision": "314113f8a7dadb388215396ba5fbee2c610a04d6",
-      "status": "candidate only; equivalence to hosted DeepSeek-V4.1-Flash-1017 tokenization unverified"
-    },
-    {
-      "purpose": "NLTK metric/tokenizer data",
-      "resources": [
-        "punkt",
-        "punkt_tab",
-        "wordnet",
-        "omw-1.4"
-      ],
-      "revision": null,
-      "status": "unresolved; exact resource archives/checksums and required installed-version resources must be frozen before T5"
+      "cache_aliases": [],
+      "files": [
+        {
+          "path": "tokenizer.json",
+          "size": 6367257,
+          "git_blob": "6a15814dd25c934028034531da744c689f87ff21"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "size": 801,
+          "git_blob": "f3dad388a2bbfd6a8605bd02754acd86d9ca5112"
+        }
+      ]
     }
   ],
-  "metadata_source": "https://huggingface.co/api/models/{repository}",
+  "nltk": {
+    "revision": "550b6625bcef1f2abff2ff770a5a0d272c9c6b2a",
+    "metadata_source": "https://raw.githubusercontent.com/nltk/nltk_data/550b6625bcef1f2abff2ff770a5a0d272c9c6b2a/index.xml",
+    "archives": [
+      {
+        "id": "punkt",
+        "directory": "tokenizers",
+        "filename": "punkt.zip",
+        "size": 13905355,
+        "sha256": "51c3078994aeaf650bfc8e028be4fb42b4a0d177d41c012b6a983979653660ec",
+        "url": "https://raw.githubusercontent.com/nltk/nltk_data/550b6625bcef1f2abff2ff770a5a0d272c9c6b2a/packages/tokenizers/punkt.zip"
+      },
+      {
+        "id": "punkt_tab",
+        "directory": "tokenizers",
+        "filename": "punkt_tab.zip",
+        "size": 4319076,
+        "sha256": "e57f64187974277726a3417ca6f181ec5403676c717672eef6a748a7b20e0106",
+        "url": "https://raw.githubusercontent.com/nltk/nltk_data/550b6625bcef1f2abff2ff770a5a0d272c9c6b2a/packages/tokenizers/punkt_tab.zip"
+      },
+      {
+        "id": "wordnet",
+        "directory": "corpora",
+        "filename": "wordnet.zip",
+        "size": 10775600,
+        "sha256": "cbda5ea6eef7f36a97a43d4a75f85e07fccbb4f23657d27b4ccbc93e2646ab59",
+        "url": "https://raw.githubusercontent.com/nltk/nltk_data/550b6625bcef1f2abff2ff770a5a0d272c9c6b2a/packages/corpora/wordnet.zip"
+      },
+      {
+        "id": "omw-1.4",
+        "directory": "corpora",
+        "filename": "omw-1.4.zip",
+        "size": 26634772,
+        "sha256": "3b941e664852f3297b6040236626065796a2aaf7d7f9eec8779a3beaa1096c2d",
+        "url": "https://raw.githubusercontent.com/nltk/nltk_data/550b6625bcef1f2abff2ff770a5a0d272c9c6b2a/packages/corpora/omw-1.4.zip"
+      }
+    ]
+  },
+  "tokenizer": {
+    "asset_id": "deepseek-tokenizer",
+    "method": "tokenizers.Tokenizer.from_file; encode(add_special_tokens=False)",
+    "hosted_parity": "unverified",
+    "limitation": "Local text-token counts use pinned released tokenizer bytes. Equivalence to hosted DeepSeek-V4.1-Flash-1017 and provider prompt serialization is not verified; final prompt/billing tokens come from API usage.",
+    "official_reference": {
+      "documentation": "https://api-docs.deepseek.com/quick_start/token_usage/",
+      "archive_url": "https://cdn.deepseek.com/api-docs/deepseek_v4_tokenizer.zip",
+      "archive_size": 1911504,
+      "archive_sha256": "e7310d1dafe0a86d8a5629fe78a7c763760f651db9b8682718a1781dcd6fe495",
+      "tokenizer_sha256": "89085f12ef79460ac5f66d1119325ddfc694b4ab209d80bbd81d35f081dc9614",
+      "observed_difference": "Official V4 archive differs from pinned V4.1 HF tokenizer in nine added special-token entries: ID128799 (placeholder vs System), IDs129264-129270 (image/table tokens), ID129279 (image token). Model tokenization tables otherwise compare equal. This does not establish hosted parity."
+    }
+  },
+  "metadata_source": "https://huggingface.co/api/models/{repository}/revision/{revision}?blobs=true",
   "verified_metadata_date": "2026-11-01",
+  "layout": {
+    "huggingface_cache": "huggingface/hub",
+    "snapshot": "huggingface/hub/models--{repository with slash replaced by --}/snapshots/{revision}",
+    "nltk_archives": "nltk_archives/{filename}",
+    "nltk_data": "nltk_data/{directory}/{archive members}"
+  },
   "rules": [
-    "No model weights or tokenizers were downloaded for offline unit tests.",
-    "Use prepared verified assets with network/model downloads disabled during experiment execution.",
-    "Do not claim actual DeepSeek context-token counts until the counting method is validated.",
-    "Hosted model ID and provider fingerprint are recorded independently of Hugging Face candidate revisions."
+    "No model weights or tokenizers are downloaded by preflight or offline tests.",
+    "HF main refs and the roberta-large alias resolve only to the frozen snapshots; preserve author model identifiers.",
+    "Verify installed dependency versions against uv.lock; execute with offline environment before importing model libraries.",
+    "Hosted model ID and provider fingerprint are independent of the local tokenizer revision."
   ]
 }

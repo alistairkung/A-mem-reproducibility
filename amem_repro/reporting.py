@@ -6,10 +6,24 @@ import hashlib
 import json
 from pathlib import Path
 
-from .config import reject_credentials, fingerprint
+from .config import (
+    reject_credentials, fingerprint, STRICT_PROVIDER_POLICY, validate_provider_policy,
+)
+
+
+def _view_provider_policy(view):
+    policies = set()
+    for row in view["individual_results"]:
+        policy = row.get("provider_contract_policy", STRICT_PROVIDER_POLICY)
+        validate_provider_policy(policy)
+        policies.add(policy)
+    if len(policies) > 1:
+        raise ValueError("Saved results mix provider-contract policies")
+    return next(iter(policies), STRICT_PROVIDER_POLICY)
 
 
 def write_tables(views, directory):
+    provider_policies = {policy: _view_provider_policy(view) for policy, view in views.items()}
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "scoring_views.json").write_text(
@@ -17,6 +31,7 @@ def write_tables(views, directory):
     )
     fields = [
         "scoring_policy",
+        "provider_contract_policy",
         "question_id",
         "category",
         "prediction",
@@ -34,6 +49,7 @@ def write_tables(views, directory):
                     writer.writerow(
                         dict(
                             scoring_policy=policy,
+                            provider_contract_policy=provider_policies[policy],
                             question_id=row["question_id"],
                             category=row["qa"]["category"],
                             prediction=row["prediction"],
@@ -45,12 +61,12 @@ def write_tables(views, directory):
                     )
     with (directory / "aggregate_metrics.csv").open("w", newline="") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["scoring_policy", "group", "metric", "statistic", "value"])
+        writer.writerow(["scoring_policy", "provider_contract_policy", "group", "metric", "statistic", "value"])
         for policy, view in views.items():
             for group, metrics in view["aggregate_metrics"].items():
                 for metric, stats in metrics.items():
                     for statistic, value in stats.items():
-                        writer.writerow([policy, group, metric, statistic, value])
+                        writer.writerow([policy, provider_policies[policy], group, metric, statistic, value])
 
 
 def _study_identity(metadata):
@@ -60,6 +76,8 @@ def _study_identity(metadata):
             "Reporting requires condition, population, manifest_sha256, repetition and run_id"
         )
     identity = {key: metadata[key] for key in required}
+    identity["provider_contract_policy"] = metadata.get("provider_contract_policy", STRICT_PROVIDER_POLICY)
+    validate_provider_policy(identity["provider_contract_policy"])
     if identity["condition"] not in (
         "full",
         "neither",
@@ -101,6 +119,9 @@ def export_experiments(
     reject_credentials(metadata or {})
     reject_credentials(views)
     identity = _study_identity(metadata)
+    for view in views.values():
+        if _view_provider_policy(view) != identity["provider_contract_policy"]:
+            raise ValueError("Saved-result provider policy differs from export identity")
     if client is None or evaluation_factory is None:
         from langfuse import Evaluation, get_client
 

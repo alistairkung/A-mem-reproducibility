@@ -142,3 +142,59 @@ Standalone AST loaders now verify frozen bytes, and direct uninstrumented/instru
 tested. Optional reporting requires complete study identity. Default live execution is disabled until T5
 has reviewed, durable phase/request/attempt/USD limits; a Boolean alone cannot enable paid execution.
 No paid calls or T5 execution are authorized by these corrections.
+
+## T5 fixture authorization and first compatibility result
+
+The user subsequently authorized T5 implementation/preflight and then explicitly approved only the
+USD2 compatibility fixture (44 logical calls, at most 132 physical attempts). Pilot, main execution,
+recovery and branch pushing were excluded. See [the attempt report](t5-compatibility-20261101.md).
+
+The first attempt stopped after ten physical requests because DeepSeek returned string connection
+indices under the unchanged integer schema despite strict mode. The conservative ledger cost is
+USD0.005851, with no unknown charges. The run is incomplete and is not compatibility acceptance or
+a baseline result. This is observed evidence, not a revision of D3: preserve the contract and outputs,
+and obtain a separate decision before paid recovery or any semantic/protocol change.
+
+## D3a — BLK-007 validation-copy compatibility policy
+
+On 1 November 2026, after the offline investigation, the user explicitly approved implementation and
+offline testing of `canonical-index-strings-v1`. The default remains `strict-original-v1`.
+
+Only `shared_decision.suggested_connections[*]` may admit strings matching ASCII `0|[1-9][0-9]*`
+that Python `int` can parse. This is narrower than the frozen `as_index` tolerance. Validate an integer
+copy against the unchanged complete schema, then return the original argument string byte-for-byte.
+Do not convert booleans, signed/padded/Unicode/decimal strings, other fields or other schemas. Do not
+filter unshown indices, reorder/deduplicate links, rewrite prompts, alter parsers or add semantic retries.
+Original `as_index` and shown-neighbor checks retain those responsibilities.
+
+Record raw schema invalidity, the affected field/items, validation-copy transformation, raw/returned
+argument hashes, canonical original/copy hashes and policy ID. Accepted deviations mark a completed
+run degraded; aborted/missing-output runs remain incomplete. Count affected completions separately
+from transformed items and inherited cache deviations. Bind policy to approval, cache and reporting
+identity; every experimental arm must use the same reviewed policy. The integer wire schema, author
+algorithm, generation settings and scoring remain unchanged.
+
+Preserve the rejected response and incomplete run. BLK-007 remains Investigating until a separately
+authorized live compatibility test succeeds; offline success does not establish provider compliance.
+No paid recovery, resumed fixture, conv-50 pilot, push or merge is authorized by this decision.
+See [implementation and offline verification](blk-007-compatibility-review.md).
+
+## Authorization — autonomous T5 baseline readiness
+
+The user subsequently authorized remaining T5 implementation, offline verification, specialist reviews,
+commits/pushes and merging PR #11 after all required checks pass. Resolve BLK-012 and other material
+engineering defects before paid execution; preserve frozen author behavior and D3a. This does not
+authorize T6–T8 or changes to algorithms, prompts, schemas, parsing/scoring, populations or settings.
+
+Exactly one **fresh** compatibility phase is authorized under `canonical-index-strings-v1`: the frozen
+18-turn/four-QA fixture, up to 44 logical calls, at most three attempts each and USD2 **additional**
+spending including failures/retries, within the study ceiling and USD8 contingency. Up to four extra
+schema probes are permitted if required; the planned fixture itself covers every schema, so the
+existing 44-call/132-attempt limits are retained and no probes are planned. Record a new immutable
+approval/source/preflight/run identity; never resume or overwrite the first failed fixture.
+
+Compatibility may succeed with degradation solely from fully audited D3a deviations. Investigate any
+other degradation; an incomplete/failed phase consumes this one authorization. Offline fixes may
+continue, but another paid phase needs a separate decision. After successful compatibility, verify
+runtime/assets/manifests/caches/results and prepare the exact unapproved 1,544-call conv-50 pilot plan
+and command. **Stop before the pilot or full benchmark**; both remain separately gated.

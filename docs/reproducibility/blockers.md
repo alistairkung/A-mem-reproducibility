@@ -12,14 +12,18 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-004](#blk-004) | Historical adversarial overlap scores reward a different reference | Mitigated | T4, T5, T8 | Author fix `b31a1dd`; scoring tests |
 | [BLK-005](#blk-005) | Original cache provenance cannot isolate the planned study | Mitigated | T3, T5–T8 | Runner cache keys; cache rejection tests |
 | [BLK-006](#blk-006) | Local runtime readiness required verified assets and active lock markers | Resolved | T5 local preflight | Initial/final preflight receipts; local T5 commit |
-| [BLK-007](#blk-007) | DeepSeek strict function returned string connection indices | Investigating | T5 compatibility; downstream T6–T8 | Archived request/response; incomplete phase receipt |
+| [BLK-007](#blk-007) | DeepSeek strict function returned string connection indices | Investigating | T5 compatibility; downstream T6–T8 | Archived response; [offline policy tests](blk-007-compatibility-review.md) |
 | [BLK-008](#blk-008) | Local tokenizer equivalence to hosted DeepSeek is unverified | Open | T4, T5, T8 token reporting | Pinned tokenizer recipe; final preflight receipt |
 | [BLK-009](#blk-009) | Four-condition affordability lacks representative pilot evidence | Open | T5 scope decision, T8 | D10/D10a; counts; conservative spending ledger |
 | [BLK-010](#blk-010) | Released retrieval default differs from paper category settings | Accepted Limitation | T5, T8, interpretation | D6; runner default; paper Table 8 |
+| [BLK-011](#blk-011) | T5 execution is not connected to Langfuse tracing/export | Open | T5, T8 observability | Runtime call-path audit; verified synthetic trace |
+| [BLK-012](#blk-012) | Failed usage settlement triggers SDK regeneration | Resolved | T5 and later paid phases | Terminal settlement guard; SQLite fault/retry regressions |
 
 Before a paid run: **BLK-007 currently prevents compatibility acceptance and pilot progression**.
 BLK-001's query/answer contracts have not been exercised live. BLK-008 limits token-count claims;
 BLK-009 still requires a separately approved representative pilot and cost-only scope decision.
+BLK-011 requires actual runner wiring; a successful connection probe alone does not enable it.
+BLK-012's terminal settlement guard is verified offline; this does not authorize paid recovery.
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -184,8 +188,10 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01, approved fixture: ten physical requests, no retries; five metadata/four decision payloads valid and one decision invalid. Next metadata event was blocked before transmission, not an eleventh request.
   - 2026-11-01, offline investigation: verify serialized strict/beta/schema settings and independently confirm both type errors with `Draft202012Validator`; add rejection/unchanged-input regression.
   - 2026-11-01, archive check: artifact hash inventory verifies; follow-up suite records 132 tests/71 subtests passed. No recovery request or proposed repair was executed.
+  - 2026-11-01, focused offline investigation: reconstruct the exact pre-decision prompt and pass the raw response to the original parser. Its state and embedding documents match an integer-only control; both counters advance 3→4, while strict rejection stays 3. Added 38 characterization tests; branch suite 92 tests/32 subtests passes. See the [proposal and schema audit](blk-007-offline-investigation.md). A field-scoped validation-copy policy is proposed only; no adapter fix or model request was made. All nine original evidence files remain byte-identical.
+  - 2026-11-01, user-approved D3a implementation/offline tests (`48bc2d1`): add opt-in `canonical-index-strings-v1` for canonical ASCII strings in this field only. Validate a copy and return raw arguments unchanged; retain strict default, record hashes/type violations and mark affected runs degraded. Full offline suite: 238 tests/71 subtests passed, including the 44-call mocked phase and frozen-parser state/retrieval/counter comparisons. SDK MockTransport replay of the exact failing response preserves the serialized request and argument bytes. See [implementation evidence and remaining gate](blk-007-compatibility-review.md). Twenty historical evidence files remain byte-identical; no model requests, recovery or pilot occurred.
 - **Final resolution or limitation:** **Unresolved.** Five notes/index rows preserved, zero of four QA completed; conservative peak-rate ledger cost USD0.005851, with no unknown charges. Response alias `deepseek-flash`, fingerprint `bc19ba97cbe016479903222bb1578db6`; immutable served weights not independently verified.
-- **Verification:** The rejection and spending stop are verified; provider compatibility is not. Future resolution must show unchanged-contract success under an explicitly authorized plan and document residual reliability limits. One successful replay alone cannot erase this failure.
+- **Verification:** Rejection/spending stop and the approved validation-copy policy are verified offline. Hosted compatibility is not. Future resolution needs a separately authorized live test with the unchanged wire schema and explicitly selected policy, recording residual reliability limits. Offline replay cannot resolve the blocker or erase the provider-contract violation.
 - **Research significance:** A documented strict API contract and HTTP success do not establish reliable schema compliance; preserving rejected outputs is essential to an honest reproduction diary.
 
 ## BLK-008
@@ -248,3 +254,47 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Accepted deviation, not historical-setting recovery. All future arms retain identical approved settings.
 - **Verification:** Configuration/bridge tests verify k=10 and disabled refresh; retrieval tests preserve context and duplicate expansion. No evidence establishes the paper's exact Table 3 settings.
 - **Research significance:** Matching an algorithm name and a nominal k does not guarantee matching the model's effective context or published experimental setting.
+
+## BLK-011
+
+- **ID:** BLK-011
+- **Title:** T5 execution is not connected to Langfuse tracing/export.
+- **Status:** Open
+- **First observed:** 2026-11-01, user review of the incomplete T5 fixture.
+- **Category:** Infrastructure
+- **Expected behaviour:** The next approved run records construction failures and later QA experiments in the configured Langfuse project, without changing model/evaluation behavior.
+- **Observed behaviour:** No trace was sent by the first fixture. T4 has an optional saved-QA importer, but the T5 entrypoint invokes neither that exporter nor phase/generation tracing. The fixture produced no QA rows.
+- **Evidence:** [Reporting code](../../amem_repro/reporting.py), `502b376:amem_repro/phases.py`, [readiness record](langfuse-readiness.md), safe local `artifacts/blk007-offline-investigation/langfuse-verified.json` and synthetic trace `a8e18a92ccdc5a873f595010f1e3c283`.
+- **Root cause:** Confirmed missing runtime connection. Private project credentials are present and authentication/ingestion succeed; this is not an authentication-failure finding.
+- **Impact:** Local records remain available, but Langfuse cannot show actual construction/generation failures until the runner is wired. A future successful QA export alone would still omit pre-QA failures.
+- **Options considered:** Recommend an explicit observation-only phase/generation wrapper at existing seams plus the existing saved-QA exporter. Credentials alone, automatic SDK replacement during compatibility investigation, or fabricated historical traces were not adopted.
+- **Resolution attempts:**
+  - 2026-11-01: privately load the project's Langfuse settings; verify no different-project environment shadowing and successful CLI authentication.
+  - 2026-11-01: send/flush one synthetic configuration span with SDK 5.1.0; read it back and verify name, type, input/output and empty model usage. No LLM was invoked and no old benchmark data was exported.
+  - 2026-11-01: document the minimal runner connection and its offline checks for review. That runtime change is not implemented.
+- **Final resolution or limitation:** Connectivity is verified; automatic paid-run tracing remains unwired. Keys/connection values are absent from records and `.env` is unchanged. No paid execution is authorized by this setup.
+- **Verification:** Synthetic observation `56d4b434cfe14653` is visible as `A-MEM/langfuse-configuration-smoke`, environment `configuration-preflight`. Verification of actual model-call capture, failure finalization and study-identity exports remains pending.
+- **Research significance:** Valid credentials and an installed observability SDK do not establish that the executed research path emits traces, especially when it fails before evaluation.
+
+## BLK-012
+
+- **ID:** BLK-012
+- **Title:** Failed usage settlement triggers SDK regeneration.
+- **Status:** Resolved
+- **First observed:** 2026-11-01, final narrow review of [PR #11](https://github.com/alistairkung/A-mem-reproducibility/pull/11), head `cc0b36c`.
+- **Category:** Cost
+- **Expected behaviour:** A local accounting failure after a received response preserves its maximum reservation and raw output, stops execution without another model request, and prevents unapproved continuation. Transport retries must not become semantic retries caused by local ledger failures.
+- **Observed behaviour:** Fault injection into the first settlement SQL update or commit after HTTP200 makes the SDK send a second request. It returns the second generated output; the phase remains unhalted and accepts a subsequent logical generation. The first maximum reservation is retained: no unsafe charge release was observed.
+- **Evidence:** [Transport settlement](../../amem_repro/adapter.py), `_recording_transport` line399 at `cc0b36c`; [SQLite transaction/settlement](../../amem_repro/budget.py); `test_failed_settlement_retains_charge_and_stops_without_sdk_regeneration` in [SDK budget tests](../../tests/test_adapter_budget.py). Safe local review artifacts: `artifacts/pr11-final-review/focused-pytest.txt` and `settlement-reproducer.json`.
+- **Root cause:** **Confirmed.** An ordinary `sqlite3.OperationalError` escapes the transport's `finally` block. The SDK interprets it as a connection failure and retries a generation whose response was already received. The exception bypasses the transport's error-recording handler; successful retry leaves no terminal phase stop. SQLite rollback itself conservatively preserves the original reservation.
+- **Impact:** Before correction, an unexpected second model output replaced the first, incurred another charge and changed the effective generation/failure process. Unknown reservations still counted toward the caps; no ceiling overrun was observed. This blocked paid execution and PR readiness until verified.
+- **Options considered:** Proposed only: retain the reservation/raw response, turn settlement failure into non-retryable `BudgetStop`, and prevent continued use of the permit even if persisting the stop fails. Retrying the completed generation or releasing its reservation is inappropriate. No production fix was made during the review.
+- **Resolution attempts:**
+  - 2026-11-01: inspect existing interruption, restart, unknown-usage, cap and SDK retry tests before adding cases. Independently reproduce both direct settlement-write failure and actual failed SQLite commit using HTTPX MockTransport; no live service or model request.
+  - 2026-11-01: add two failing fail-closed regressions. Both observe two transmissions where one is required; the initial charge remains reserved. Separate memory/question-abort tests and strengthened postprocessing assertions verify BLK-007 deviation persistence without modifying production code.
+  - 2026-11-01, approved focused P1 correction: `PhasePermit.settle` rolls back failed accounting, latches a terminal state, separately persists the halt and raises `BudgetStop` outside the SDK's `Exception` retry machinery. Attempt records retain the received payload plus error classes. No provider request policy or author code changed.
+  - 2026-11-01: both original update/commit regressions pass. Additional halt-write/commit fault cases reject continuation and old-approval restart even while SQLite cannot persist the halt; once writes recover, the original reason persists. Genuine 429/503/read-error retries still succeed under unchanged SDK limits and retain unknown reservations. Full offline suite: 247 tests and 71 subtests passed. Safe evidence: `artifacts/blk012-fix/{red.txt,focused.txt,full-pytest.txt}`.
+  - 2026-11-01, correction commit `d0e0bf9`: repeat Standards and Spec reviews independently found no remaining actionable defect. Independent safety subsets passed 26 tests and 111 tests/39 subtests respectively. Author source, contracts, scientific configuration and dependency lock remain unchanged; review covered spending, raw/strict contracts and persistence after later errors.
+- **Final resolution or limitation:** Terminal accounting failures cannot regenerate a response or reuse the permit. The original reservation and response evidence survive; phase halt is committed separately. If SQLite remains unwritable, an irreversible local latch and the already-durable one-shot phase claim prevent continuation/restart; summaries explicitly report `halt_persisted:false` and the persistence error type. This does not pretend a failed halt write succeeded. Historical initial reproducer (two attempts, USD0.315785, no halt) and original paid-run evidence remain unchanged.
+- **Verification:** Update/commit fault tests prove one transmission, USD0.315773 retained reservation, original response, durable halt and denied continuation/restart. Halt-write/commit failure tests verify the local fallback and truthful persistence diagnostics; genuine transport/provider retry tests remain green. SQLite transaction and SDK integration tests run with sockets disabled; no paid request was used to verify the fix.
+- **Research significance:** Durable cost reservation and correct retry classification are separate requirements. A financially conservative ledger can still cause scientifically uncontrolled resampling when local accounting exceptions enter a provider's retry machinery.

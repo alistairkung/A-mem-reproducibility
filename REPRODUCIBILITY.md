@@ -46,11 +46,12 @@ zero-based source QA index. Source verification is available as
 | `measurements.py` | Passive retrieval counts, local action timings and attempt-aware usage estimates |
 | `scoring.py` | Original author scoring functions, metric-failure notices and immutable dual rescoring |
 | `reporting.py` | Local JSON/CSV and optional import of saved results into Langfuse Experiments |
+| `preflight.py`, `budget.py`, `phases.py`, `forecast.py` | Verified local assets, durable spending permits, separately approved T5 phases and cost-only forecasts |
 
 `run_manifest` accepts an injected agent factory/scorer for offline use. Default live construction
-is disabled until T5 phase spending controls are implemented and reviewed. A Boolean authorization
-flag cannot create a real transport or live agent. The SDK factory accepts only an explicit MockTransport
-for offline retry contracts; credentials alone cannot enable execution.
+remains disabled. A Boolean authorization flag cannot create a real transport or live agent. T5's
+`phases` entrypoint binds the original agent to a durable, explicitly approved spending permit;
+credentials alone cannot enable execution. Explicit MockTransport remains available for offline tests.
 Only original full mode is runnable in this foundation. Other conditions and deterministic replay
 are intentionally rejected until T6/T7. No live-experiment CLI is provided in T1–T4.
 
@@ -113,36 +114,14 @@ Both Standards and Spec reviews were performed. Review corrections preserve the 
 keep asset-network isolation active during execution, isolate observation failures from original behavior,
 and share credential-field validation across provenance, artifacts and exports.
 
-## T5 preflight and authorization requirements
+## T5 preparation and paid-phase gates
 
-T5 has not started. Offline success does not establish live beta compatibility.
+T5 implementation/preflight was authorized on 1 November 2026. The frozen research decisions are
+unchanged. See the [T5 runbook](docs/reproducibility/t5-runbook.md) for reproducible asset preparation,
+offline checks, unapproved execution plans and the acceptance-criteria status.
 
-1. Review this foundation and authorize any T5 preparation/execution separately.
-2. Prepare the locked `author` runtime extra and verify local model/tokenizer files at the revisions in
-   `config/assets.json`. Freeze NLTK resource checksums and confirm the installed BERTScore checkpoint.
-   The author extra is resolved/locked but was not installed or exercised with real model assets here.
-3. Validate a documented context-token counting method. The pinned DeepSeek tokenizer repository is a
-   candidate; equivalence to the hosted model remains unverified. Label estimates honestly and resolve
-   any requirement change before paid execution.
-4. Set credentials privately in the process environment. No credential values belong in configs,
-   commands, issues, logs or commits. Confirm provider version/fingerprint information at execution.
-5. Approve a bounded compatibility/functional phase separately (provisional USD 1–2): four schema probes
-   if required plus the 44-call fixture (48 nominal calls total when both are run), with bounded retries.
-   Verify strict-schema acceptance/output reliability and preserve all responses and attempt costs.
-6. Only after compatibility success, approve the complete conv-50 full-mode pilot separately
-   (provisional USD 5–10; 1,544 nominal generation calls before retries).
-7. Before paid execution, verify phase-specific spending/stop controls and account for unknown charges;
-   live construction is currently fused off because the Boolean flag is not a spending limit.
-   Removing that fuse in T5 requires a reviewed authorization bound to phase, exact manifest/configuration
-   and run identity, explicit logical-request/physical-attempt ceilings, and a USD phase cap inside the
-   overall USD 50 ceiling with USD 8 contingency. Check limits before each physical transmission, including
-   SDK retries; reserve a conservative charge before sending. Unknown usage is not zero. Preserve the
-   expenditure ledger across processes so relaunch cannot silently reset the allowance. Stop on exhausted
-   allowance, configuration/phase mismatch or uncertain unaffordable charges. Separately authorize paid
-   recovery/reruns. Offline tests must demonstrate these stop paths before real transports are enabled.
-8. Forecast incurred spending + remaining four-condition cost + USD 8 contingency within USD 50. Select
-   all ten conversations or the exact fallback from costs alone before comparative performance review.
-   If neither fits, stop. Extra repetitions, recovery/reruns and main-condition execution need approval.
-
-No ablation gates, paid baseline, live Langfuse export, T6 replay engine or T5–T8 execution was performed.
-The separate HW3 repository is untouched.
+The real local embedding and author-metric smoke passes with sockets disabled. The separately approved
+first paid compatibility attempt stopped on a provider schema violation after ten requests; see the
+[attempt report](docs/reproducibility/t5-compatibility-20261101.md). Compatibility has not passed and
+tokenizer parity remains unverified. No pilot, baseline, ablation gate, live Langfuse export or T6 replay
+was executed. The separate HW3 repository is untouched.

@@ -2,13 +2,22 @@
 
 Protocol: [experimental-protocol.md](experimental-protocol.md).
 Decision record: [decisions.md](decisions.md).
-Created 1 November 2026. T1–T4 are implemented offline and await review; T5–T8 remain unstarted.
+Created 1 November 2026. T1–T4 are merged in PR #9. T5 implementation/preflight is in progress;
+paid phases require separate approval. T6–T8 remain unstarted.
 See [foundation validation and preflight](../../REPRODUCIBILITY.md).
 
 Issue creation alone is planning authorization. The user subsequently authorized T1–T4 implementation,
 offline tests and scoped commits on feature/reproducibility-foundation. Paid API calls, paid recovery,
 T5–T8 execution and merging into main remain subject to separate user approval. A closed dependency does
 not itself authorize a blocked ticket's execution. T5 and T8 require explicit paid-phase approvals.
+
+The user subsequently invoked `implement-spec issue T5`, authorizing T5 implementation and offline
+preparation. See the [T5 runbook](t5-runbook.md) for controls, evidence and unfinished live criteria.
+This does not grant paid execution, recovery, push or merge permission.
+
+The user later approved only the USD2 compatibility fixture. Its first attempt is incomplete following
+a provider schema violation; see the [archived findings](t5-compatibility-20261101.md). T5 stays open,
+and pilot/main/recovery remain unauthorized.
 
 ## Tracker and dependency map
 

@@ -66,6 +66,30 @@ class AuthorContractsTest(unittest.TestCase):
             with self.assertRaises(ContractError):
                 validate_arguments(value, {"type": "integer"})
 
+    def test_observed_deepseek_connection_strings_violate_the_frozen_contract(self):
+        from jsonschema import Draft202012Validator
+
+        schema = load_author_contracts(ROOT)["shared_decision"]["json_schema"]["schema"]
+        decision = {
+            "should_evolve": True,
+            "actions": ["strengthen"],
+            "suggested_connections": ["2", "3"],
+            "tags_to_update": [],
+            "new_context_neighborhood": [],
+            "new_tags_neighborhood": [],
+        }
+        original = copy.deepcopy(decision)
+        with self.assertRaisesRegex(ContractError, r"suggested_connections\[0\].*integer"):
+            validate_arguments(decision, schema)
+        self.assertEqual(decision, original)
+        self.assertEqual(
+            [list(error.path) for error in Draft202012Validator(schema).iter_errors(decision)],
+            [["suggested_connections", 0], ["suggested_connections", 1]],
+        )
+        control = {**decision, "suggested_connections": [2, 3]}
+        validate_arguments(control, schema)
+        self.assertTrue(Draft202012Validator(schema).is_valid(control))
+
 
 if __name__ == "__main__":
     unittest.main()

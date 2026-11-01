@@ -8,7 +8,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from .config import reject_credentials as _safe
+from .config import (
+    reject_credentials as _safe, STRICT_PROVIDER_POLICY, validate_provider_policy,
+)
 
 
 class CacheRejected(ValueError):
@@ -96,10 +98,12 @@ class CacheStore:
             raise CacheRejected("Missing, incomplete or malformed cache") from error
 
 
-def build_identity(config, conversation, dataset_sha256, source_hashes, repetition=0):
+def build_identity(config, conversation, dataset_sha256, source_hashes, repetition=0,
+                   *, provider_contract_policy=STRICT_PROVIDER_POLICY):
     from .config import validate_config
 
     validate_config(config)
+    validate_provider_policy(provider_contract_policy)
     if not source_hashes or not dataset_sha256 or repetition < 0:
         raise ValueError(
             "Source/data fingerprints and nonnegative repetition are required"
@@ -110,6 +114,7 @@ def build_identity(config, conversation, dataset_sha256, source_hashes, repetiti
         "source_hashes": source_hashes,
         "repetition": repetition,
         "conversation": conversation,
+        "provider_contract_policy": provider_contract_policy,
     }
     _safe(identity)
     return json.loads(_json_bytes(identity))
@@ -212,7 +217,10 @@ def restore_memory(system, state, *, note_type):
 class RunLedger:
     """Durable events and output-based completion without hiding degraded runs."""
 
-    def __init__(self, directory, run_id, expected_question_ids):
+    def __init__(self, directory, run_id, expected_question_ids, *,
+                 provider_contract_policy=STRICT_PROVIDER_POLICY):
+        validate_provider_policy(provider_contract_policy)
+        self.provider_contract_policy = provider_contract_policy
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.path = self.directory / "events.jsonl"
@@ -230,7 +238,8 @@ class RunLedger:
         self.path.touch()
         _write(
             self.directory / "run.json",
-            {"run_id": run_id, "expected_question_ids": expected},
+            {"run_id": run_id, "expected_question_ids": expected,
+             "provider_contract_policy": provider_contract_policy},
         )
 
     def record(self, event):
@@ -263,12 +272,25 @@ class RunLedger:
         return "complete"
 
     def finish(self):
+        deviations = [e for e in self.events if e.get("type") == "failure"
+                      and e.get("kind") == "provider_contract_deviation"]
+        current = [e for e in deviations if not e.get("from_cache")]
+        inherited = [e for e in deviations if e.get("from_cache")]
         result = {
             "run_id": self.run_id,
             "status": self.status(),
             "expected_questions": len(self.expected),
             "completed_questions": len(self.results),
             "failures": [e for e in self.events if e.get("type") == "failure"],
+            "provider_contract_policy": self.provider_contract_policy,
+            "provider_contract_deviation_count": len(current),
+            "inherited_provider_contract_deviation_count": len(inherited),
+            "validation_copy_transformed_item_count": sum(
+                len(e["compatibility_deviation"]["transformations"]) for e in current
+            ),
+            "inherited_validation_copy_transformed_item_count": sum(
+                len(e["compatibility_deviation"]["transformations"]) for e in inherited
+            ),
         }
         _write(self.directory / "summary.json", result)
         return result
