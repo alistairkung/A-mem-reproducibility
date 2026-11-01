@@ -120,8 +120,12 @@ def verify_checkpoint(path, root, manifest, config, sources, receipt, compatibil
     # Require durable original accounting; a new or relocated empty ledger cannot reset spend.
     ledger = root / 'artifacts/study-budget.sqlite'
     from .budget import ledger_summary
-    if ledger_summary(ledger)['unknown_attempts']:
+    study = ledger_summary(ledger)
+    if study['unknown_attempts']:
         raise ValueError('Unknown study charges block checkpoint recovery')
+    if any(study[key] < phase['study_budget'][key] for key in (
+            'charged_or_reserved_microusd', 'physical_attempts', 'logical_calls')):
+        raise ValueError('Shared ledger lost historical study charges or requests')
     with sqlite3.connect(ledger.resolve().as_uri() + '?mode=ro', uri=True) as db:
         row = db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',
                          (approval['approval_id'],)).fetchone()

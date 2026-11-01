@@ -79,7 +79,8 @@ def run_manifest(
         raise ValueError("Action gating is not implemented or authorized in T1–T4")
     if execution_type not in ("fresh_build", "cached_qa", "checkpoint_recovery"):
         raise ValueError("This runner supports fresh_build and cached_qa; replay is T6")
-    if (checkpoint is not None) != (execution_type == 'checkpoint_recovery'):
+    if ((checkpoint is not None and execution_type not in ('checkpoint_recovery', 'cached_qa'))
+            or (checkpoint is None and execution_type == 'checkpoint_recovery')):
         raise ValueError('Checkpoint state requires explicit recovery execution')
     if agent_factory is None and not paid_authorized:
         raise PermissionError("Separate paid execution approval is required")
@@ -215,7 +216,7 @@ def run_manifest(
                         {
                             **failure,
                             **active,
-                            "origin_run_id": failure.get("run_id"),
+                            "origin_run_id": failure.get("origin_run_id", failure.get("run_id")),
                             "from_cache": True,
                         }
                     )

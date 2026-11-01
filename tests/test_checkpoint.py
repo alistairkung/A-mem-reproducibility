@@ -1,6 +1,7 @@
 """Portable offline BLK-014 recovery evidence; no private study artifacts required."""
 import ast
 import copy
+from decimal import Decimal
 import hashlib
 import json
 import sqlite3
@@ -91,17 +92,22 @@ def parent(tmp_path, monkeypatch):
     phase = {'phase': 'pilot', 'run_id': 'parent', 'status': 'incomplete', 'usable_for_next_phase': False,
              'completed_questions': 0, 'conversation_ids': ['conv-50'], 'binding': binding,
              'budget': {'charged_or_reserved_microusd': 526*12},
+             'study_budget': {'charged_or_reserved_microusd': 527*12, 'physical_attempts':527, 'logical_calls':527},
              'artifact_sha256': {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in directory.iterdir()}}
     phases._save(directory / 'phase.json', phase)
     monkeypatch.setattr('amem_repro.checkpoint.PARENT_PHASE_SHA256', fingerprint(phase))
     ledger = tmp_path / 'artifacts/study-budget.sqlite'
     with sqlite3.connect(ledger) as db:
         db.executescript(SCHEMA)
+        db.execute('INSERT INTO phases VALUES (?,?,?,?,?,?)', ('history','history','{}','old-owner',1000000,'done'))
         db.execute('INSERT INTO phases VALUES (?,?,?,?,?,?)', ('parent', 'parent', json.dumps(auth), 'old-owner', 10000000, 'failed'))
         for i in range(526):
             db.execute('INSERT INTO logical_calls VALUES (?,?,?)', (i+1, 'parent', ('metadata','shared_decision')[i%2]))
             db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,?,?)',
                        (i+1, i+1, 'parent', 'hash', 'settled', 12, 319373, json.dumps(usage)))
+        db.execute('INSERT INTO logical_calls VALUES (?,?,?)',(527,'history','answer'))
+        db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,?,?)',
+                   (527,527,'history','hash','settled',12,319373,json.dumps(usage)))
     return NS(root=tmp_path, path=directory/'phase.json', manifest=manifest, sources=sources,
               receipt=receipt, compat=compat, auth=auth, phase=phase, state=state, ledger=ledger)
 
@@ -166,7 +172,7 @@ def test_approval_and_checkpoint_claim_are_one_shot(parent):
     auth.update(approval_id='second-child', run_id='second-child')
     with pytest.raises(BudgetStop, match='Checkpoint already claimed'):
         PhasePermit(auth, parent.ledger, auth['binding'])
-    assert ledger_summary(parent.ledger)['physical_attempts'] == 526
+    assert ledger_summary(parent.ledger)['physical_attempts'] == 527
 
 
 @pytest.mark.parametrize('abort', [False, 'memory', 'question', 'postprocessing'])
@@ -233,7 +239,7 @@ def test_full_child_phase_and_composite_forecast(parent, abort):
         assert result['status'] == 'degraded'
         assert result['usable_for_next_phase'] is True
         assert result['budget']['logical_calls'] == 1018
-        assert result['study_budget']['physical_attempts'] == 1544
+        assert result['study_budget']['physical_attempts'] == 1545
         assert result['completed_questions'] == 204
         child = parent.root/'artifacts/runs/child'
         events = [json.loads(line) for line in (child/'events.jsonl').read_text().splitlines()]
@@ -250,11 +256,26 @@ def test_full_child_phase_and_composite_forecast(parent, abort):
         saved=CacheStore(parent.root/'artifacts/cache').load(json.loads(cache_identity.read_text()))
         assert [n['key'] for n in saved['notes'][:263]]==[n['key'] for n in parent.state['notes']]
         assert saved['outcomes'][:263]==parent.state['outcomes']
+        from amem_repro.runner import run_manifest
+        cached_provider=Provider()
+        cached_factory=make_agent_factory(ROOT,memory_module=author_module(),
+            controller_factory=lambda observer:DeepSeekController(cached_provider,observer=observer,
+                                                                 provider_contract_policy=INDEX_STRING_POLICY))
+        cached=run_manifest(parent.root/'data/locomo10.json',parent.manifest,DEFAULT_CONFIG,
+                            output_dir=parent.root/'artifacts/runs/cached-qa',
+                            cache_root=parent.root/'artifacts/cache',source_hashes=parent.sources,
+                            execution_type='cached_qa',checkpoint=recovered,agent_factory=cached_factory,
+                            scorer=AuthorScorer(ROOT,dependencies=dependencies()),
+                            provider_contract_policy=INDEX_STRING_POLICY)
+        assert cached['completed_questions']==204 and cached['status']=='degraded'
+        assert len(cached_provider.requests)==408
+        assert all('should_evolve' not in request['tools'][0]['function']['parameters']['properties']
+                   for request in cached_provider.requests)
         with patch.object(phases, 'source_fingerprint', return_value=parent.sources):
             forecast=phases.forecast_pilot(child/'phase.json',root=parent.root,provider_contract_policy=INDEX_STRING_POLICY)
         assert forecast['pilot_credited_once'] is True
         assert forecast['pilot_stage_usage']['shared_decision']['logical_calls']==568
-        assert forecast['incurred_or_reserved_usd']==ledger_summary(parent.ledger)['charged_or_reserved_usd']
+        assert Decimal(forecast['incurred_or_reserved_usd'])==Decimal(ledger_summary(parent.ledger)['charged_or_reserved_usd'])
     assert json.loads(parent.path.read_text())==parent.phase
 
 
@@ -323,7 +344,16 @@ def test_recovery_permit_cannot_exceed_remaining_request_limit(parent):
     auth['limits'].update(max_logical_calls=1019,max_attempts=3057)
     with pytest.raises(BudgetStop,match='Checkpoint request limits'):
         PhasePermit(auth,parent.ledger,auth['binding'])
-    assert ledger_summary(parent.ledger)['physical_attempts']==526
+    assert ledger_summary(parent.ledger)['physical_attempts']==527
+
+
+def test_removing_earlier_failed_phase_cannot_reset_recovery_spending(parent):
+    with sqlite3.connect(parent.ledger) as db:
+        db.execute("DELETE FROM attempts WHERE approval_id='history'")
+        db.execute("DELETE FROM logical_calls WHERE approval_id='history'")
+        db.execute("DELETE FROM phases WHERE approval_id='history'")
+    with pytest.raises(ValueError,match='historical study charges'):
+        verified(parent)
 
 
 def test_only_reviewed_support_migration_is_allowed(parent):

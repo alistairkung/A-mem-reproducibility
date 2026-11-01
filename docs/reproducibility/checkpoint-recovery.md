@@ -33,6 +33,11 @@ blocked event, adds child generations and checks full 1,544-call coverage. Neith
 unknown charges can select scope. Only the verified parent failure is admitted for cost accounting;
 this is not acceptance of malformed output in the adapter.
 
+The low-level runner can subsequently locate the completed recovered build for `cached_qa` using the
+same verified checkpoint lineage and source identity. It loads the complete cache, not the partial
+snapshot. This is a dependent QA rerun requiring its own paid authorization; no live cached-QA phase
+is added or executed here.
+
 ## Offline preparation commands
 
 Run after the final reviewed source is fixed; use new paths if these already exist:
