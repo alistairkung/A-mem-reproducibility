@@ -18,15 +18,15 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-010](#blk-010) | Released retrieval default differs from paper category settings | Accepted Limitation | T5, T8, interpretation | D6; runner default; paper Table 8 |
 | [BLK-011](#blk-011) | T5 execution is not connected to Langfuse tracing/export | Open | T5, T8 observability | Runtime call-path audit; verified synthetic trace |
 | [BLK-012](#blk-012) | Failed usage settlement triggers SDK regeneration | Resolved | T5 and later paid phases | Terminal settlement guard; SQLite fault/retry regressions |
-| [BLK-013](#blk-013) | Shared decision exhausts the frozen 1,000-token output limit | Open | T5 compatibility; baseline readiness | New incomplete phase; exact length-truncation replay |
+| [BLK-013](#blk-013) | Shared decision exhausts the historical 1,000-token output limit | Investigating | T5 compatibility; baseline readiness | Incomplete phase; D9a mitigation approved, live verification pending |
 
 Before a paid run: **BLK-007 currently prevents compatibility acceptance and pilot progression**.
 BLK-001's query/answer contracts have not been exercised live. BLK-008 limits token-count claims;
 BLK-009 still requires a separately approved representative pilot and cost-only scope decision.
 BLK-011 requires actual runner wiring; a successful connection probe alone does not enable it.
 BLK-012's terminal settlement guard is verified offline; this does not authorize paid recovery.
-BLK-013 stopped the single fresh authorized phase. Another paid phase or a changed output limit needs
-an explicit decision; the conv-50 pilot is blocked. See [readiness evidence](baseline-readiness.md).
+BLK-013 consumed the prior phase. D9a now authorizes one further fresh phase after offline tests,
+review and preflight; it has not run. The pilot remains blocked. See [readiness evidence](baseline-readiness.md).
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -306,8 +306,8 @@ are unavailable unless an experiment receipt supplies them.
 ## BLK-013
 
 - **ID:** BLK-013
-- **Title:** Shared decision exhausts the frozen 1,000-token output limit.
-- **Status:** Open
+- **Title:** Shared decision exhausts the historical 1,000-token output limit.
+- **Status:** Investigating
 - **First observed:** 2026-11-01, fresh authorized T5 phase `compatibility-d3a-20261101`, merged source `167470b`.
 - **Category:** Provider compatibility
 - **Expected behaviour:** Complete original-schema output within the frozen D9 generation settings, processing all 18 turns and four QA before compatibility acceptance.
@@ -320,6 +320,7 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01: retain full received request/response, partial memory/index, settled costs and audited D3a deviation. Verify phase inventory, original 19 historical files and the first ten ledger attempts/charge.
   - 2026-11-01: exact offline SDK MockTransport replay confirms identical request, truncated response preservation, rejection, terminal halt and blocked subsequent transmission. Pilot planning against the incomplete receipt rejects before execution.
   - 2026-11-01: independent offline source/output audit confirms output growth and original max_tokens=1000. Prepare a proposed 4,000-token shared-decision amendment plus one further USD2 phase for explicit decision; neither change nor new phase has been executed.
-- **Final resolution or limitation:** **Unresolved; material experimental/recovery decision required.** The single fresh live-phase authorization is consumed. Baseline readiness has not been achieved; no pilot/full benchmark or T6–T8 work was started.
-- **Verification:** Failure and safe stop are verified, not successful compatibility. Existing truncation tests and exact saved-response replay show the current adapter correctly rejects incomplete output; increasing the cap or paying for another run cannot be inferred from unspent funds.
+  - 2026-11-01, D9a approved after PR #12 merge (`5078459`): implement output policy `d9a-shared-decision-4000-v1`, raising only shared decisions to 4,000 tokens and retaining 1,000 elsewhere uniformly across arms. Preserve prompts/schemas/parsers/temperatures. Bind stage caps and update conservative reservations to 319,373 microUSD for shared decisions / 315,773 for other attempts; retain the USD2 hard phase and USD42 usable study caps. One fresh 44-call/132-attempt phase is authorized after offline verification, review and preflight; no extra probes planned. New live verification has not occurred and no approved execution plan exists yet.
+- **Final resolution or limitation:** **Unresolved; approved D9a mitigation awaits offline and live verification.** Both previous phase approvals remain consumed. One further fresh phase is explicitly authorized after its gates; this is not pilot/full-benchmark/T6–T8 authorization. A larger cap does not guarantee completion or establish baseline readiness.
+- **Verification:** Failure and safe stop are verified, not successful compatibility. Existing truncation tests and exact saved-response replay prove correct rejection at the historical cap. D9a must pass new stage-cap/spending regressions and the authorized fresh live fixture before resolving this blocker; another paid phase after that needs a new decision.
 - **Research significance:** Preserving a paper's nominal generation cap under a model substitution can make the released structured-output algorithm operationally infeasible. Output growth, provider representation compatibility and spending safety are separate reproducibility constraints.

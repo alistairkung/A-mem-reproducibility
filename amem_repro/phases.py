@@ -22,6 +22,7 @@ from unittest.mock import patch
 from .config import (
     fingerprint, load_config, source_fingerprint, reject_credentials,
     STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY, validate_provider_policy,
+    stage_output_limits,
 )
 from .manifests import expand_manifest
 from .preflight import (
@@ -175,6 +176,7 @@ def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
         "model": config["model"]["id"],
         "endpoint": config["model"]["base_url"] + config["model"]["route"],
         "provider_contract_policy": provider_contract_policy,
+        "max_output_tokens_by_stage": stage_output_limits(),
     }
     if phase == "pilot":
         if compatibility is None:
@@ -182,7 +184,8 @@ def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
         previous = _verified_phase(compatibility, root)
         if previous["phase"] != "compatibility":
             raise ValueError("The pilot requires a compatibility receipt")
-        for key in ("config_sha256", "source_sha256", "preflight_sha256", "model", "endpoint", "provider_contract_policy"):
+        for key in ("config_sha256", "source_sha256", "preflight_sha256", "model", "endpoint",
+                    "provider_contract_policy", "max_output_tokens_by_stage"):
             if previous["binding"].get(key) != binding[key]:
                 raise ValueError("Compatibility provenance differs; stop for review")
         binding["compatibility_sha256"] = fingerprint(previous)
@@ -210,7 +213,7 @@ def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibil
             "pricing_id": "deepseek-flash-peak-2026-11-01",
             "source": "https://api-docs.deepseek.com/quick_start/pricing/",
             "input_per_million": .30, "output_per_million": 1.20,
-            "max_context_tokens": 1048576, "max_output_tokens": 1000,
+            "max_context_tokens": 1048576, "max_output_tokens": max(stage_output_limits().values()),
         },
         "population": manifest["totals"],
         "stop_policy": "No subsequent request after provider/contract failure; no automatic recovery",

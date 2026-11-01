@@ -7,11 +7,12 @@ Work breakdown: [implementation-tickets.md](implementation-tickets.md).
 
 ## Authorization boundary
 
-Current authorization covers T1–T4 implementation, dependency preparation, deterministic offline tests,
-and one logically scoped commit per ticket on feature/reproducibility-foundation. Prepare one consolidated
-PR for review. T5–T8 execution and all paid API calls remain unauthorized. Obtain separate approval for
-paid compatibility/functional testing, the paid pilot, main execution, and paid recovery or reruns.
-Do not merge into main without user approval.
+Current authorization covers T5 engineering through baseline readiness, commits/pushes, offline tests
+and reviews. PR #11 and the blocked-readiness documentation in PR #12 are merged. The user approved
+[D9a](decisions.md#d9a--approved-shared-decision-output-allowance-and-one-fresh-verification-phase)
+and exactly one further bounded compatibility phase after its offline/review/preflight gates pass.
+Use a new immutable approval/phase identity; both previous failed phases remain consumed. The pilot,
+main execution, further paid recovery and T6–T8 remain separately gated. Stop at baseline readiness.
 Keep all work inside this repository; the separate FTEC5660 HW3 repository is out of scope.
 Credentials stay in the environment and outside code, public records, logs and committed artifacts.
 
@@ -50,7 +51,9 @@ Execution sequence:
 | Metadata / shared decision / query-keyword temperature | 0.7 |
 | Category 1–4 answer temperature | 0.7 |
 | Category 5 answer temperature | 0.5 |
-| Maximum output tokens, every completion | 1,000 |
+| Metadata / query-keyword / answer maximum output tokens | 1,000 |
+| Shared-decision maximum output tokens | 4,000 under D9a; historical D9 was 1,000 |
+| Output-token policy | `d9a-shared-decision-4000-v1` |
 | Execution | Serial, non-streaming |
 | Transport | Explicit 120-second timeout setting; at most two SDK retries (three attempts total) |
 | Additional retries | No second retry layer, semantic repair, or answer-quality retries |
@@ -59,6 +62,15 @@ The retry policy covers transient transport/provider failures consistently acros
 record actual retryable statuses/exceptions, SDK version, backoff behavior and attempts in the manifest.
 Bounded retries must be included in the approval and budget for each paid phase.
 Retain existing caller failure/fallback behavior after exhausted retries.
+
+D9a is a controlled generation-setting deviation made after a DeepSeek shared decision exhausted the
+historical 1,000-token allowance (BLK-013). Preserve original prompts/schemas/parsers and author files;
+use the same stage limits in every arm and label original failed results separately. Bind the output
+policy and stage-cap map to approval, request validation, run/cache identity and reporting. Pricing
+validation uses a 4,000-token bound, with per-attempt conservative reservations of 319,373 microUSD for
+shared decisions and 315,773 for other stages. Phase/study caps and retry limits remain unchanged.
+Offline verification and the new live fixture must precede compatibility acceptance; a higher limit
+does not establish that output growth will fit it throughout conv-50.
 
 At discovery, the [provider model documentation](https://api-docs.deepseek.com/quick_start/pricing/)
 mapped this identifier to DeepSeek-V4.1-Flash-1017. Record the actual request ID, endpoint, model-version

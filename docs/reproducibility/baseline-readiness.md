@@ -1,9 +1,33 @@
 # T5 baseline readiness — blocked by output truncation
 
-Checked 1 November 2026, Hong Kong time. **The conv-50 pilot is not ready to execute.** The one
-authorized fresh compatibility phase is incomplete. Its authorization is consumed; no additional
-paid recovery, pilot or full benchmark has been authorized. See BLK-013 and the pending protocol
-decision below. T5 stays open; T6–T8 are unstarted.
+## Current status — D9a approved; fresh verification pending
+
+After PR #12 merged this failure record (`5078459`), the user approved
+[D9a](decisions.md#d9a--approved-shared-decision-output-allowance-and-one-fresh-verification-phase):
+4,000 output tokens for shared decisions and 1,000 for every other stage, with original temperatures,
+prompts, schemas and parsers retained. The uniform all-arm output policy is
+`d9a-shared-decision-4000-v1`; approvals bind its configuration hash and explicit stage-cap map. Pricing must
+allow the 4,000-token bound while reservations remain stage-specific: 319,373 microUSD for a shared
+decision and 315,773 for another stage. The USD2 phase hard cap and USD42 usable study allowance
+(preserving USD8 contingency) are unchanged.
+
+Exactly **one further fresh** 18-turn/four-question phase is authorized after offline tests, review and
+new runtime preflight: 44 logical calls, at most 132 physical attempts including SDK retries, no extra
+probes planned, and at most USD2 additional expenditure. That phase has not been executed and no
+approved execution plan exists yet. BLK-013 remains Investigating; BLK-007 remains Investigating.
+A 4,000-token limit is not a guarantee of fixture or full-pilot completion. The conv-50 pilot remains
+unready and unauthorized; full benchmark and T6–T8 are also outside this task's execution authority.
+
+The D9a offline suite passes **268 tests and 92 subtests**, including stage-specific SDK requests,
+usage/reservations, rejection of missing/incorrect limits, failed settlements and genuine SDK retries.
+Live verification still requires the final reviewed source and refreshed runtime preflight.
+
+## Historical checkpoint — consumed 1,000-token phase
+
+Checked 1 November 2026, Hong Kong time. **At this checkpoint the conv-50 pilot was not ready to
+execute.** The one authorized fresh compatibility phase was incomplete and its authorization consumed;
+no further paid phase was then authorized. The following failure evidence and decision request are
+preserved as history. T5 stays open; T6–T8 are unstarted.
 
 ## Engineering and merge evidence
 
@@ -78,7 +102,9 @@ The phase's artifact inventory verifies. Nineteen protected historical files are
 The shared ledger necessarily gained the authorized phase; its original ten attempts and USD0.005851
 charge remain intact. Raw artifacts and credentials are not committed.
 
-## Decision needed before another paid phase
+## Historical decision request before D9a approval
+
+The request below was subsequently approved as D9a; it does not itself record a successful live test.
 
 The frozen D9 cap is 1,000 tokens for every generation. Increasing it is an experimental amendment,
 not a routine repair. Proposed minimum: change **only shared-decision** maximum output to 4,000, keep

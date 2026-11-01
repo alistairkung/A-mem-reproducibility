@@ -10,6 +10,7 @@ import pytest
 from amem_repro.adapter import create_deepseek_controller, AdapterError
 from amem_repro.budget import PhasePermit, BudgetStop, ledger_summary
 from amem_repro.contracts import load_author_contracts
+from amem_repro.config import stage_output_limits
 
 
 def approval(cap=2, logical=44):
@@ -20,6 +21,7 @@ def approval(cap=2, logical=44):
         "condition": "full", "repetition": 0, "population": "smoke",
         "model": "deepseek-flash",
         "endpoint": "https://api.deepseek.com/beta/chat/completions",
+        "max_output_tokens_by_stage": stage_output_limits(),
     }
     return {
         "approval_id": "test-only", "approved": True, "approved_by": "offline test",
@@ -28,7 +30,7 @@ def approval(cap=2, logical=44):
         "limits": {"phase_usd": cap, "max_logical_calls": logical, "max_attempts": logical * 3},
         "pricing": {"pricing_id": "test-peak", "input_per_million": 0.30,
                     "output_per_million": 1.20, "max_context_tokens": 1048576,
-                    "max_output_tokens": 1000},
+                    "max_output_tokens": 4000},
     }
 
 
@@ -71,6 +73,76 @@ def test_attempt_is_reserved_before_transmission_and_settled_once(tmp_path):
     assert events[0]["attempts"][0]["budget_attempt_id"] == 1
     assert events[0]["attempts"][0]["request_body"] == requests[0]
     assert "offline-placeholder" not in json.dumps(events)
+
+
+def test_shared_decision_sdk_request_uses_stage_bound_and_preserves_original_arguments(tmp_path):
+    auth = approval(logical=1)
+    permit = PhasePermit(auth, tmp_path / "budget.sqlite", auth["binding"])
+    requests, events = [], []
+    raw = ' {"should_evolve": true, "actions": [], "suggested_connections": [], "tags_to_update": [], "new_context_neighborhood": [], "new_tags_neighborhood": []} \n'
+    received = response(raw)
+    received["usage"] = {"prompt_tokens": 20, "completion_tokens": 4000, "total_tokens": 4020}
+
+    def handler(request):
+        requests.append(json.loads(request.content))
+        assert permit.summary()["charged_or_reserved_microusd"] == 319373
+        return httpx.Response(200, json=received)
+
+    c = controller(permit, handler, events)
+    try:
+        result = c.get_completion("same prompt", load_author_contracts()["shared_decision"])
+    finally:
+        c.client.close()
+    assert result == raw
+    assert len(requests) == 1
+    assert requests[0]["max_tokens"] == events[0]["max_tokens"] == 4000
+    assert requests[0]["tools"][0]["function"]["parameters"] == load_author_contracts()["shared_decision"]["json_schema"]["schema"]
+    assert permit.summary()["charged_or_reserved_microusd"] == 4806
+    assert permit.summary()["unknown_attempts"] == 0
+
+
+def test_shared_decision_sdk_retry_reserves_four_thousand_tokens_before_transmission(tmp_path):
+    auth = approval(cap=.638745, logical=1)
+    permit = PhasePermit(auth, tmp_path / "budget.sqlite", auth["binding"])
+    requests, events = [], []
+
+    def handler(request):
+        requests.append(json.loads(request.content))
+        return httpx.Response(429, json={"error": {"message": "offline retryable error"}},
+                              headers={"retry-after-ms": "1"})
+
+    c = controller(permit, handler, events)
+    try:
+        with pytest.raises(BudgetStop):
+            c.get_completion("same prompt", load_author_contracts()["shared_decision"])
+    finally:
+        c.client.close()
+    assert len(requests) == 1
+    assert requests[0]["max_tokens"] == 4000
+    assert permit.summary()["physical_attempts"] == permit.summary()["unknown_attempts"] == 1
+    assert permit.summary()["charged_or_reserved_microusd"] == 319373
+    assert permit.summary()["halted"]
+
+
+@pytest.mark.parametrize("change", ["missing", "unknown", "wrong", "incomplete"])
+def test_bad_stage_limit_approval_is_rejected_before_credential_access(tmp_path, change):
+    auth = approval()
+    limits = auth["binding"]["max_output_tokens_by_stage"]
+    if change == "missing":
+        del auth["binding"]["max_output_tokens_by_stage"]
+    elif change == "unknown":
+        limits["unknown"] = 1000
+    elif change == "wrong":
+        limits["answer"] = 4000
+    else:
+        del limits["metadata"]
+    path = tmp_path / "budget.sqlite"
+    with patch("amem_repro.adapter.os.environ.get", side_effect=AssertionError("credential read")):
+        with pytest.raises(BudgetStop):
+            permit = PhasePermit(auth, path, auth["binding"])
+            create_deepseek_controller(paid_authorized=True, phase_permit=permit,
+                                       http_transport=httpx.MockTransport(lambda request: None))
+    assert not path.exists()
 
 
 def test_retry_cannot_transmit_when_next_reservation_exceeds_cap(tmp_path):

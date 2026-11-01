@@ -15,7 +15,10 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation, ROUND_CEILING, ROUND_FLOOR
 from pathlib import Path
 
-from .config import fingerprint, reject_credentials, validate_provider_policy, STRICT_PROVIDER_POLICY
+from .config import (
+    fingerprint, reject_credentials, validate_provider_policy, STRICT_PROVIDER_POLICY,
+    stage_output_limits,
+)
 
 MICROS = Decimal(1_000_000)
 GLOBAL_USABLE_MICROS = 42_000_000  # USD 50 total less the USD 8 contingency.
@@ -65,6 +68,11 @@ def _validate(auth, binding):
         if phase not in phase_max or auth['binding'] != binding:
             raise BudgetStop('Approval phase or immutable binding mismatch')
         validate_provider_policy(binding.get('provider_contract_policy', STRICT_PROVIDER_POLICY))
+        output_limits = binding['max_output_tokens_by_stage']
+        expected_limits = stage_output_limits()
+        if (type(output_limits) is not dict or output_limits != expected_limits
+            or any(type(limit) is not int for limit in output_limits.values())):
+            raise BudgetStop('Stage output limits differ from the approved policy')
         for name in ('manifest_sha256', 'config_sha256', 'source_sha256', 'preflight_sha256'):
             digest = binding[name]
             if not isinstance(digest,str) or len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest):
@@ -98,9 +106,10 @@ def _validate(auth, binding):
         if input_rate < Decimal('.30') or output_rate < Decimal('1.20'):
             raise BudgetStop('Rates cannot undercut the reviewed peak-price bound')
         context = _integer(pricing['max_context_tokens'], 'max_context_tokens')
-        if context < 1048576 or pricing['max_output_tokens'] != 1000 or type(pricing['max_output_tokens']) is not int:
+        max_output = max(expected_limits.values())
+        if context < 1048576 or pricing['max_output_tokens'] != max_output or type(pricing['max_output_tokens']) is not int:
             raise BudgetStop('Token bounds differ from the frozen conservative limits')
-        reserve = int((context*input_rate+1000*output_rate).to_integral_value(rounding=ROUND_CEILING))
+        reserve = int((context*input_rate+max_output*output_rate).to_integral_value(rounding=ROUND_CEILING))
         return cap_micros, reserve, input_rate, output_rate
     except (KeyError, TypeError, ValueError, AttributeError) as error:
         raise BudgetStop(f'Malformed approval: {type(error).__name__}') from None
@@ -212,9 +221,10 @@ class PhasePermit:
                                  (logical_id,self.approval_id)).fetchone()
             if logical is None:
                 self._halt(db,'Logical request belongs to another phase')
+            output_limit = self.binding['max_output_tokens_by_stage'][logical[0]]
             expected_temp = (.5,.7) if logical[0]=='answer' else (.7,)
             if (not isinstance(request,dict) or request.get('model') != self.binding['model'] or request.get('endpoint') != self.binding['endpoint']
-                or type(request.get('max_tokens')) is not int or request['max_tokens'] != 1000
+                or type(request.get('max_tokens')) is not int or request['max_tokens'] != output_limit
                 or request.get('stream') is not False or request.get('temperature') not in expected_temp
                 or request.get('provider_contract_policy', STRICT_PROVIDER_POLICY) != self.binding.get('provider_contract_policy', STRICT_PROVIDER_POLICY)
                 or request.get('thinking') not in ('disabled', {'type':'disabled'})):
@@ -235,10 +245,12 @@ class PhasePermit:
             total = db.execute('SELECT COALESCE(SUM(charge),0) FROM attempts').fetchone()[0]
             phase_total = db.execute('SELECT COALESCE(SUM(charge),0) FROM attempts WHERE approval_id=?',
                                      (self.approval_id,)).fetchone()[0]
-            if total+self.reserve_micros > GLOBAL_USABLE_MICROS or phase_total+self.reserve_micros > phase[1]:
+            reservation = int((self.auth['pricing']['max_context_tokens']*self.input_rate
+                               +output_limit*self.output_rate).to_integral_value(rounding=ROUND_CEILING))
+            if total+reservation > GLOBAL_USABLE_MICROS or phase_total+reservation > phase[1]:
                 self._halt(db,'Conservative reservation would exceed phase or study ceiling')
             return db.execute('INSERT INTO attempts(logical_id,approval_id,request_sha256,status,charge,reservation) VALUES (?,?,?,?,?,?)',
-                              (logical_id,self.approval_id,request_hash,'reserved',self.reserve_micros,self.reserve_micros)).lastrowid
+                              (logical_id,self.approval_id,request_hash,'reserved',reservation,reservation)).lastrowid
 
     def settle(self, attempt_id, usage):
         try:
@@ -255,7 +267,9 @@ class PhasePermit:
     def _settle(self, attempt_id, usage):
         with self._transaction() as db:
             self._phase(db,allow_halted=True)
-            row = db.execute('SELECT status,reservation,usage_json FROM attempts WHERE id=? AND approval_id=?',
+            row = db.execute('SELECT a.status,a.reservation,a.usage_json,l.stage FROM attempts AS a '
+                             'JOIN logical_calls AS l ON l.id=a.logical_id '
+                             'WHERE a.id=? AND a.approval_id=?',
                              (attempt_id,self.approval_id)).fetchone()
             if row is None:
                 self._halt(db,'Unknown physical attempt')
@@ -272,7 +286,8 @@ class PhasePermit:
             valid = usage is None
             if isinstance(usage,dict):
                 inp,out=usage.get('prompt_tokens'),usage.get('completion_tokens')
-                valid = (type(inp) is int and type(out) is int and 0<=inp<=self.auth['pricing']['max_context_tokens'] and 0<=out<=1000)
+                output_limit = self.binding['max_output_tokens_by_stage'][row[3]]
+                valid = (type(inp) is int and type(out) is int and 0<=inp<=self.auth['pricing']['max_context_tokens'] and 0<=out<=output_limit)
                 if 'total_tokens' in usage:
                     total = usage['total_tokens']
                     valid = valid and type(total) is int and total == inp+out

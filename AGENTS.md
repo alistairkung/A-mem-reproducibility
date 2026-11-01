@@ -22,13 +22,14 @@ and `docs/reproducibility/decisions.md`. Follow `docs/reproducibility/implementa
 for issue dependencies. The approved protocol and ticket creation do not authorize implementation,
 commits, pushes or paid API execution; those require separate user authorization.
 
-Current work is T5 through baseline readiness on PR #11. Before execution, read the latest
+Current work is T5 through baseline readiness; PR #11 is merged. Before execution, read the latest
 authorization in `docs/reproducibility/decisions.md` and the phase's immutable approval/artifacts.
-The user authorized reviewed T5 fixes, commits/pushes, conditional PR #11 merge and one fresh bounded
-compatibility phase. Stop before the conv-50 pilot, full benchmark or T6–T8; these need separate approval.
+The user approved D9a engineering and exactly one further fresh compatibility phase after offline
+tests, review and a new provenance-bound approval. Stop before the conv-50 pilot, full benchmark or
+T6–T8; these need separate approval.
 Preserve the frozen author files; add support code separately. A consumed phase approval cannot be reused.
-Before any further paid phase, read `docs/reproducibility/baseline-readiness.md`: the fresh phase was
-consumed by BLK-013, and another phase or an output-limit amendment requires a new explicit decision.
+Before any paid phase, read `docs/reproducibility/baseline-readiness.md`: it distinguishes the consumed
+failed phases from the single D9a phase now authorized; additional recovery requires a new decision.
 
 ## Reproducibility Blocker Tracking
 
