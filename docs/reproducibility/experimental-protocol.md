@@ -11,10 +11,16 @@ Current authorization covers T5 engineering through baseline readiness, commits/
 and reviews. PR #11 and the blocked-readiness documentation in PR #12 are merged. The user approved
 [D9a](decisions.md#d9a--approved-shared-decision-output-allowance-and-one-fresh-verification-phase)
 and the bounded D9a fixture has now succeeded with degradation solely from audited D3a deviations.
-That authorization and both earlier failed-phase approvals are consumed. PR #13's reviewed D9a changes
-are authorized for merge; its merge is not claimed here. The conv-50 pilot has a verified unapproved
-plan and still requires separate explicit authorization. Main execution, further paid recovery and
-T6–T8 remain separately gated. Stop at baseline readiness.
+PR #13 is merged as `c659856`. The user then authorized one conv-50 pilot under the frozen plan:
+USD10, 1,544 logical calls and at most 4,632 attempts. It is now incomplete after a normally finished
+but malformed provider response (BLK-014); its approval and all compatibility approvals are consumed.
+See the [pilot record](t5-pilot-conv50-d9a-20261101.md). Preserve partial results and charges; a complete
+cost-only scope forecast is blocked by missing QA coverage. Further paid recovery, main execution and
+T6–T8 require separate decisions. Stop after recording this pilot and budget status.
+The user subsequently authorized checkpoint recovery implementation/offline tests and a PR, preserving
+the exact 263-note failure state and strict validation; see [engineering authorization](decisions.md#authorization--blk-014-checkpoint-engineering-only).
+The recovery approval must explicitly bind the reviewed support-code migration and new preflight to
+the immutable parent. This grants no paid continuation, JSON repair or acceptance-policy exception.
 Keep all work inside this repository; the separate FTEC5660 HW3 repository is out of scope.
 Credentials stay in the environment and outside code, public records, logs and committed artifacts.
 

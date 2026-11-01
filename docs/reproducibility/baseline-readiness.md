@@ -1,6 +1,25 @@
-# T5 baseline readiness — verified D9a fixture; pilot approval pending
+# T5 baseline readiness — conv-50 pilot incomplete
 
-## Current status — functional compatibility verified
+## Current status — BLK-014 blocks pilot completion
+
+The user authorized one conv-50 pilot from the D9a plan (USD10 / 1,544 logical calls / 4,632 attempts).
+It ran on merged PR #13 source `c659856` and is **incomplete**: 263 notes/index rows retained, zero
+of 204 QA, 526 physical requests and USD0.739432 conservative charge. A normally finished shared
+decision contained malformed JSON at 970 output tokens, below its unchanged 4,000-token allowance.
+The durable halt blocked the next transmission. No retry, recovery or scoring result was fabricated.
+
+Study total is USD0.806717; USD41.193283 remains usable while preserving USD8 contingency. Missing
+QA and later construction coverage prevent a defensible full/fallback cost forecast. The original
+population target remains unchanged. BLK-014 is Open; the successful small fixture remains valid
+historical evidence, not proof of long-run provider reliability. All phase approvals are consumed.
+See the [pilot report](t5-pilot-conv50-d9a-20261101.md) for immutable artifacts and socket-disabled replay.
+Stop before further paid execution, the full benchmark or T6–T8.
+
+Checkpoint engineering and offline tests are now separately authorized. The
+[recovery runbook](checkpoint-recovery.md) describes the parent-bound child, exact stale-index restore
+and new approval/preflight gates. This does not authorize paid continuation or resolve the provider defect.
+
+## Historical checkpoint — functional compatibility verified; pilot approval pending
 
 The authorized phase `compatibility-d9a-20261101` completed the frozen 18-turn/four-question fixture
 under D9a and `canonical-index-strings-v1`. Its status is **degraded solely by approved, fully audited
