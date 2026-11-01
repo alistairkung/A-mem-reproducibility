@@ -22,9 +22,11 @@ and `docs/reproducibility/decisions.md`. Follow `docs/reproducibility/implementa
 for issue dependencies. The approved protocol and ticket creation do not authorize implementation,
 commits, pushes or paid API execution; those require separate user authorization.
 
-Current implementation scope: T1–T4 and offline tests are authorized on
-`feature/reproducibility-foundation`, with separate commits per ticket and a consolidated PR for review.
-T5 and paid execution remain gated. Preserve the frozen author files; add support code separately.
+Current work is T5 through baseline readiness on PR #11. Before execution, read the latest
+authorization in `docs/reproducibility/decisions.md` and the phase's immutable approval/artifacts.
+The user authorized reviewed T5 fixes, commits/pushes, conditional PR #11 merge and one fresh bounded
+compatibility phase. Stop before the conv-50 pilot, full benchmark or T6–T8; these need separate approval.
+Preserve the frozen author files; add support code separately. A consumed phase approval cannot be reused.
 
 ## Reproducibility Blocker Tracking
 

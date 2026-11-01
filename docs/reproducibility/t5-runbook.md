@@ -3,10 +3,11 @@
 Status: offline preparation implemented; the separately approved first compatibility attempt stopped
 on a provider schema violation. See the [attempt report](t5-compatibility-20261101.md).
 
-The user subsequently approved the BLK-007 validation-copy policy for implementation/offline tests
-only. See [D3a and verification](blk-007-compatibility-review.md). BLK-007 remains Investigating;
-no paid recovery/resume/pilot is authorized. Keep all original failed-run artifacts unchanged.
-Pilot, main execution and recovery remain separately gated.
+The user subsequently approved D3a implementation/offline tests, then autonomous T5 baseline readiness:
+reviewed fixes, PR #11 merge and **one new** USD2 compatibility phase under D3a after spending-safety
+verification. See [authorization](decisions.md#authorization--autonomous-t5-baseline-readiness) and
+[D3a verification](blk-007-compatibility-review.md). BLK-007 remains Investigating pending that live test.
+Keep the failed fixture immutable. An additional recovery phase, pilot and main execution remain gated.
 Issue: [T5 / #5](https://github.com/alistairkung/A-mem-reproducibility/issues/5).
 The [frozen protocol](experimental-protocol.md) and D1–D13 remain the research authority.
 
@@ -188,5 +189,20 @@ in this command.
 | Reuse valid pilot, preserve failures, avoid duplicate charges | Provenance receipts and forecast credit implemented; main baseline orchestration awaits scope decision |
 
 T5 must remain open until the approved live phases and selected original baseline are archived. T6/T7
-action refactoring remains blocked. This preparation does not authorize a paid compatibility test,
-pilot, main execution, recovery, additional repetition, branch push, or merge.
+action refactoring remains blocked. The latest user authorization permits only the single fresh bounded
+compatibility phase and reviewed PR #11 merge. Pilot/main execution, additional recovery phases and
+additional repetitions still require separate approval.
+
+## BLK-012 correction and final review
+
+Commit `d0e0bf9` makes failed usage settlements terminal before they can reach SDK retry handling.
+The original maximum reservation and received payload survive. A separate transaction persists the
+halt; if SQLite remains unwritable, a local irreversible latch and the already-durable one-shot claim
+prevent continuation/restart. `halt_persisted:false` identifies that fallback rather than claiming a
+successful halt write. Genuine 429/503/transport retries retain the existing SDK policy.
+
+Full offline suite: **247 tests and 71 subtests passed**. Repeat Standards review: no actionable defect,
+independent 26-test focused run passed. Repeat Spec review: no unmet safety requirement, independent
+111-test/39-subtest focused run passed. Existing schemas/raw return, later-deviation persistence, asset
+integrity and manifest hashes were checked. BLK-012 is Resolved; this does not resolve BLK-007 live
+compatibility or authorize the pilot. Safe local evidence: `artifacts/blk012-fix/`.
