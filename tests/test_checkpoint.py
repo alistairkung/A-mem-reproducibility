@@ -69,7 +69,7 @@ def parent(tmp_path, monkeypatch):
         state['outcomes'].append(outcome)
         for j, stage in enumerate(('metadata', 'shared_decision')):
             event = {'type': 'generation', 'stage': stage, 'run_id': 'parent',
-                     'attempts': [{'budget_attempt_id': 2*i+j+1, 'usage': usage}], 'error_type': None}
+                     'attempts': [{'budget_attempt_id': 2*i+j+2, 'usage': usage}], 'error_type': None}
             if i == 262 and stage == 'shared_decision':
                 event.update(error_type='AdapterError', output='{"new_tags_neighborhood":[["x"]}',
                              provider_response={'choices': [{'finish_reason': 'tool_calls'}]})
@@ -102,12 +102,12 @@ def parent(tmp_path, monkeypatch):
         db.execute('INSERT INTO phases VALUES (?,?,?,?,?,?)', ('history','history','{}','old-owner',1000000,'done'))
         db.execute('INSERT INTO phases VALUES (?,?,?,?,?,?)', ('parent', 'parent', json.dumps(auth), 'old-owner', 10000000, 'failed'))
         for i in range(526):
-            db.execute('INSERT INTO logical_calls VALUES (?,?,?)', (i+1, 'parent', ('metadata','shared_decision')[i%2]))
+            db.execute('INSERT INTO logical_calls VALUES (?,?,?)', (i+2, 'parent', ('metadata','shared_decision')[i%2]))
             db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,?,?)',
-                       (i+1, i+1, 'parent', 'hash', 'settled', 12, 319373, json.dumps(usage)))
-        db.execute('INSERT INTO logical_calls VALUES (?,?,?)',(527,'history','answer'))
+                       (i+2, i+2, 'parent', 'hash', 'settled', 12, 319373, json.dumps(usage)))
+        db.execute('INSERT INTO logical_calls VALUES (?,?,?)',(1,'history','answer'))
         db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,?,?)',
-                   (527,527,'history','hash','settled',12,319373,json.dumps(usage)))
+                   (1,1,'history','hash','settled',12,319373,json.dumps(usage)))
     return NS(root=tmp_path, path=directory/'phase.json', manifest=manifest, sources=sources,
               receipt=receipt, compat=compat, auth=auth, phase=phase, state=state, ledger=ledger)
 
@@ -353,6 +353,16 @@ def test_removing_earlier_failed_phase_cannot_reset_recovery_spending(parent):
         db.execute("DELETE FROM logical_calls WHERE approval_id='history'")
         db.execute("DELETE FROM phases WHERE approval_id='history'")
     with pytest.raises(ValueError,match='historical study charges'):
+        verified(parent)
+
+
+def test_later_spending_cannot_mask_missing_historical_charges(parent):
+    with sqlite3.connect(parent.ledger) as db:
+        db.execute("DELETE FROM attempts WHERE approval_id='history'")
+        db.execute("DELETE FROM logical_calls WHERE approval_id='history'")
+        db.execute("INSERT INTO logical_calls VALUES (528,'history','answer')")
+        db.execute("INSERT INTO attempts VALUES (528,528,'history','later','settled',1000,1000,'{}')")
+    with pytest.raises(ValueError,match='Historical ledger prefix'):
         verified(parent)
 
 

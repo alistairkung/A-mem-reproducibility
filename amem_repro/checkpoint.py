@@ -135,6 +135,17 @@ def verify_checkpoint(path, root, manifest, config, sources, receipt, compatibil
                               (approval['approval_id'],)).fetchall()
         logical = db.execute('SELECT COUNT(*) FROM logical_calls WHERE approval_id=?',
                              (approval['approval_id'],)).fetchone()[0]
+        last_logical = db.execute('SELECT MAX(id) FROM logical_calls WHERE approval_id=?',
+                                  (approval['approval_id'],)).fetchone()[0]
+        last_attempt = attempts[-1][0] if attempts else 0
+        historical_charge, historical_attempts = db.execute(
+            'SELECT COALESCE(SUM(charge),0),COUNT(*) FROM attempts WHERE id<=?', (last_attempt,)).fetchone()
+        historical_logical = db.execute('SELECT COUNT(*) FROM logical_calls WHERE id<=?',
+                                         (last_logical or 0,)).fetchone()[0]
+        if (historical_charge != phase['study_budget']['charged_or_reserved_microusd']
+                or historical_attempts != phase['study_budget']['physical_attempts']
+                or historical_logical != phase['study_budget']['logical_calls']):
+            raise ValueError('Historical ledger prefix differs from frozen study accounting')
     recorded = [a for e in generations for a in e['attempts']]
     if (len(attempts) != 526 or logical != 526 or len(recorded) != len(attempts)
             or any(row[0] != a['budget_attempt_id'] or row[1] != 'settled'
