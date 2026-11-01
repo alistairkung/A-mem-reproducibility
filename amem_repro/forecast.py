@@ -30,7 +30,7 @@ def _usd(value):
 
 
 def forecast_scope(pilot_events, pilot_summary, study_ledger_summary, *,
-                   pilot_reusable, safety_multiplier=2):
+                   pilot_reusable, safety_multiplier=2, retained_failure_sha256=None):
     """Recommend full/fallback/stop using usage only, pending separate approval.
 
     The caller verifies provenance before passing pilot_reusable=True. A reusable
@@ -55,10 +55,18 @@ def forecast_scope(pilot_events, pilot_summary, study_ledger_summary, *,
     totals = {stage: {"logical_calls": 0, "physical_attempts": 0,
                       "input_tokens": 0, "output_tokens": 0,
                       "cost": Decimal(0)} for stage in PILOT_COUNTS}
+    retained_failures = 0
     for event in pilot_events:
         if event.get("type", "generation") != "generation":
             continue
-        if event.get("error_type") or event.get("stage") not in totals:
+        retained = False
+        if event.get('error_type') and retained_failure_sha256 is not None:
+            from .config import fingerprint
+            retained = (fingerprint(event) == retained_failure_sha256
+                        and event['stage'] == 'shared_decision'
+                        and event['error_type'] == 'AdapterError')
+            retained_failures += int(retained)
+        if (event.get("error_type") and not retained) or event.get("stage") not in totals:
             raise ValueError("Failed or unknown pilot generation")
         stage = totals[event["stage"]]
         stage["logical_calls"] += 1
@@ -81,6 +89,8 @@ def forecast_scope(pilot_events, pilot_summary, study_ledger_summary, *,
             stage["cost"] += (inp * INPUT_RATE + out * OUTPUT_RATE) / MILLION
     if {stage: total["logical_calls"] for stage, total in totals.items()} != PILOT_COUNTS:
         raise ValueError("Pilot generation coverage differs from the fixed workload")
+    if retained_failure_sha256 is not None and retained_failures != 1:
+        raise ValueError('Exactly one verified parent failure must be retained')
     charged = study_ledger_summary.get("charged_or_reserved_microusd")
     if type(charged) is not int or charged < 0:
         raise ValueError("Study ledger must supply a nonnegative integer charge")

@@ -65,6 +65,7 @@ def run_manifest(
     run_id=None,
     token_counter=None,
     provider_contract_policy=STRICT_PROVIDER_POLICY,
+    checkpoint=None,
 ):
     """Run an approved manifest. Injected interfaces support deterministic offline contracts.
 
@@ -76,8 +77,11 @@ def run_manifest(
     validate_provider_policy(provider_contract_policy)
     if condition != "full":
         raise ValueError("Action gating is not implemented or authorized in T1–T4")
-    if execution_type not in ("fresh_build", "cached_qa"):
+    if execution_type not in ("fresh_build", "cached_qa", "checkpoint_recovery"):
         raise ValueError("This runner supports fresh_build and cached_qa; replay is T6")
+    if ((checkpoint is not None and execution_type not in ('checkpoint_recovery', 'cached_qa'))
+            or (checkpoint is None and execution_type == 'checkpoint_recovery')):
+        raise ValueError('Checkpoint state requires explicit recovery execution')
     if agent_factory is None and not paid_authorized:
         raise PermissionError("Separate paid execution approval is required")
     dataset_path = Path(dataset_path).resolve()
@@ -182,6 +186,8 @@ def run_manifest(
                 provider_contract_policy=provider_contract_policy,
             )
             identity["condition"] = condition
+            if checkpoint is not None:
+                identity['checkpoint'] = checkpoint['lineage']
             build_id = cache.path_for(identity).name
             active.clear()
             active.update(
@@ -189,7 +195,7 @@ def run_manifest(
                 conversation_id=conversation["original_id"],
                 build_id=build_id,
             )
-            if execution_type == "fresh_build" and cache.path_for(identity).exists():
+            if execution_type != "cached_qa" and cache.path_for(identity).exists():
                 raise ValueError(
                     "Fresh build already exists; approve a new independent repetition"
                 )
@@ -210,21 +216,38 @@ def run_manifest(
                         {
                             **failure,
                             **active,
-                            "origin_run_id": failure.get("run_id"),
+                            "origin_run_id": failure.get("origin_run_id", failure.get("run_id")),
                             "from_cache": True,
                         }
                     )
             else:
                 outcomes = []
+                prefix = []
+                if checkpoint is not None:
+                    restore_memory(agent.memory_system, checkpoint['state'], note_type=note_type)
+                    outcomes = copy.deepcopy(checkpoint['state']['outcomes'])
+                    prefix = [o['turn_id'] for o in outcomes]
+                    if prefix != conversation['turn_ids'][:len(prefix)]:
+                        raise ValueError('Checkpoint turn prefix differs')
+                    record({'type': 'checkpoint_restore', **checkpoint['lineage']})
+                    for index, failure in enumerate(checkpoint['failures']):
+                        ledger.record({**failure, **active, 'from_cache': True,
+                                       'inherited_from': 'checkpoint',
+                                       'origin_run_id': failure['run_id'],
+                                       'origin_failure_index': index})
                 parsed = parser.parse_conversation(sample["conversation"])
                 sessions = {
                     f"session_{key}": session
                     for key, session in parsed.sessions.items()
                 }
-                processed_turns = []
+                processed_turns = list(prefix)
+                turn_offset = 0
                 for session_key in conversation["session_keys"]:
                     session = sessions[session_key]
                     for turn in session.turns:
+                        turn_offset += 1
+                        if turn_offset <= len(prefix):
+                            continue
                         previous = _counts(agent)
                         before = {
                             key: {"context": note.context, "tags": list(note.tags)}

@@ -160,7 +160,7 @@ def _verified_phase(path, root):
 
 
 def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
-                  provider_contract_policy=STRICT_PROVIDER_POLICY):
+                  provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None):
     validate_provider_policy(provider_contract_policy)
     if phase not in PHASES:
         raise ValueError("Only separately approved compatibility and pilot phases are enabled")
@@ -184,31 +184,43 @@ def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
         previous = _verified_phase(compatibility, root)
         if previous["phase"] != "compatibility":
             raise ValueError("The pilot requires a compatibility receipt")
-        for key in ("config_sha256", "source_sha256", "preflight_sha256", "model", "endpoint",
-                    "provider_contract_policy", "max_output_tokens_by_stage"):
-            if previous["binding"].get(key) != binding[key]:
-                raise ValueError("Compatibility provenance differs; stop for review")
+        if checkpoint is None:
+            for key in ("config_sha256", "source_sha256", "preflight_sha256", "model", "endpoint",
+                        "provider_contract_policy", "max_output_tokens_by_stage"):
+                if previous["binding"].get(key) != binding[key]:
+                    raise ValueError("Compatibility provenance differs; stop for review")
+        else:
+            from .checkpoint import verify_checkpoint
+            recovered = verify_checkpoint(checkpoint, root, manifest, config, sources, receipt, previous)
+            if (recovered['phase']['binding']['provider_contract_policy'] != provider_contract_policy
+                    or recovered['phase']['binding']['max_output_tokens_by_stage'] != stage_output_limits()):
+                raise ValueError('Checkpoint provider policy differs')
+            binding['checkpoint'] = recovered['lineage']
         binding["compatibility_sha256"] = fingerprint(previous)
+    elif checkpoint is not None:
+        raise ValueError('Only the pilot supports checkpoint recovery')
     return config, manifest, sources, binding
 
 
 def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibility=None,
-               provider_contract_policy=STRICT_PROVIDER_POLICY):
+               provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None):
     root = Path(root)
     _, manifest, _, binding = _phase_inputs(
         phase, receipt, asset_root, root, compatibility,
         provider_contract_policy=provider_contract_policy,
+        checkpoint=checkpoint,
     )
     run_id = run_id or f"{phase}-{uuid.uuid4().hex[:12]}"
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run_id must be a safe, unique local artifact name")
     spec = PHASES[phase]
+    calls = binding.get('checkpoint', {}).get('remaining_logical_calls', spec['calls'])
     return {
         "approval_id": str(uuid.uuid4()), "approved": False,
         "approved_by": None, "approved_at": None, "run_id": run_id, "phase": phase,
         "binding": binding,
-        "limits": {"phase_usd": spec["cap"], "max_logical_calls": spec["calls"],
-                   "max_attempts": spec["calls"] * 3},
+        "limits": {"phase_usd": spec["cap"], "max_logical_calls": calls,
+                   "max_attempts": calls * 3},
         "pricing": {
             "pricing_id": "deepseek-flash-peak-2026-11-01",
             "source": "https://api-docs.deepseek.com/quick_start/pricing/",
@@ -221,7 +233,7 @@ def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibil
     }
 
 
-def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=None):
+def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=None, checkpoint=None):
     """No paid request occurs until explicit approval and all bindings verify.
 
     The caller supplies a reviewed approval artifact. Implementation permission,
@@ -238,6 +250,7 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
     config, manifest, sources, binding = _phase_inputs(
         approval["phase"], receipt, asset_root, root, compatibility,
         provider_contract_policy=provider_contract_policy,
+        checkpoint=checkpoint,
     )
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", approval["run_id"]):
         raise ValueError("Invalid run identity")
@@ -245,6 +258,16 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
     if output.exists():
         raise FileExistsError("Existing run requires separately approved recovery")
     validate_approval(approval, binding)
+    recovered = None
+    if checkpoint is not None:
+        from .checkpoint import verify_checkpoint
+        recovered = verify_checkpoint(checkpoint, root, manifest, config, sources, receipt,
+                                      _verified_phase(compatibility, root))
+        if (approval['limits']['max_logical_calls'] > binding['checkpoint']['remaining_logical_calls']
+                or approval['limits']['max_attempts'] > 3 * binding['checkpoint']['remaining_logical_calls']):
+            raise ValueError('Recovery request limits exceed remaining workload')
+    elif 'checkpoint' in approval['binding']:
+        raise ValueError('Checkpoint-bound approval requires its parent')
     if not os.environ.get("DEEPSEEK_API_KEY"):
         raise ValueError("DEEPSEEK_API_KEY is required in the environment")
     # A single fixed study ledger prevents a fresh per-run file resetting spending.
@@ -253,9 +276,13 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
     output.mkdir(parents=True)
     _save(output / "approval.json", approval)
     _save(output / "preflight.json", receipt)
+    if recovered is not None:
+        _save(output / 'checkpoint.json', recovered['lineage'])
     clients = []
     versions, fingerprints, schema_outcomes = set(), set(), {}
     deviations = {"completions": 0, "items": 0}
+    inherited_deviations = [e for e in recovered['failures']
+                           if e.get('kind') == 'provider_contract_deviation'] if recovered else []
     if compatibility is not None:
         previous = _verified_phase(compatibility, root)
         versions.update(previous["returned_models"])
@@ -302,6 +329,8 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
                 output_dir=output, cache_root=root / "artifacts/cache", source_hashes=sources,
                 agent_factory=factory, scorer=scorer, observer=observe, run_id=approval["run_id"],
                 provider_contract_policy=provider_contract_policy,
+                execution_type='checkpoint_recovery' if recovered else 'fresh_build',
+                checkpoint=recovered,
             )
             events = [json.loads(line) for line in (output / "events.jsonl").read_text().splitlines()]
             # The two views consume saved predictions and cannot make model calls.
@@ -356,6 +385,9 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             "provider_contract_policy": provider_contract_policy,
             "provider_contract_deviation_count": deviations["completions"],
             "validation_copy_transformed_item_count": deviations["items"],
+            'inherited_provider_contract_deviation_count': len(inherited_deviations),
+            'inherited_validation_copy_transformed_item_count': sum(
+                len(e['compatibility_deviation']['transformations']) for e in inherited_deviations),
             "expected_questions": manifest["totals"]["questions"],
             "completed_questions": summary["completed_questions"] if summary else 0,
             "error_type": error_type, "budget": budget,
@@ -363,7 +395,9 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             "schema_outcomes": schema_outcomes,
             "usable_for_next_phase": bool(summary and not budget["halted"]
                 and budget["unknown_attempts"] == 0
-                and budget["logical_calls"] == PHASES[approval["phase"]]["calls"]
+                and error_type is None and summary['status'] in ('complete', 'degraded')
+                and budget["logical_calls"] == binding.get('checkpoint', {}).get(
+                    'remaining_logical_calls', PHASES[approval["phase"]]["calls"])
                 and set(schema_outcomes) == {"metadata", "shared_decision", "query_keywords", "answer"}),
             "returned_models": sorted(versions), "system_fingerprints": sorted(fingerprints),
             "completed_at": datetime.now(timezone.utc).isoformat(),
@@ -395,10 +429,30 @@ def forecast_pilot(path, *, root=ROOT, provider_contract_policy=STRICT_PROVIDER_
     # Read generation records only. Do not read the saved scoring views or predictions.
     events = (json.loads(line) for line in (Path(path).parent / "events.jsonl").read_text().splitlines())
     generations = [event for event in events if event.get("type") == "generation"]
+    retained_failure = None
+    if 'checkpoint' in pilot['binding']:
+        from .checkpoint import verify_checkpoint
+        lineage = pilot['binding']['checkpoint']
+        def archived(run_id):
+            if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,79}', run_id):
+                raise ValueError('Invalid checkpoint archive identity')
+            return root / 'artifacts/runs' / run_id / 'phase.json'
+        child_start = json.loads((Path(path).parent / 'events.jsonl').open().readline())
+        recovered = verify_checkpoint(
+            archived(lineage['parent_run_id']), root, manifest, config,
+            child_start['source_hashes'], json.loads((Path(path).parent / 'preflight.json').read_text()),
+            _verified_phase(archived(lineage['compatibility_run_id']), root))
+        if recovered['lineage'] != lineage:
+            raise ValueError('Recovered pilot lineage differs')
+        generations = recovered['generations'] + generations
+        retained_failure = fingerprint(recovered['generations'][-1])
     result = forecast_scope(generations, pilot, ledger_summary(root / "artifacts/study-budget.sqlite"),
-                            pilot_reusable=reusable)
+                            pilot_reusable=reusable, retained_failure_sha256=retained_failure)
     result["pilot_receipt_sha256"] = fingerprint(pilot)
     result["provider_contract_policy"] = provider_contract_policy
+    if retained_failure is not None:
+        result['retained_checkpoint_failure_sha256'] = retained_failure
+        result['checkpoint'] = pilot['binding']['checkpoint']
     return result
 
 
@@ -414,6 +468,7 @@ def main():
     plan.add_argument("--assets", required=True)
     plan.add_argument("--preflight", required=True)
     plan.add_argument("--compatibility")
+    plan.add_argument('--checkpoint', help='Immutable incomplete conv-50 parent phase.json')
     plan.add_argument("--provider-contract-policy", choices=(STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY),
                       default=STRICT_PROVIDER_POLICY)
     plan.add_argument("--output", required=True)
@@ -422,6 +477,7 @@ def main():
     run.add_argument("--assets", required=True)
     run.add_argument("--preflight", required=True)
     run.add_argument("--compatibility")
+    run.add_argument('--checkpoint')
     forecast = sub.add_parser("forecast")
     forecast.add_argument("--pilot", required=True)
     forecast.add_argument("--provider-contract-policy", choices=(STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY),
@@ -435,13 +491,15 @@ def main():
     elif args.command == "plan":
         receipt = json.loads(Path(args.preflight).read_text())
         result = plan_phase(args.phase, receipt, args.assets, run_id=args.run_id,
-                            compatibility=args.compatibility, provider_contract_policy=args.provider_contract_policy)
+                            compatibility=args.compatibility, provider_contract_policy=args.provider_contract_policy,
+                            checkpoint=args.checkpoint)
         _save(args.output, result)
         print(json.dumps({"approved": False, "phase": args.phase, "limits": result["limits"]}))
     elif args.command == "execute":
         approval = json.loads(Path(args.approval).read_text())
         receipt = json.loads(Path(args.preflight).read_text())
-        print(json.dumps(execute_phase(approval, receipt, args.assets, compatibility=args.compatibility)))
+        print(json.dumps(execute_phase(approval, receipt, args.assets, compatibility=args.compatibility,
+                                      checkpoint=args.checkpoint)))
     else:
         result = forecast_pilot(args.pilot, provider_contract_policy=args.provider_contract_policy)
         _save(args.output, result)

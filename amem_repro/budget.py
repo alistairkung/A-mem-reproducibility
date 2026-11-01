@@ -92,6 +92,18 @@ def _validate(auth, binding):
         max_calls = {'compatibility':44, 'pilot':1544, 'baseline':15736}[phase]
         if logical > max_calls or attempts > 3*logical:
             raise BudgetStop('Request limits exceed the approved phase or retry protocol')
+        if 'checkpoint' in binding:
+            checkpoint = binding['checkpoint']
+            if (phase != 'pilot' or not isinstance(checkpoint, dict)
+                    or checkpoint.get('policy') != 'blk014-checkpoint-v1'
+                    or checkpoint.get('completed_turns') != 263
+                    or checkpoint.get('remaining_logical_calls') != 1018 or logical > 1018):
+                raise BudgetStop('Checkpoint request limits or policy differ')
+            for name in ('parent_phase_sha256', 'parent_snapshot_sha256',
+                         'parent_events_sha256', 'parent_source_sha256'):
+                digest = checkpoint.get(name)
+                if not isinstance(digest, str) or len(digest) != 64 or any(c not in '0123456789abcdef' for c in digest):
+                    raise BudgetStop('Checkpoint requires complete parent fingerprints')
         cap = _number(limits['phase_usd'], 'phase_usd')
         if cap > phase_max[phase]:
             raise BudgetStop('Phase ceiling exceeds the frozen allocation')
@@ -128,6 +140,9 @@ CREATE TABLE IF NOT EXISTS attempts (
  approval_id TEXT NOT NULL REFERENCES phases, request_sha256 TEXT NOT NULL,
  status TEXT NOT NULL, charge INTEGER NOT NULL, reservation INTEGER NOT NULL, usage_json TEXT
 );
+CREATE TABLE IF NOT EXISTS checkpoint_claims (
+ parent_phase_sha256 TEXT PRIMARY KEY, approval_id TEXT UNIQUE NOT NULL REFERENCES phases
+);
 '''
 
 
@@ -155,6 +170,11 @@ class PhasePermit:
                 raise BudgetStop('Phase already claimed; paid recovery requires a new explicit approval')
             db.execute('INSERT INTO phases VALUES (?,?,?,?,?,NULL)',
                        (self.approval_id, auth['run_id'], _canonical(auth), self.owner, cap))
+            if 'checkpoint' in binding:
+                parent = binding['checkpoint']['parent_phase_sha256']
+                if db.execute('SELECT 1 FROM checkpoint_claims WHERE parent_phase_sha256=?', (parent,)).fetchone():
+                    raise BudgetStop('Checkpoint already claimed; another recovery requires review')
+                db.execute('INSERT INTO checkpoint_claims VALUES (?,?)', (parent, self.approval_id))
 
     @contextmanager
     def _transaction(self, initialize=False):

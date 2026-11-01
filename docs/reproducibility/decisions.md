@@ -270,3 +270,52 @@ artifacts and the exact pilot command.
 run or execution exists. Obtain separate explicit pilot authorization and record a new approved file
 before execution. The full benchmark, further paid recovery and T6–T8 remain unauthorized. T5 remains
 open until its later approved pilot/baseline acceptance criteria are fulfilled.
+
+## Authorization — one conv-50 D9a pilot and cost-only forecast
+
+On 1 November 2026 the user explicitly authorized one pilot using the frozen
+`artifacts/pilot-conv50-d9a-plan.json`: full-mode conv-50, all 568 turns/204 questions,
+USD10 cap, 1,544 logical calls and at most 4,632 physical attempts including SDK retries.
+Preserve the reviewed D3a/D9a settings, source/preflight/compatibility bindings and fresh-build
+identity. Record approval in a new file without overwriting the unapproved plan. Retain every
+result, failure, partial artifact and incurred or reserved charge in the shared study ledger.
+
+After the pilot, use measured usage/cost to forecast remaining four-condition expenditure with
+already incurred costs and USD8 contingency. Inspect cost evidence for that decision, not comparative
+quality. A failed/incomplete pilot does not authorize automatic recovery or a forecast that assumes
+complete representative coverage. Stop before the full benchmark or T6–T8; neither those phases
+nor another paid pilot/recovery phase is authorized by this instruction.
+
+### Outcome — pilot incomplete; approval consumed
+
+`pilot-conv50-d9a` executed on merged main `c659856` with the approved immutable binding. It retained
+263 notes/outcomes and a 263×384 index before a shared-decision response failed JSON parsing.
+The response finished with `tool_calls` at 970/4,000 tokens; a missing outer array bracket makes this
+BLK-014, distinct from BLK-013 output-cap exhaustion. No repair or retry was applied. The following
+metadata event was blocked before transmission by the durable halt.
+
+The phase made 526 logical/physical requests, no retries, and answered zero of 204 questions.
+Conservative charge: USD0.739432; study total USD0.806717/592 requests, with zero unknown charges.
+Remaining balance is USD49.193283 including contingency, or USD41.193283 while preserving USD8.
+These are ledger balances, not approval for new spending or full/fallback affordability estimates.
+The existing cost forecaster rejects this incomplete pilot; no population change is made.
+
+All raw phase artifacts and historical ledger rows verify unchanged. The approved D3a deviations
+(176 completions/661 indices) survive the later failure; incomplete status takes precedence.
+The [pilot report](t5-pilot-conv50-d9a-20261101.md) records exact evidence and offline replay.
+This authorization is consumed. No further paid phase, full benchmark or T6–T8 was started.
+
+## Authorization — BLK-014 checkpoint engineering only
+
+The user approved implementation/offline tests and a PR for checkpoint recovery, preserving all 263
+notes, the failed evolution, stale index and parent provenance. Strict validation remains unchanged.
+No JSON repair or raw-malformed-response acceptance exception is approved. Paid continuation is not
+authorized; T6–T8 and main benchmark remain gated.
+
+The child must have a new immutable approval and phase identity, with the same shared study ledger
+and an exclusive durable claim on its parent checkpoint. Restore the exact saved prefix and begin at
+`D15:8`; do not regenerate note263 or its failed decision. New support-code/preflight fingerprints
+must remain explicit: the reviewed migration permits only checkpoint/runner/phase/forecast/budget
+support changes, while author files, provider adapter, scoring and scientific settings match the parent.
+Retain inherited failures/deviations and charges once; child completion is degraded and the parent
+remains incomplete. See the [recovery runbook](checkpoint-recovery.md).
