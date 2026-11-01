@@ -27,6 +27,8 @@ authorization in `docs/reproducibility/decisions.md` and the phase's immutable a
 The user authorized reviewed T5 fixes, commits/pushes, conditional PR #11 merge and one fresh bounded
 compatibility phase. Stop before the conv-50 pilot, full benchmark or T6–T8; these need separate approval.
 Preserve the frozen author files; add support code separately. A consumed phase approval cannot be reused.
+Before any further paid phase, read `docs/reproducibility/baseline-readiness.md`: the fresh phase was
+consumed by BLK-013, and another phase or an output-limit amendment requires a new explicit decision.
 
 ## Reproducibility Blocker Tracking
 

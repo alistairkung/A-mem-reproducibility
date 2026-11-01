@@ -198,3 +198,16 @@ other degradation; an incomplete/failed phase consumes this one authorization. O
 continue, but another paid phase needs a separate decision. After successful compatibility, verify
 runtime/assets/manifests/caches/results and prepare the exact unapproved 1,544-call conv-50 pilot plan
 and command. **Stop before the pilot or full benchmark**; both remain separately gated.
+
+## Execution record — fresh D3a phase incomplete
+
+PR #11 merged as `167470b` after BLK-012 correction, 247 offline tests/71 subtests and clear repeat
+Standards/Spec reviews. The authorized fresh phase `compatibility-d3a-20261101` then made 12 physical
+requests, charged a conservative USD0.008316 and completed zero QA. One D3a response was correctly
+admitted with unchanged input; the sixth evolution decision exhausted the frozen 1,000-token output
+limit and returned incomplete JSON (BLK-013). The phase halted, preserving all evidence and charges.
+
+The single fresh-phase authorization is consumed. No further paid recovery, pilot or full benchmark
+is authorized. A larger output limit would amend D9 and needs explicit approval; a retry under unchanged
+settings still needs separate paid-phase approval. The proposed change in the [readiness report](baseline-readiness.md)
+is pending, not an approved decision or implemented setting. Preserve both failed runs as historical evidence.
