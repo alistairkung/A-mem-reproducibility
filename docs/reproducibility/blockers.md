@@ -18,12 +18,15 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-010](#blk-010) | Released retrieval default differs from paper category settings | Accepted Limitation | T5, T8, interpretation | D6; runner default; paper Table 8 |
 | [BLK-011](#blk-011) | T5 execution is not connected to Langfuse tracing/export | Open | T5, T8 observability | Runtime call-path audit; verified synthetic trace |
 | [BLK-012](#blk-012) | Failed usage settlement triggers SDK regeneration | Resolved | T5 and later paid phases | Terminal settlement guard; SQLite fault/retry regressions |
+| [BLK-013](#blk-013) | Shared decision exhausts the frozen 1,000-token output limit | Open | T5 compatibility; baseline readiness | New incomplete phase; exact length-truncation replay |
 
 Before a paid run: **BLK-007 currently prevents compatibility acceptance and pilot progression**.
 BLK-001's query/answer contracts have not been exercised live. BLK-008 limits token-count claims;
 BLK-009 still requires a separately approved representative pilot and cost-only scope decision.
 BLK-011 requires actual runner wiring; a successful connection probe alone does not enable it.
 BLK-012's terminal settlement guard is verified offline; this does not authorize paid recovery.
+BLK-013 stopped the single fresh authorized phase. Another paid phase or a changed output limit needs
+an explicit decision; the conv-50 pilot is blocked. See [readiness evidence](baseline-readiness.md).
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -190,6 +193,7 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01, archive check: artifact hash inventory verifies; follow-up suite records 132 tests/71 subtests passed. No recovery request or proposed repair was executed.
   - 2026-11-01, focused offline investigation: reconstruct the exact pre-decision prompt and pass the raw response to the original parser. Its state and embedding documents match an integer-only control; both counters advance 3→4, while strict rejection stays 3. Added 38 characterization tests; branch suite 92 tests/32 subtests passes. See the [proposal and schema audit](blk-007-offline-investigation.md). A field-scoped validation-copy policy is proposed only; no adapter fix or model request was made. All nine original evidence files remain byte-identical.
   - 2026-11-01, user-approved D3a implementation/offline tests (`48bc2d1`): add opt-in `canonical-index-strings-v1` for canonical ASCII strings in this field only. Validate a copy and return raw arguments unchanged; retain strict default, record hashes/type violations and mark affected runs degraded. Full offline suite: 238 tests/71 subtests passed, including the 44-call mocked phase and frozen-parser state/retrieval/counter comparisons. SDK MockTransport replay of the exact failing response preserves the serialized request and argument bytes. See [implementation evidence and remaining gate](blk-007-compatibility-review.md). Twenty historical evidence files remain byte-identical; no model requests, recovery or pilot occurred.
+  - 2026-11-01, separately authorized fresh phase `compatibility-d3a-20261101` on merged PR #11: the fifth shared decision's string indices were admitted with raw/copy hashes and unchanged parser input. One completion/two items were audited and retained after later failure. The sixth decision truncated at the frozen output limit (BLK-013), so the run is incomplete and BLK-007 remains Investigating. No automatic recovery or pilot followed.
 - **Final resolution or limitation:** **Unresolved.** Five notes/index rows preserved, zero of four QA completed; conservative peak-rate ledger cost USD0.005851, with no unknown charges. Response alias `deepseek-flash`, fingerprint `bc19ba97cbe016479903222bb1578db6`; immutable served weights not independently verified.
 - **Verification:** Rejection/spending stop and the approved validation-copy policy are verified offline. Hosted compatibility is not. Future resolution needs a separately authorized live test with the unchanged wire schema and explicitly selected policy, recording residual reliability limits. Offline replay cannot resolve the blocker or erase the provider-contract violation.
 - **Research significance:** A documented strict API contract and HTTP success do not establish reliable schema compliance; preserving rejected outputs is essential to an honest reproduction diary.
@@ -298,3 +302,24 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Terminal accounting failures cannot regenerate a response or reuse the permit. The original reservation and response evidence survive; phase halt is committed separately. If SQLite remains unwritable, an irreversible local latch and the already-durable one-shot phase claim prevent continuation/restart; summaries explicitly report `halt_persisted:false` and the persistence error type. This does not pretend a failed halt write succeeded. Historical initial reproducer (two attempts, USD0.315785, no halt) and original paid-run evidence remain unchanged.
 - **Verification:** Update/commit fault tests prove one transmission, USD0.315773 retained reservation, original response, durable halt and denied continuation/restart. Halt-write/commit failure tests verify the local fallback and truthful persistence diagnostics; genuine transport/provider retry tests remain green. SQLite transaction and SDK integration tests run with sockets disabled; no paid request was used to verify the fix.
 - **Research significance:** Durable cost reservation and correct retry classification are separate requirements. A financially conservative ledger can still cause scientifically uncontrolled resampling when local accounting exceptions enter a provider's retry machinery.
+
+## BLK-013
+
+- **ID:** BLK-013
+- **Title:** Shared decision exhausts the frozen 1,000-token output limit.
+- **Status:** Open
+- **First observed:** 2026-11-01, fresh authorized T5 phase `compatibility-d3a-20261101`, merged source `167470b`.
+- **Category:** Provider compatibility
+- **Expected behaviour:** Complete original-schema output within the frozen D9 generation settings, processing all 18 turns and four QA before compatibility acceptance.
+- **Observed behaviour:** The sixth shared decision returned HTTP200, `finish_reason=length`, exactly 1,000 output tokens and incomplete tool-argument JSON ending inside a neighbor-tag string. Twelve physical requests were charged; the next metadata attempt was blocked before transmission. Six notes were preserved, zero QA completed.
+- **Evidence:** [Readiness report](baseline-readiness.md); safe local `artifacts/runs/compatibility-d3a-20261101/` and `artifacts/compatibility-d3a-20261101-truncation-reproducer.json`. The exact request retains max_tokens=1000, temperature 0.7, disabled thinking, original schema/prompt. Failed arguments hash `26708080e3e5a0edb08a3f62d9e4265d3eebab088015c6b45526e88211037a9e`.
+- **Root cause:** **Confirmed immediate cause:** output allowance exhausted before valid JSON completion. **Supported explanation, not a universal guarantee:** fuller neighbor payloads and repeated metadata enrichment increase output demand; observed decision token counts were 149, 262, 409, 569, 778, 1000 for zero through five neighbors. No adapter truncation or altered generation cap was found. This differs from BLK-007's complete-but-wrong-type response.
+- **Impact:** Compatibility is incomplete, BLK-007 cannot close, and the pilot cannot be planned as ready. Phase charge USD0.008316 remains recorded; cumulative study charge USD0.014167 includes both failed phases. No benchmark score exists.
+- **Options considered:** Proposed controlled D9 amendment: raise only shared-decision output allowance uniformly across arms, with updated hard reservations and a separately approved fresh phase. An unchanged-settings retry also requires separate approval and may recur. Prompt/schema/parser repair or automatic semantic retries are outside the approved protocol and were not attempted.
+- **Resolution attempts:**
+  - 2026-11-01: retain full received request/response, partial memory/index, settled costs and audited D3a deviation. Verify phase inventory, original 19 historical files and the first ten ledger attempts/charge.
+  - 2026-11-01: exact offline SDK MockTransport replay confirms identical request, truncated response preservation, rejection, terminal halt and blocked subsequent transmission. Pilot planning against the incomplete receipt rejects before execution.
+  - 2026-11-01: independent offline source/output audit confirms output growth and original max_tokens=1000. Prepare a proposed 4,000-token shared-decision amendment plus one further USD2 phase for explicit decision; neither change nor new phase has been executed.
+- **Final resolution or limitation:** **Unresolved; material experimental/recovery decision required.** The single fresh live-phase authorization is consumed. Baseline readiness has not been achieved; no pilot/full benchmark or T6–T8 work was started.
+- **Verification:** Failure and safe stop are verified, not successful compatibility. Existing truncation tests and exact saved-response replay show the current adapter correctly rejects incomplete output; increasing the cap or paying for another run cannot be inferred from unspent funds.
+- **Research significance:** Preserving a paper's nominal generation cap under a model substitution can make the released structured-output algorithm operationally infeasible. Output growth, provider representation compatibility and spending safety are separate reproducibility constraints.
