@@ -1,16 +1,15 @@
 # T5: bounded compatibility and cost pilot
 
-Status: both previous compatibility phases are incomplete and their authorizations consumed. The first
-failed on string connection indices; the second passed that D3a exception but truncated a shared
-decision at 1,000 tokens (BLK-013). Preserve both failures. See the [first attempt report](t5-compatibility-20261101.md)
-and [current readiness record](baseline-readiness.md).
+Status: `compatibility-d9a-20261101` completed the 18-turn/four-question fixture under reviewed D9a
+settings. Its degraded status is solely seven audited D3a completions/19 string indices: 44 physical
+requests, no retries, USD0.053118 conservative phase charge. BLK-007 is Mitigated; BLK-013 is Resolved
+for this fixture. The two earlier failed runs remain unchanged. See the [current readiness record](baseline-readiness.md).
 
-The user approved D9a: shared decisions may output 4,000 tokens; metadata, query keywords and answers
-remain at 1,000. Output policy `d9a-shared-decision-4000-v1` applies identically across all arms without
-changing prompts, schemas, parsers or temperatures. Exactly **one further** USD2 compatibility phase
-is authorized after offline tests, review and refreshed preflight. It has not run; no approved plan
-exists yet. See [D9a authority](decisions.md#d9a--approved-shared-decision-output-allowance-and-one-fresh-verification-phase).
-BLK-007 and BLK-013 remain Investigating. Pilot/main execution and another recovery phase remain gated.
+D9a permits 4,000 shared-decision output tokens and 1,000 elsewhere under output policy
+`d9a-shared-decision-4000-v1`, uniformly across arms with original prompts/schemas/parsers/temperatures.
+All three phase authorizations are consumed. The user authorized PR #13's reviewed changes for merge;
+no merge commit is claimed here. A verified **unapproved** conv-50 pilot plan is prepared, but pilot/main
+execution and another recovery phase require separate approval. See [D9a authority](decisions.md#d9a--approved-shared-decision-output-allowance-and-one-fresh-verification-phase).
 Issue: [T5 / #5](https://github.com/alistairkung/A-mem-reproducibility/issues/5).
 The [frozen protocol](experimental-protocol.md), D1–D13 and approved D3a/D9a amendments remain the research authority.
 
@@ -81,6 +80,9 @@ its text-context counts are explicitly estimates (`exact=False`). API usage supp
 billing counts. Hosted parity and strict beta acceptance require live evidence.
 
 ## Review a concrete phase plan
+
+The compatibility commands below document the already consumed D9a workflow; they do not authorize
+another fixture. For the prepared conv-50 pilot plan and future command, use the dedicated section below.
 
 ```sh
 .venv/bin/python -m amem_repro.phases plan --phase compatibility \
@@ -191,18 +193,39 @@ in this command.
 
 | T5 criterion | Current evidence / remaining gate |
 | --- | --- |
-| Offline compatibility first; separate paid approvals | Offline checks pass; first fixture approved and stopped; pilot approval not obtained |
-| Archive four live schema outcomes and untouched full mode | Five metadata/four decision outputs valid, one decision invalid; query/answer and baseline pending |
-| Measure cost, latency, retries and context expansion | Partial fixture usage/latency/cost archived; representative pilot evidence still pending |
+| Offline compatibility first; separate paid approvals | D9a tests/reviews and live fixture pass; all fixture approvals consumed; pilot approval pending |
+| Archive four live schema outcomes and untouched full mode | 18 metadata/18 decisions/4 query/4 answer calls, raw arguments and complete fixture state verified; benchmark baseline pending |
+| Measure cost, latency, retries and context expansion | Complete functional fixture measurements archived; representative pilot evidence still pending |
 | Cost-only full/fallback choice within USD50 | Forecast tested; actual pilot and explicit main decision still pending |
 | Fresh builds, one repetition, no truncation/tuning | Original full mode only; no repetition/recovery automation |
 | Reuse valid pilot, preserve failures, avoid duplicate charges | Provenance receipts and forecast credit implemented; main baseline orchestration awaits scope decision |
 
 T5 must remain open until the approved live phases and selected original baseline are archived. T6/T7
-action refactoring remains blocked. D9a authorizes only one further fresh bounded compatibility phase
-after its engineering gates. Pilot/main execution, another recovery phase and additional repetitions
-still require separate approval. A complete/degraded fixture is accepted only under the documented
-D3a audit and D9a settings; other degradation requires investigation before acceptance.
+action refactoring remains blocked. The single D9a phase has succeeded and its authorization is
+consumed. Pilot/main execution, another recovery phase and additional repetitions require separate
+approval. The fixture was accepted under the documented D3a audit and D9a settings; its four scores
+are functional evidence, not a benchmark quality estimate.
+
+## Prepared conv-50 pilot — separate authorization required
+
+`artifacts/pilot-conv50-d9a-plan.json` is `approved:false`: 568 turns, 204 original QA, 1,544 logical
+calls, at most 4,632 physical attempts and a USD10 hard cap. Its source/configuration/preflight,
+D3a policy, stage caps and verified compatibility receipt match the completed fixture. No pilot cache,
+run directory or execution exists. A 4,000-token cap and a tiny fixture's cost do not guarantee full
+pilot feasibility or the later four-condition budget.
+
+After separate explicit pilot approval, create `artifacts/pilot-conv50-d9a-approved.json` from the exact
+reviewed plan with approval identity/time. That approved file does not exist at this checkpoint.
+Configure `DEEPSEEK_API_KEY` privately in the process environment; the CLI never loads `.env`.
+The future command is **not executed**:
+
+```sh
+.venv/bin/python -m amem_repro.phases execute \
+  --assets artifacts/assets \
+  --preflight artifacts/compatibility-d9a-preflight.json \
+  --compatibility artifacts/runs/compatibility-d9a-20261101/phase.json \
+  --approval artifacts/pilot-conv50-d9a-approved.json
+```
 
 ## BLK-012 correction and final review
 
@@ -215,5 +238,5 @@ successful halt write. Genuine 429/503/transport retries retain the existing SDK
 Full offline suite: **247 tests and 71 subtests passed**. Repeat Standards review: no actionable defect,
 independent 26-test focused run passed. Repeat Spec review: no unmet safety requirement, independent
 111-test/39-subtest focused run passed. Existing schemas/raw return, later-deviation persistence, asset
-integrity and manifest hashes were checked. BLK-012 is Resolved; this does not resolve BLK-007 live
-compatibility or authorize the pilot. Safe local evidence: `artifacts/blk012-fix/`.
+integrity and manifest hashes were checked. BLK-012 is Resolved. D9a's later live verification mitigates
+BLK-007 as recorded above; pilot authorization remains separate. Safe local evidence: `artifacts/blk012-fix/`.

@@ -244,3 +244,29 @@ and BLK-007 remains Investigating until supported by the fresh live result. If t
 preserve it and investigate offline; another paid recovery needs a new explicit decision. The ongoing
 baseline-readiness task permits T5 engineering, commits/pushes and reviews; the conv-50 pilot, full
 benchmark and T6–T8 remain unauthorized.
+
+## Execution record — D9a fixture verified; pilot approval pending
+
+The authorized phase `compatibility-d9a-20261101` completed all 18 turns and four original questions
+under reviewed D9a implementation `4e7f82b`, source bundle
+`02dc368e77f1a1e36d7d2deeffe1e6b0c9a7e8de9e715864852566e704ad7285`. It made 44 logical/physical
+requests with zero retries or unknown charges. Conservative phase charge: USD0.053118; cumulative
+study charge: USD0.067285 across 66 physical requests, retaining both earlier failed phases.
+
+Status is **degraded solely by seven audited D3a completions/19 string indices**. All 44 original
+argument strings, schema/stage settings and relevant hashes verify. All 18 notes/outcomes and 18×384
+index rows are preserved; evolution counter 17. Both scoring views use the same four saved predictions
+without metric failures. Maximum shared-decision output was 1,572 tokens; this verifies the fixture,
+not a guarantee that 4,000 will suffice throughout the pilot. This functional fixture is not a quality
+benchmark. BLK-007 is Mitigated; BLK-013 is Resolved for this fixture under D9a; BLK-012 stays Resolved.
+
+The D9a phase authorization is now consumed. The user approved PR #13 for merge after its successful
+verification; no PR #13 merge commit is claimed at this checkpoint. Offline suite: 268 tests/92 subtests,
+with clear independent Standards/Spec reviews. See [readiness evidence](baseline-readiness.md) for
+artifacts and the exact pilot command.
+
+`artifacts/pilot-conv50-d9a-plan.json` is a verified **unapproved** plan: complete conv-50, 568 turns,
+204 original QA, 1,544 logical calls, at most 4,632 physical attempts and USD10 cap. No pilot cache,
+run or execution exists. Obtain separate explicit pilot authorization and record a new approved file
+before execution. The full benchmark, further paid recovery and T6–T8 remain unauthorized. T5 remains
+open until its later approved pilot/baseline acceptance criteria are fulfilled.

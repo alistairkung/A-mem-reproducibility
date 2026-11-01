@@ -10,9 +10,11 @@ Work breakdown: [implementation-tickets.md](implementation-tickets.md).
 Current authorization covers T5 engineering through baseline readiness, commits/pushes, offline tests
 and reviews. PR #11 and the blocked-readiness documentation in PR #12 are merged. The user approved
 [D9a](decisions.md#d9a--approved-shared-decision-output-allowance-and-one-fresh-verification-phase)
-and exactly one further bounded compatibility phase after its offline/review/preflight gates pass.
-Use a new immutable approval/phase identity; both previous failed phases remain consumed. The pilot,
-main execution, further paid recovery and T6–T8 remain separately gated. Stop at baseline readiness.
+and the bounded D9a fixture has now succeeded with degradation solely from audited D3a deviations.
+That authorization and both earlier failed-phase approvals are consumed. PR #13's reviewed D9a changes
+are authorized for merge; its merge is not claimed here. The conv-50 pilot has a verified unapproved
+plan and still requires separate explicit authorization. Main execution, further paid recovery and
+T6–T8 remain separately gated. Stop at baseline readiness.
 Keep all work inside this repository; the separate FTEC5660 HW3 repository is out of scope.
 Credentials stay in the environment and outside code, public records, logs and committed artifacts.
 
@@ -69,8 +71,10 @@ use the same stage limits in every arm and label original failed results separat
 policy and stage-cap map to approval, request validation, run/cache identity and reporting. Pricing
 validation uses a 4,000-token bound, with per-attempt conservative reservations of 319,373 microUSD for
 shared decisions and 315,773 for other stages. Phase/study caps and retry limits remain unchanged.
-Offline verification and the new live fixture must precede compatibility acceptance; a higher limit
-does not establish that output growth will fit it throughout conv-50.
+Offline verification and the D9a live fixture establish functional compatibility for the frozen
+18-turn/four-question fixture. Its maximum shared-decision output was 1,572 tokens; a higher limit
+does not establish that output growth will fit it throughout conv-50. Preserve the earlier failed
+1,000-token runs and identify D9a as a controlled generation-setting deviation.
 
 At discovery, the [provider model documentation](https://api-docs.deepseek.com/quick_start/pricing/)
 mapped this identifier to DeepSeek-V4.1-Flash-1017. Record the actual request ID, endpoint, model-version

@@ -19,6 +19,11 @@ The user later approved only the USD2 compatibility fixture. Its first attempt i
 a provider schema violation; see the [archived findings](t5-compatibility-20261101.md). T5 stays open,
 and pilot/main/recovery remain unauthorized.
 
+Current checkpoint: the separately approved D9a fixture completed all 18 turns/four questions with
+audited type-policy degradation only. The exact conv-50 plan is prepared but unapproved; see
+[baseline readiness](baseline-readiness.md). T5 remains open for its later pilot/baseline criteria;
+the pilot, full benchmark, further recovery and T6–T8 have not been authorized or executed.
+
 ## Tracker and dependency map
 
 | Ticket | GitHub issue / deliverable | Direct blockers |

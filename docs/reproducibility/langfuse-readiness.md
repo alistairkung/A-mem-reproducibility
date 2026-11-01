@@ -1,5 +1,24 @@
 # Langfuse readiness before the next paid phase
 
+## Verified D9a saved-result import — 1 November 2026
+
+After the successful `compatibility-d9a-20261101` fixture, the existing locked SDK 5.1.0 exporter
+created two saved-result experiments and the modern CLI Observations API returned all eight question
+traces. Condition/population/repetition, original question IDs, predictions, both scoring-policy IDs,
+D3a/D9a policy metadata, source hash, original degraded status/deviation count and USD0.053118 phase
+cost metadata were checked. No LLM evaluator or model call was made; the ledger and immutable phase
+artifacts are unchanged. Import usage/cost fields are empty, with actual inference usage/cost in the
+explicitly labelled original-phase metadata/local artifacts. Import timing is not inference timing.
+
+- [Corrected experiment](https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=a2ca1a936b9b2427)
+- [Historical experiment](https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=f00c6621e4195c75)
+
+Safe local receipts: `artifacts/compatibility-d9a-langfuse-export.json` and
+`artifacts/compatibility-d9a-langfuse-verified.json`; response headers and SDK project-key attributes
+are excluded. This verifies the optional reporting path. BLK-011 remains Open because automatic
+construction-time generation tracing is still unwired; local artifacts remain authoritative.
+The following configuration/initial-failure notes are retained as history.
+
 Checked 1 November 2026, Hong Kong time. Uses the existing locked **Langfuse Python 5.1.0**; no
 dependency, `.env`, model/provider or evaluation change was made.
 
