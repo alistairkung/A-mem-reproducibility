@@ -1,0 +1,94 @@
+{
+  "manifest_version": 1,
+  "protocol_id": "amem-controlled-reproduction-v1",
+  "scope": "smoke",
+  "dataset_path": "data/locomo10.json",
+  "dataset_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "conversations": [
+    {
+      "original_id": "conv-26",
+      "sample_index": 0,
+      "session_keys": [
+        "session_1"
+      ],
+      "turn_ids": [
+        "D1:1",
+        "D1:2",
+        "D1:3",
+        "D1:4",
+        "D1:5",
+        "D1:6",
+        "D1:7",
+        "D1:8",
+        "D1:9",
+        "D1:10",
+        "D1:11",
+        "D1:12",
+        "D1:13",
+        "D1:14",
+        "D1:15",
+        "D1:16",
+        "D1:17",
+        "D1:18"
+      ],
+      "question_indices": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "questions": [
+        {
+          "question_id": "conv-26:qa:0",
+          "original_qa_index": 0,
+          "category": 2,
+          "question_sha256": "db23cff112433bc3f25a9807266bec8880a28e9960e82494cdb341841c24fb77",
+          "answer": "7 May 2023",
+          "adversarial_answer": null,
+          "evidence": [
+            "D1:3"
+          ]
+        },
+        {
+          "question_id": "conv-26:qa:1",
+          "original_qa_index": 1,
+          "category": 2,
+          "question_sha256": "3fe8fabebce9572de230b407486d4edb6ce86ba1a70966371cfe39af18c3dc8b",
+          "answer": 2022,
+          "adversarial_answer": null,
+          "evidence": [
+            "D1:12"
+          ]
+        },
+        {
+          "question_id": "conv-26:qa:2",
+          "original_qa_index": 2,
+          "category": 3,
+          "question_sha256": "a23bf35eea31573780dcde5f871d18508783b6a99c91956662be3d681bf003af",
+          "answer": "Psychology, counseling certification",
+          "adversarial_answer": null,
+          "evidence": [
+            "D1:9",
+            "D1:11"
+          ]
+        },
+        {
+          "question_id": "conv-26:qa:4",
+          "original_qa_index": 4,
+          "category": 1,
+          "question_sha256": "557073e870d0eab54bd19b0b8eae378ddeee639da133935d995abb398a709edd",
+          "answer": "Transgender woman",
+          "adversarial_answer": null,
+          "evidence": [
+            "D1:5"
+          ]
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "conversations": 1,
+    "turns": 18,
+    "questions": 4
+  }
+}
