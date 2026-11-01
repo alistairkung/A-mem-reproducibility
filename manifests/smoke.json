@@ -1,0 +1,28 @@
+{
+  "manifest_version": 2,
+  "protocol_id": "amem-controlled-reproduction-v1",
+  "scope": "smoke",
+  "dataset_path": "data/locomo10.json",
+  "dataset_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "selection": {
+    "method": "first-session-evidence-contained",
+    "question_index_basis": "original-zero-based",
+    "session_order": "original-dataset-order"
+  },
+  "conversations": [
+    {
+      "original_id": "conv-26",
+      "sample_index": 0,
+      "session_keys": [
+        "session_1"
+      ],
+      "question_indices": [0, 1, 2, 4]
+    }
+  ],
+  "totals": {
+    "conversations": 1,
+    "turns": 18,
+    "questions": 4
+  },
+  "expanded_sha256": "d4e5652bcc8e7f3c5054c1f6c4547906b130e36bb2e21b7cf50c40a85153ec99"
+}

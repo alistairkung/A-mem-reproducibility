@@ -1,0 +1,70 @@
+{
+  "protocol_id": "amem-controlled-reproduction-v1",
+  "model": {
+    "id": "deepseek-flash",
+    "base_url": "https://api.deepseek.com/beta",
+    "route": "/chat/completions",
+    "thinking": "disabled",
+    "documented_version": "DeepSeek-V4.1-Flash-1017",
+    "immutable_weights_pin": false
+  },
+  "generation": {
+    "temperature": 0.7,
+    "temperature_c5": 0.5,
+    "max_tokens": 1000,
+    "stream": false,
+    "concurrency": 1
+  },
+  "transport": {
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "semantic_retries": 0
+  },
+  "retrieval": {
+    "answer_k": 10,
+    "construction_k": 5,
+    "refresh_index": false
+  },
+  "memory": {
+    "evo_threshold": 100,
+    "counter_policy": "positive-decision",
+    "initial_metadata": true
+  },
+  "conditions": {
+    "neither": {
+      "strengthen": false,
+      "update_neighbor": false
+    },
+    "linking_only": {
+      "strengthen": true,
+      "update_neighbor": false
+    },
+    "evolution_only": {
+      "strengthen": false,
+      "update_neighbor": true
+    },
+    "full": {
+      "strengthen": true,
+      "update_neighbor": true
+    }
+  },
+  "selection_seed": 42,
+  "option_order_seed": 42,
+  "build_repetitions": 1,
+  "scoring_policies": [
+    "author-corrected-v1",
+    "author-legacy-c5-v1"
+  ],
+  "budget": {
+    "ceiling_usd": 50,
+    "contingency_usd": 8,
+    "functional_allocation_usd": [
+      1,
+      2
+    ],
+    "pilot_allocation_usd": [
+      5,
+      10
+    ]
+  }
+}

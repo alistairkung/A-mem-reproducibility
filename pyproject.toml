@@ -1,0 +1,23 @@
+[project]
+name = "amem-repro"
+version = "0.1.0"
+description = "Offline reproducibility support for the frozen A-MEM release"
+requires-python = ">=3.11,<3.13"
+dependencies = []
+
+[project.optional-dependencies]
+author = [
+  "numpy", "sentence-transformers", "scikit-learn", "torch", "transformers",
+  "nltk", "rank-bm25", "openai", "litellm", "ollama", "rouge-score", "bert-score",
+  "tqdm", "pandas", "python-dotenv", "requests"
+]
+provider = ["openai", "jsonschema"]
+reporting = ["langfuse==5.1.0"]
+test = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.uv]
+package = false

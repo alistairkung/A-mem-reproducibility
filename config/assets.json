@@ -1,0 +1,43 @@
+{
+  "asset_manifest_version": 1,
+  "preparation_status": "not-downloaded-or-runtime-verified; T5 preflight must verify required local assets",
+  "assets": [
+    {
+      "purpose": "retrieval and SBERT metrics",
+      "repository": "sentence-transformers/all-MiniLM-L6-v2",
+      "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "status": "repository-metadata-pinned; local asset files not downloaded/verified"
+    },
+    {
+      "purpose": "BERTScore English default candidate",
+      "repository": "FacebookAI/roberta-large",
+      "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59",
+      "status": "repository-metadata-pinned; verify installed bert-score default and local assets before T5"
+    },
+    {
+      "purpose": "DeepSeek context tokenizer candidate",
+      "repository": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "revision": "314113f8a7dadb388215396ba5fbee2c610a04d6",
+      "status": "candidate only; equivalence to hosted DeepSeek-V4.1-Flash-1017 tokenization unverified"
+    },
+    {
+      "purpose": "NLTK metric/tokenizer data",
+      "resources": [
+        "punkt",
+        "punkt_tab",
+        "wordnet",
+        "omw-1.4"
+      ],
+      "revision": null,
+      "status": "unresolved; exact resource archives/checksums and required installed-version resources must be frozen before T5"
+    }
+  ],
+  "metadata_source": "https://huggingface.co/api/models/{repository}",
+  "verified_metadata_date": "2026-11-01",
+  "rules": [
+    "No model weights or tokenizers were downloaded for offline unit tests.",
+    "Use prepared verified assets with network/model downloads disabled during experiment execution.",
+    "Do not claim actual DeepSeek context-token counts until the counting method is validated.",
+    "Hosted model ID and provider fingerprint are recorded independently of Hugging Face candidate revisions."
+  ]
+}
