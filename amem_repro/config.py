@@ -113,6 +113,18 @@ def load_config(path=None):
     return config
 
 
+def verified_author_bytes(repo_root, relative_path):
+    """Return only the exact bytes checked against the frozen Git blob."""
+    root = Path(repo_root)
+    expected = subprocess.check_output(
+        ["git", "show", f"{AUTHOR_REVISION}:{relative_path}"], cwd=root
+    )
+    current = (root / relative_path).read_bytes()
+    if current != expected:
+        raise ValueError(f"Frozen author source changed: {relative_path}")
+    return current
+
+
 def source_fingerprint(repo_root):
     """Verify frozen author files against Git blobs without importing their code."""
     root = Path(repo_root)
@@ -127,12 +139,7 @@ def source_fingerprint(repo_root):
     ]
     hashes = {}
     for path in paths:
-        expected = subprocess.check_output(
-            ["git", "show", f"{AUTHOR_REVISION}:{path}"], cwd=root
-        )
-        current = (root / path).read_bytes()
-        if current != expected:
-            raise ValueError(f"Frozen author source changed: {path}")
+        current = verified_author_bytes(root, path)
         hashes[path] = hashlib.sha256(current).hexdigest()
     support = [*root.glob("amem_repro/**/*.py"), *root.glob("config/*.json")]
     support += [

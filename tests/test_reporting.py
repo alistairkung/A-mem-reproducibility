@@ -54,7 +54,13 @@ class ReportingTests(unittest.TestCase):
             client=client,
             export_authorized=True,
             evaluation_factory=lambda **k: k,
-            metadata={"run_id": "r1"},
+            metadata={
+                "run_id": "r1",
+                "condition": "full",
+                "population": "pilot",
+                "manifest_sha256": "a" * 64,
+                "repetition": 0,
+            },
         )
         self.assertEqual(result[CORRECTED], "saved-url")
         self.assertEqual(
@@ -85,3 +91,90 @@ class ExportSafetyTests(unittest.TestCase):
                 metadata={"api_key": "fixture"},
             )
         self.assertEqual(client.runs, [])
+
+
+class ExperimentIdentityTests(unittest.TestCase):
+    def test_each_study_dimension_changes_export_identity(self):
+        identity = {
+            "run_id": "r1",
+            "condition": "full",
+            "population": "pilot",
+            "manifest_sha256": "a" * 64,
+            "repetition": 0,
+        }
+        identities = [
+            identity,
+            {**identity, "condition": "linking_only"},
+            {**identity, "population": "fallback"},
+            {**identity, "manifest_sha256": "b" * 64},
+            {**identity, "repetition": 1},
+            {**identity, "run_id": "r2"},
+        ]
+        names = []
+        for metadata in identities:
+            client = FakeClient()
+            export_experiments(
+                ReportingTests().views(),
+                client=client,
+                export_authorized=True,
+                evaluation_factory=lambda **k: k,
+                metadata=metadata,
+            )
+            run = client.runs[0]
+            names.append((run["name"], run["run_name"]))
+            self.assertEqual(run["metadata"]["condition"], metadata["condition"])
+            self.assertEqual(
+                run["data"][0]["metadata"]["manifest_sha256"],
+                metadata["manifest_sha256"],
+            )
+        self.assertEqual(len(names), len(set(names)))
+        views = ReportingTests().views()
+        from amem_repro.scoring import HISTORICAL
+
+        views[HISTORICAL] = views.pop(CORRECTED)
+        views[HISTORICAL]["scoring_policy"] = HISTORICAL
+        client = FakeClient()
+        export_experiments(
+            views,
+            client=client,
+            export_authorized=True,
+            evaluation_factory=lambda **k: k,
+            metadata=identity,
+        )
+        self.assertNotIn((client.runs[0]["name"], client.runs[0]["run_name"]), names)
+
+    def test_missing_or_invalid_identity_rejected_before_sdk_initialization(self):
+        from unittest.mock import patch
+
+        valid = {
+            "run_id": "r1",
+            "condition": "full",
+            "population": "pilot",
+            "manifest_sha256": "a" * 64,
+            "repetition": 0,
+        }
+        for field in valid:
+            metadata = {k: v for k, v in valid.items() if k != field}
+            with (
+                self.subTest(missing=field),
+                patch(
+                    "langfuse.get_client", side_effect=AssertionError("client created")
+                ),
+            ):
+                with self.assertRaises(ValueError):
+                    export_experiments(
+                        ReportingTests().views(),
+                        export_authorized=True,
+                        metadata=metadata,
+                    )
+        for field, value in [
+            ("repetition", True),
+            ("manifest_sha256", "short"),
+            ("condition", "arbitrary"),
+        ]:
+            with self.assertRaises(ValueError):
+                export_experiments(
+                    ReportingTests().views(),
+                    export_authorized=True,
+                    metadata={**valid, field: value},
+                )

@@ -16,7 +16,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
-from .config import validate_config
+from .config import validate_config, verified_author_bytes
 
 _BINDING_LOCK = threading.RLock()
 
@@ -45,7 +45,14 @@ def _load_memory(root):
         sys.modules[name] = module
         try:
             with _local_models_only():
-                spec.loader.exec_module(module)
+                exec(
+                    compile(
+                        verified_author_bytes(root, "memory_layer.py"),
+                        str(root / "memory_layer.py"),
+                        "exec",
+                    ),
+                    module.__dict__,
+                )
         except BaseException:
             sys.modules.pop(name, None)
             raise
@@ -69,17 +76,11 @@ def make_agent_factory(
     if controller_factory is None:
         if paid_authorized is not True:
             raise PermissionError("Separate paid execution approval is required")
-        if token_counter is None:
-            raise ValueError(
-                "A documented context-token counter is required before live execution"
-            )
-        from .adapter import create_deepseek_controller
-
-        controller_factory = lambda observer: create_deepseek_controller(
-            paid_authorized=True, observer=observer
+        raise NotImplementedError(
+            "T5 live execution requires reviewed phase spending controls"
         )
     root = Path(repo_root).resolve()
-    tree = ast.parse((root / "test_advanced.py").read_text())
+    tree = ast.parse(verified_author_bytes(root, "test_advanced.py"))
     original_class = next(
         node
         for node in tree.body

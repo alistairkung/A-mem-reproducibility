@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from .config import source_fingerprint
+from .config import source_fingerprint, verified_author_bytes
 from .author import _local_models_only
 
 CORRECTED = "author-corrected-v1"
@@ -107,7 +107,7 @@ class AuthorScorer:
                 _local_dependencies() if dependencies is None else dependencies
             )
         self._missing_sbert = self.namespace.get("sentence_model") is None
-        dataset = ast.parse((self.root / "load_dataset.py").read_text())
+        dataset = ast.parse(verified_author_bytes(self.root, "load_dataset.py"))
         nodes = [
             n for n in dataset.body if isinstance(n, ast.ClassDef) and n.name == "QA"
         ]
@@ -127,7 +127,7 @@ class AuthorScorer:
             ),
             self.namespace,
         )
-        source = (self.root / "utils.py").read_bytes()
+        source = verified_author_bytes(self.root, "utils.py")
         self.scorer_sha256 = hashlib.sha256(source).hexdigest()
         functions = [
             n for n in ast.parse(source).body if isinstance(n, ast.FunctionDef)

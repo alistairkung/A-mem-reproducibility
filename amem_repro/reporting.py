@@ -6,7 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from .config import reject_credentials
+from .config import reject_credentials, fingerprint
 
 
 def write_tables(views, directory):
@@ -53,6 +53,36 @@ def write_tables(views, directory):
                         writer.writerow([policy, group, metric, statistic, value])
 
 
+def _study_identity(metadata):
+    required = ("condition", "population", "manifest_sha256", "repetition", "run_id")
+    if not isinstance(metadata, dict) or any(key not in metadata for key in required):
+        raise ValueError(
+            "Reporting requires condition, population, manifest_sha256, repetition and run_id"
+        )
+    identity = {key: metadata[key] for key in required}
+    if identity["condition"] not in (
+        "full",
+        "neither",
+        "linking_only",
+        "evolution_only",
+    ):
+        raise ValueError("Unknown experimental condition")
+    if identity["population"] not in ("full", "fallback", "smoke", "pilot"):
+        raise ValueError("Unknown population")
+    digest = identity["manifest_sha256"]
+    if (
+        not isinstance(digest, str)
+        or len(digest) != 64
+        or any(c not in "0123456789abcdef" for c in digest)
+    ):
+        raise ValueError("Population requires its full manifest fingerprint")
+    if type(identity["repetition"]) is not int or identity["repetition"] < 0:
+        raise ValueError("Repetition must be a nonnegative integer")
+    if not isinstance(identity["run_id"], str) or not identity["run_id"].strip():
+        raise ValueError("Original run_id is required")
+    return identity
+
+
 def export_experiments(
     views,
     *,
@@ -70,6 +100,7 @@ def export_experiments(
         raise PermissionError("Explicit reporting-export authorization required")
     reject_credentials(metadata or {})
     reject_credentials(views)
+    identity = _study_identity(metadata)
     if client is None or evaluation_factory is None:
         from langfuse import Evaluation, get_client
 
@@ -82,6 +113,9 @@ def export_experiments(
     results = {}
     try:
         for policy, view in saved.items():
+            if view["scoring_policy"] != policy:
+                raise ValueError("Scoring policy identity mismatch")
+            export_identity = {**identity, "scoring_policy": policy}
             by_id = {r["question_id"]: r for r in view["individual_results"]}
             if len(by_id) != len(view["individual_results"]) or not by_id:
                 raise ValueError("Expected nonempty unique question IDs")
@@ -116,6 +150,7 @@ def export_experiments(
                 "scorer_sha256": view["scorer_sha256"],
                 "artifact_sha256": artifact_hash,
                 "execution_mode": "imported_results",
+                "experiment_identity": export_identity,
             }
             data = [
                 {
@@ -134,8 +169,8 @@ def export_experiments(
                 for r in by_id.values()
             ]
             results[policy] = client.run_experiment(
-                name="A-MEM controlled reproduction",
-                run_name=policy,
+                name=f"A-MEM/{identity['condition']}/{identity['population']}/{policy}",
+                run_name=f"repetition-{identity['repetition']}/{fingerprint(export_identity)}",
                 data=data,
                 task=task,
                 evaluators=evaluators,

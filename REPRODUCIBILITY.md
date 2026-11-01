@@ -26,7 +26,13 @@ Regenerate and compare manifests without importing author model code:
 uv run --frozen python -m amem_repro.manifests --output /tmp/amem-manifests
 ```
 
-Compare those four JSON files with `manifests/`. Each question keeps its original conversation ID and
+Compare those four JSON files with `manifests/`. They are compact version-2 selections: frozen dataset
+hash, selection configuration, original conversation/sample IDs, explicit source QA indices and session
+selection. They omit duplicated reference answers, evidence and turn records. `expand_manifest` verifies
+the entire dataset SHA-256 AND the approved selection before reconstructing version-1 runtime records.
+Each compact file also records the canonical expanded-manifest SHA-256. Regression tests reproduce the
+exact four pre-compaction hashes; source QA identities, references, order and cache semantics are preserved.
+Existing expanded callers remain supported. Each question keeps its original conversation ID and
 zero-based source QA index. Source verification is available as
 `amem_repro.config.source_fingerprint(repo_root)`; any changed frozen author file is rejected.
 
@@ -42,14 +48,21 @@ zero-based source QA index. Source verification is available as
 | `reporting.py` | Local JSON/CSV and optional import of saved results into Langfuse Experiments |
 
 `run_manifest` accepts an injected agent factory/scorer for offline use. Default live construction
-requires an explicit paid-authorization declaration; credentials alone cannot enable execution.
+is disabled until T5 phase spending controls are implemented and reviewed. A Boolean authorization
+flag cannot create a real transport or live agent. The SDK factory accepts only an explicit MockTransport
+for offline retry contracts; credentials alone cannot enable execution.
 Only original full mode is runnable in this foundation. Other conditions and deterministic replay
 are intentionally rejected until T6/T7. No live-experiment CLI is provided in T1–T4.
 
-The original agent class is compiled unchanged from author source, avoiding module-level downloads.
+AST loading is deliberately narrow: direct author imports initialize/download models and NLTK resources.
+Every AST loader verifies the exact bytes against the frozen Git blob before parsing/compiling, including
+standalone schema/agent loaders. Changed source is rejected before provider invocation. The original
+agent class is compiled unchanged, avoiding module-level downloads.
 The original memory system is bound temporarily to the isolated controller during construction.
 Author scoring functions are compiled from their original definitions; observational exception hooks
 identify failures that the author converts to zero. Numerical scoring expressions remain unchanged.
+Paired tests compare instrumented functions with uninstrumented frozen functions for normal/empty answers,
+category-5 corrected/legacy references, metric exceptions and aggregates: only diagnostic notices differ.
 
 Retrieval observers intercept the existing search rather than issue another search or transform text.
 Local strengthening/update timing uses passive Python line tracing of the frozen action branches;
@@ -65,6 +78,10 @@ scoring-policy IDs. Predictions and reference inputs are preserved; no generatio
 
 `export_experiments` defaults to refusing upload. An explicitly authorized export uses the pinned
 Langfuse SDK, returns saved predictions/scores, and labels observations `execution_mode=imported_results`.
+Export metadata must include condition, population, full expanded-manifest SHA-256, nonnegative build
+repetition and original run ID; missing/invalid identity is rejected before SDK initialization. Experiment
+names include condition/population/scoring policy; run names include repetition and a full hash of all five
+study dimensions plus policy. Full identity is retained in both run and item metadata.
 Its timing describes the import, not original inference. Original IDs, configuration, usage and latency
 remain in run artifacts/metadata. Failed metrics remain labelled; degraded runs are not silently dropped.
 
@@ -87,6 +104,10 @@ Each commit references its ticket: T1/#1, T2/#2, T3/#3 and T4/#4. Use
 The end-to-end mocked smoke exercises original note/evolution/retrieval/answer methods with 18 notes
 and four questions: exactly 44 generation calls, 18 executed strengthening and neighbor-update branches,
 four retrieval observations and no additional generation during dual rescoring.
+
+Focused follow-up validation: 54 tests and 32 subtests passed. Compact-manifest expansion reproduces
+all four pre-compaction hashes. Direct AST mutation, instrumented/original scoring parity, reporting
+identity separation and live-fuse regression tests pass with network connections denied.
 
 Both Standards and Spec reviews were performed. Review corrections preserve the SBERT-load fallback,
 keep asset-network isolation active during execution, isolate observation failures from original behavior,
@@ -111,7 +132,14 @@ T5 has not started. Offline success does not establish live beta compatibility.
 6. Only after compatibility success, approve the complete conv-50 full-mode pilot separately
    (provisional USD 5–10; 1,544 nominal generation calls before retries).
 7. Before paid execution, verify phase-specific spending/stop controls and account for unknown charges;
-   the T1–T4 API authorization flag is not a budget-enforcement mechanism or proof of user approval.
+   live construction is currently fused off because the Boolean flag is not a spending limit.
+   Removing that fuse in T5 requires a reviewed authorization bound to phase, exact manifest/configuration
+   and run identity, explicit logical-request/physical-attempt ceilings, and a USD phase cap inside the
+   overall USD 50 ceiling with USD 8 contingency. Check limits before each physical transmission, including
+   SDK retries; reserve a conservative charge before sending. Unknown usage is not zero. Preserve the
+   expenditure ledger across processes so relaunch cannot silently reset the allowance. Stop on exhausted
+   allowance, configuration/phase mismatch or uncertain unaffordable charges. Separately authorize paid
+   recovery/reruns. Offline tests must demonstrate these stop paths before real transports are enabled.
 8. Forecast incurred spending + remaining four-condition cost + USD 8 contingency within USD 50. Select
    all ten conversations or the exact fallback from costs alone before comparative performance review.
    If neither fits, stop. Extra repetitions, recovery/reruns and main-condition execution need approval.

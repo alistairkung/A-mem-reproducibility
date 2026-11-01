@@ -132,3 +132,13 @@ Run ticket tests after each ticket and the complete offline suite at the end. St
 T5. No paid API calls or merge into main are authorized. Earlier parallel drafts are incorporated by
 file review/copy; no branch merges are needed. The earlier separate-authorization requirement for
 pushing is retained until explicitly resolved; prepare the local PR description before requesting it.
+
+## PR #9 focused follow-up review
+
+The user requested reviewability and safety corrections before merge. Compact version-2 selection
+manifests replace duplicated dataset records while preserving the full dataset hash, original identities,
+selection rules and exact expanded-manifest hashes. This changes representation, not the D4/D10a population.
+Standalone AST loaders now verify frozen bytes, and direct uninstrumented/instrumented scoring parity is
+tested. Optional reporting requires complete study identity. Default live execution is disabled until T5
+has reviewed, durable phase/request/attempt/USD limits; a Boolean alone cannot enable paid execution.
+No paid calls or T5 execution are authorized by these corrections.

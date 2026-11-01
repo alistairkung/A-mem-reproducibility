@@ -240,3 +240,43 @@ class BridgeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CompactRunnerTests(unittest.TestCase):
+    def test_saved_compact_manifest_runs_the_same_source_questions(self):
+        manifest = json.loads((ROOT / "manifests/smoke.json").read_text())
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_manifest(
+                ROOT / "data/locomo10.json",
+                manifest,
+                DEFAULT_CONFIG,
+                output_dir=Path(directory) / "run",
+                cache_root=Path(directory) / "cache",
+                source_hashes={"wrapper": "test"},
+                agent_factory=lambda **kw: Agent(),
+                scorer=score,
+            )
+            self.assertEqual(result["status"], "complete")
+            events = [
+                json.loads(line)
+                for line in (Path(directory) / "run/events.jsonl")
+                .read_text()
+                .splitlines()
+            ]
+            self.assertEqual(
+                [e["question_id"] for e in events if e["type"] == "question_result"],
+                ["conv-26:qa:0", "conv-26:qa:1", "conv-26:qa:2", "conv-26:qa:4"],
+            )
+
+    def test_boolean_does_not_unlock_live_manifest_execution(self):
+        manifest = build_manifest(ROOT / "data/locomo10.json", "smoke")
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(NotImplementedError, "T5"):
+                run_manifest(
+                    ROOT / "data/locomo10.json",
+                    manifest,
+                    DEFAULT_CONFIG,
+                    output_dir=Path(directory) / "run",
+                    cache_root=Path(directory) / "cache",
+                    paid_authorized=True,
+                )

@@ -20,7 +20,7 @@ from .artifacts import (
     restore_memory,
 )
 from .config import validate_config, source_fingerprint
-from .manifests import build_manifest
+from .manifests import expand_manifest
 
 
 def load_dataset_module(repo_root):
@@ -78,8 +78,7 @@ def run_manifest(
         raise PermissionError("Separate paid execution approval is required")
     dataset_path = Path(dataset_path).resolve()
     root = dataset_path.parent.parent
-    if manifest != build_manifest(dataset_path, manifest["scope"]):
-        raise ValueError("Manifest differs from the frozen source identities")
+    manifest = expand_manifest(dataset_path, manifest)
     if agent_factory is None:
         actual_sources = source_fingerprint(root)
         if source_hashes is not None and source_hashes != actual_sources:

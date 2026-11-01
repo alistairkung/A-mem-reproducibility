@@ -331,3 +331,25 @@ class AdapterTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LiveExecutionFuseTests(unittest.TestCase):
+    def test_boolean_approval_cannot_enable_uncapped_live_factory(self):
+        with patch(
+            "amem_repro.adapter.os.environ.get",
+            side_effect=AssertionError("credential access"),
+        ):
+            with self.assertRaisesRegex(NotImplementedError, "T5"):
+                create_deepseek_controller(paid_authorized=True)
+
+    def test_real_transport_cannot_bypass_t5_fuse(self):
+        import httpx
+
+        transport = httpx.HTTPTransport()
+        try:
+            with self.assertRaisesRegex(NotImplementedError, "T5"):
+                create_deepseek_controller(
+                    paid_authorized=True, http_transport=transport
+                )
+        finally:
+            transport.close()

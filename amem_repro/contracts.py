@@ -7,6 +7,8 @@ import math
 from pathlib import Path
 from typing import Any
 
+from .config import verified_author_bytes
+
 
 class ContractError(ValueError):
     """A contract cannot be represented without changing its semantics."""
@@ -25,7 +27,7 @@ def load_author_contracts(root: str | Path | None = None) -> dict[str, dict]:
     root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
     contracts = {}
     for stage, (filename, class_name, method_name) in _LOCATIONS.items():
-        tree = ast.parse((root / filename).read_text())
+        tree = ast.parse(verified_author_bytes(root, filename))
         cls = next(
             n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name
         )

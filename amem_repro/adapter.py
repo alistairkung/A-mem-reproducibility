@@ -184,15 +184,23 @@ def create_deepseek_controller(
     """Explicit execution gate; implementation approval alone cannot create a live client."""
     if paid_authorized is not True:
         raise PermissionError("Separate paid execution authorization is required")
+    if http_transport is None:
+        raise NotImplementedError(
+            "T5 live execution requires reviewed phase spending controls"
+        )
+    import httpx
+
+    if not isinstance(http_transport, httpx.MockTransport):
+        raise NotImplementedError(
+            "T5 live execution requires reviewed phase spending controls"
+        )
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
         raise ValueError("DEEPSEEK_API_KEY is required in the environment")
     import httpx
     from openai import OpenAI
 
-    transport = _recording_transport(
-        http_transport if http_transport is not None else httpx.HTTPTransport()
-    )
+    transport = _recording_transport(http_transport)
     client = OpenAI(
         api_key=api_key,
         base_url=BASE_URL,

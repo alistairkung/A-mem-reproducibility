@@ -160,3 +160,57 @@ class FailedMetricIdentityTests(unittest.TestCase):
         self.assertEqual(metrics["bleu1"], 0.0)
         self.assertEqual(metrics["bleu2"], 0.0)
         self.assertEqual([e["affected_metrics"] for e in scorer.failures], [["bleu1"]])
+
+
+class OriginalScoringParityTests(unittest.TestCase):
+    def test_instrumented_results_equal_uninstrumented_frozen_functions(self):
+        import ast
+
+        for failing in (False, True):
+            scorer = AuthorScorer(ROOT, dependencies=dependencies(failing))
+            plain = dict(scorer.namespace)
+            nodes = [
+                n
+                for n in ast.parse((ROOT / "utils.py").read_bytes()).body
+                if isinstance(n, ast.FunctionDef)
+            ]
+            exec(
+                compile(
+                    ast.Module(body=nodes, type_ignores=[]),
+                    str(ROOT / "utils.py"),
+                    "exec",
+                ),
+                plain,
+            )
+            for legacy in (False, True):
+                actual = []
+                expected = []
+                categories = []
+                for prediction, category, answer, trap in [
+                    ("pear pear", 4, "pear apple", None),
+                    ("", 1, "pear", None),
+                    (None, 2, "date", None),
+                    ("Not mentioned in the conversation", 5, None, "Alice"),
+                    ("Alice", 5, None, "Alice"),
+                ]:
+                    qa = scorer.qa(
+                        {
+                            "question": "Which?",
+                            "category": category,
+                            "answer": answer,
+                            "adversarial_answer": trap,
+                        }
+                    )
+                    with self.subTest(
+                        failing=failing, legacy=legacy, prediction=prediction
+                    ):
+                        result = scorer.score(prediction, qa, legacy)
+                        original = plain["score_prediction"](prediction, qa, legacy)
+                        self.assertEqual(result, original)
+                        actual.append(result[1])
+                        expected.append(original[1])
+                        categories.append(category)
+                self.assertEqual(
+                    scorer.aggregate(actual, categories),
+                    plain["aggregate_metrics"](expected, categories),
+                )

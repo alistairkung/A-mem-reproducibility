@@ -69,3 +69,36 @@ class AuthorContractsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FrozenSourceTests(unittest.TestCase):
+    def test_standalone_schema_loader_rejects_changed_author_bytes(self):
+        from unittest.mock import patch
+
+        read = Path.read_bytes
+
+        def changed(path):
+            value = read(path)
+            return (
+                value + b"\n# changed\n" if path == ROOT / "memory_layer.py" else value
+            )
+
+        with patch.object(Path, "read_bytes", changed):
+            with self.assertRaisesRegex(ValueError, "Frozen author source changed"):
+                load_author_contracts(ROOT)
+
+    def test_standalone_agent_loader_rejects_changed_author_bytes(self):
+        from unittest.mock import patch
+        from amem_repro.author import make_agent_factory
+
+        read = Path.read_bytes
+
+        def changed(path):
+            value = read(path)
+            return (
+                value + b"\n# changed\n" if path == ROOT / "test_advanced.py" else value
+            )
+
+        with patch.object(Path, "read_bytes", changed):
+            with self.assertRaisesRegex(ValueError, "Frozen author source changed"):
+                make_agent_factory(ROOT, controller_factory=lambda observer: None)

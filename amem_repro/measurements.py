@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from numbers import Integral
 
+from .config import verified_author_bytes
+
 
 @dataclass(frozen=True)
 class TokenCounter:
@@ -141,7 +143,7 @@ def observe_actions(root, observer):
     from pathlib import Path
 
     path = Path(root).resolve() / "memory_layer.py"
-    tree = ast.parse(path.read_text())
+    tree = ast.parse(verified_author_bytes(path.parent, "memory_layer.py"))
     cls = next(
         n
         for n in tree.body
