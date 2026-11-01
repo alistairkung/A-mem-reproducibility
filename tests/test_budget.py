@@ -5,12 +5,14 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from amem_repro.budget import BudgetStop, PhasePermit, ledger_summary
+from amem_repro.config import stage_output_limits
 
 
 def binding():
     return {'manifest_sha256':'a'*64,'config_sha256':'b'*64,'source_sha256':'c'*64,
             'preflight_sha256':'d'*64,'population':'smoke','condition':'full','repetition':0,
-            'model':'deepseek-flash','endpoint':'https://api.deepseek.com/beta/chat/completions'}
+            'model':'deepseek-flash','endpoint':'https://api.deepseek.com/beta/chat/completions',
+            'max_output_tokens_by_stage':stage_output_limits()}
 
 
 def approval(phase='compatibility', cap='2', ident='phase-one', run='run-one'):
@@ -21,7 +23,7 @@ def approval(phase='compatibility', cap='2', ident='phase-one', run='run-one'):
             'approved_at':'2026-11-01T00:00:00+00:00','phase':phase,'run_id':run,
             'binding':b,'limits':{'max_logical_calls':44,'max_attempts':132,'phase_usd':cap},
             'pricing':{'pricing_id':'peak-offline-fixture','input_per_million':'0.30',
-                       'output_per_million':'1.20','max_context_tokens':1048576,'max_output_tokens':1000}}
+                       'output_per_million':'1.20','max_context_tokens':1048576,'max_output_tokens':4000}}
 
 
 def request():
@@ -40,6 +42,74 @@ def reserve_from_new_process(path, auth, outcomes):
 
 
 class BudgetTests(unittest.TestCase):
+    def test_shared_decision_reserves_its_four_thousand_token_bound_and_settles_usage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'ledger'
+            permit=PhasePermit(approval(),path,binding())
+            attempt=permit.reserve_attempt(permit.start_logical('shared_decision'),request()|{'max_tokens':4000})
+            self.assertEqual(permit.summary()['charged_or_reserved_microusd'],319373)
+            permit.settle(attempt,{'prompt_tokens':20,'completion_tokens':4000,'total_tokens':4020})
+            self.assertEqual(permit.summary()['charged_or_reserved_microusd'],4806)
+            self.assertEqual(permit.summary()['unknown_attempts'],0)
+
+    def test_nondecision_requests_cannot_use_the_four_thousand_token_cap(self):
+        for stage in ('metadata','query_keywords','answer'):
+            with self.subTest(stage=stage),tempfile.TemporaryDirectory() as directory:
+                permit=PhasePermit(approval(),Path(directory)/'ledger',binding())
+                with self.assertRaises(BudgetStop):
+                    permit.reserve_attempt(permit.start_logical(stage),request()|{'max_tokens':4000})
+                self.assertEqual(permit.summary()['physical_attempts'],0)
+                self.assertTrue(permit.summary()['halted'])
+
+    def test_usage_limit_follows_the_attempt_stage_not_the_global_pricing_bound(self):
+        for stage,limit,reservation in (('shared_decision',4000,319373),
+                                        ('metadata',1000,315773),
+                                        ('query_keywords',1000,315773),
+                                        ('answer',1000,315773)):
+            with self.subTest(stage=stage),tempfile.TemporaryDirectory() as directory:
+                permit=PhasePermit(approval(),Path(directory)/'ledger',binding())
+                attempt=permit.reserve_attempt(permit.start_logical(stage),request()|{'max_tokens':limit})
+                # A later logical stage must not replace this attempt's usage bound.
+                permit.start_logical('metadata' if stage=='shared_decision' else 'shared_decision')
+                with self.assertRaises(BudgetStop):
+                    permit.settle(attempt,{'prompt_tokens':20,'completion_tokens':limit+1})
+                self.assertEqual(permit.summary()['charged_or_reserved_microusd'],reservation)
+                self.assertEqual(permit.summary()['unknown_attempts'],1)
+                self.assertTrue(permit.summary()['halted'])
+
+    def test_shared_decision_retry_reservation_accounts_for_its_full_stage_bound(self):
+        with tempfile.TemporaryDirectory() as directory:
+            permit=PhasePermit(approval(cap='0.638746'),Path(directory)/'ledger',binding())
+            logical=permit.start_logical('shared_decision')
+            for _ in range(2):
+                attempt=permit.reserve_attempt(logical,request()|{'max_tokens':4000})
+                permit.settle(attempt,None)
+            self.assertEqual(permit.summary()['charged_or_reserved_microusd'],638746)
+            self.assertEqual(permit.summary()['unknown_attempts'],2)
+            with self.assertRaises(BudgetStop):
+                permit.reserve_attempt(logical,request()|{'max_tokens':4000})
+            self.assertEqual(permit.summary()['physical_attempts'],2)
+
+    def test_stage_output_approval_is_explicit_complete_and_strictly_integer(self):
+        cases=[None,{}, {'metadata':1000},
+               stage_output_limits()|{'unknown':1000},
+               stage_output_limits()|{'shared_decision':1000},
+               stage_output_limits()|{'shared_decision':4001},
+               stage_output_limits()|{'shared_decision':4000.0},
+               stage_output_limits()|{'metadata':4000},
+               stage_output_limits()|{'metadata':True},
+               stage_output_limits()|{'answer':1000.0}]
+        for limits in cases:
+            with self.subTest(limits=limits),tempfile.TemporaryDirectory() as directory:
+                auth=approval()
+                if limits is None:
+                    del auth['binding']['max_output_tokens_by_stage']
+                else:
+                    auth['binding']['max_output_tokens_by_stage']=limits
+                path=Path(directory)/'ledger'
+                with self.assertRaises(BudgetStop):PhasePermit(auth,path,auth['binding'])
+                self.assertFalse(path.exists())
+
     def test_reserve_before_transmission_then_settle_usage_without_double_charge(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'budget.sqlite3'
@@ -261,6 +331,8 @@ class BudgetTests(unittest.TestCase):
                ('limits.max_logical_calls',45),('limits.max_logical_calls',1.0),
                ('pricing.input_per_million','.29'),('pricing.output_per_million','1.19'),
                ('pricing.max_context_tokens',1048575),('pricing.max_output_tokens',999),
+               ('pricing.max_output_tokens',1000),('pricing.max_output_tokens',4001),
+               ('pricing.max_output_tokens',4000.0),('pricing.max_output_tokens',True),
                ('binding.preflight_sha256','missing'),('binding.population','full')]
         for key,value in cases:
             with self.subTest(key=key,value=value),tempfile.TemporaryDirectory() as directory:

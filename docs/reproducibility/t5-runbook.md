@@ -1,15 +1,17 @@
 # T5: bounded compatibility and cost pilot
 
-Status: offline preparation implemented; the separately approved first compatibility attempt stopped
-on a provider schema violation. See the [attempt report](t5-compatibility-20261101.md).
+Status: `compatibility-d9a-20261101` completed the 18-turn/four-question fixture under reviewed D9a
+settings. Its degraded status is solely seven audited D3a completions/19 string indices: 44 physical
+requests, no retries, USD0.053118 conservative phase charge. BLK-007 is Mitigated; BLK-013 is Resolved
+for this fixture. The two earlier failed runs remain unchanged. See the [current readiness record](baseline-readiness.md).
 
-The user subsequently approved D3a implementation/offline tests, then autonomous T5 baseline readiness:
-reviewed fixes, PR #11 merge and **one new** USD2 compatibility phase under D3a after spending-safety
-verification. See [authorization](decisions.md#authorization--autonomous-t5-baseline-readiness) and
-[D3a verification](blk-007-compatibility-review.md). BLK-007 remains Investigating pending that live test.
-Keep the failed fixture immutable. An additional recovery phase, pilot and main execution remain gated.
+D9a permits 4,000 shared-decision output tokens and 1,000 elsewhere under output policy
+`d9a-shared-decision-4000-v1`, uniformly across arms with original prompts/schemas/parsers/temperatures.
+All three phase authorizations are consumed. The user authorized PR #13's reviewed changes for merge;
+no merge commit is claimed here. A verified **unapproved** conv-50 pilot plan is prepared, but pilot/main
+execution and another recovery phase require separate approval. See [D9a authority](decisions.md#d9a--approved-shared-decision-output-allowance-and-one-fresh-verification-phase).
 Issue: [T5 / #5](https://github.com/alistairkung/A-mem-reproducibility/issues/5).
-The [frozen protocol](experimental-protocol.md) and D1–D13 remain the research authority.
+The [frozen protocol](experimental-protocol.md), D1–D13 and approved D3a/D9a amendments remain the research authority.
 
 ## Local preparation
 
@@ -55,7 +57,7 @@ Run the actual local runtime check in a fresh process:
 
 ```sh
 .venv/bin/python -m amem_repro.phases preflight \
-  --assets artifacts/assets --output artifacts/preflight.json
+  --assets artifacts/assets --output <fresh-d9a-preflight.json>
 ```
 
 It checks active Python/platform dependency versions against `uv.lock`, verifies frozen author bytes,
@@ -79,15 +81,21 @@ billing counts. Hosted parity and strict beta acceptance require live evidence.
 
 ## Review a concrete phase plan
 
+The compatibility commands below document the already consumed D9a workflow; they do not authorize
+another fixture. For the prepared conv-50 pilot plan and future command, use the dedicated section below.
+
 ```sh
 .venv/bin/python -m amem_repro.phases plan --phase compatibility \
-  --assets artifacts/assets --preflight artifacts/preflight.json \
-  --output artifacts/compatibility-plan.json
+  --run-id <fresh-d9a-run-id> \
+  --provider-contract-policy canonical-index-strings-v1 \
+  --assets artifacts/assets --preflight <fresh-d9a-preflight.json> \
+  --output <fresh-d9a-plan.json>
 ```
 
-Plans contain `approved:false`. The implementer must obtain the user's explicit approval of that exact
-phase and limits before recording approval identity/time and setting it true. Do not infer approval
-from credentials, issue state, implementation permission or a provisional allocation.
+Plans contain `approved:false`. After the D9a offline/review/preflight gates pass, the orchestrator may
+record the user's existing explicit one-phase D9a authorization in the exact provenance-bound plan.
+Verify its policy/stage map, fixture and limits before setting approval identity/time and `approved:true`.
+Pilot approval is separate; credentials, issue state or an unapproved plan do not authorize spending.
 
 The default provider policy is `strict-original-v1`. A future reviewed plan may explicitly select
 `--provider-contract-policy canonical-index-strings-v1` (D3a); execution takes the policy from the
@@ -95,6 +103,8 @@ approved binding and offers no runtime override. After this source change, refre
 a unique new run ID and plan filename. Never overwrite/reuse the original fixture plan or approval.
 Changing policy invalidates cache identity and pilot-compatibility provenance. The wire integer schema
 and raw parser input remain unchanged; admitted violations are recorded and completed runs degraded.
+The approval binding must also carry `d9a-shared-decision-4000-v1` and the complete stage-cap map.
+Recompute source/configuration/cache identities; legacy 1,000-token receipts cannot authorize D9a runs.
 
 | Phase | Frozen workload | Logical ceiling | Physical ceiling | USD hard cap |
 | --- | --- | --- | --- | --- |
@@ -111,13 +121,13 @@ After the relevant separate approval and private environment configuration:
 
 ```sh
 .venv/bin/python -m amem_repro.phases execute \
-  --assets artifacts/assets --preflight artifacts/preflight.json \
-  --approval artifacts/compatibility-plan.json
+  --assets artifacts/assets --preflight <fresh-d9a-preflight.json> \
+  --approval <fresh-d9a-approved.json>
 ```
 
 Credentials come only from the process environment; the CLI never reads `.env` and never records request
-headers or exception text. The exact model, route, prompts, schemas, parameters and original parser output
-remain frozen. Required schema-semantic changes stop the study for review. Provider model/fingerprint
+headers or exception text. Model, route, original prompts/schemas/parsers and approved D9a stage settings
+are fixed. Required schema-semantic changes stop the study for review. Provider model/fingerprint
 changes and exhausted transport/contract failures prevent subsequent requests. A pilot detects a change
 from the archived compatibility model/fingerprint before continuing.
 
@@ -126,7 +136,9 @@ from the archived compatibility model/fingerprint before continuing.
 One SQLite ledger, `artifacts/study-budget.sqlite`, governs the whole study. Every physical attempt is
 durably reserved **before transmission**, including SDK retries. Reservations use peak uncached prices
 verified on 1 November 2026: [USD0.30 input / USD1.20 output per million tokens](https://api-docs.deepseek.com/quick_start/pricing/).
-The conservative maximum is 1,048,576 input +1,000 output tokens, USD0.315773 per attempt. Valid reported
+Input is conservatively bounded at 1,048,576 tokens. D9a pricing validation allows at most 4,000 output
+tokens; reserve USD0.319373 for a shared-decision attempt and USD0.315773 for a 1,000-token other-stage
+attempt. The request validator enforces each bound from the approved stage map. Valid reported
 usage releases the unused reservation. Unknown or interrupted charges retain it; invalid usage halts.
 This accounting is a conservative peak-price estimate, not an invoice or a claim of actual cache discounts.
 
@@ -181,17 +193,39 @@ in this command.
 
 | T5 criterion | Current evidence / remaining gate |
 | --- | --- |
-| Offline compatibility first; separate paid approvals | Offline checks pass; first fixture approved and stopped; pilot approval not obtained |
-| Archive four live schema outcomes and untouched full mode | Five metadata/four decision outputs valid, one decision invalid; query/answer and baseline pending |
-| Measure cost, latency, retries and context expansion | Partial fixture usage/latency/cost archived; representative pilot evidence still pending |
+| Offline compatibility first; separate paid approvals | D9a tests/reviews and live fixture pass; all fixture approvals consumed; pilot approval pending |
+| Archive four live schema outcomes and untouched full mode | 18 metadata/18 decisions/4 query/4 answer calls, raw arguments and complete fixture state verified; benchmark baseline pending |
+| Measure cost, latency, retries and context expansion | Complete functional fixture measurements archived; representative pilot evidence still pending |
 | Cost-only full/fallback choice within USD50 | Forecast tested; actual pilot and explicit main decision still pending |
 | Fresh builds, one repetition, no truncation/tuning | Original full mode only; no repetition/recovery automation |
 | Reuse valid pilot, preserve failures, avoid duplicate charges | Provenance receipts and forecast credit implemented; main baseline orchestration awaits scope decision |
 
 T5 must remain open until the approved live phases and selected original baseline are archived. T6/T7
-action refactoring remains blocked. The latest user authorization permits only the single fresh bounded
-compatibility phase and reviewed PR #11 merge. Pilot/main execution, additional recovery phases and
-additional repetitions still require separate approval.
+action refactoring remains blocked. The single D9a phase has succeeded and its authorization is
+consumed. Pilot/main execution, another recovery phase and additional repetitions require separate
+approval. The fixture was accepted under the documented D3a audit and D9a settings; its four scores
+are functional evidence, not a benchmark quality estimate.
+
+## Prepared conv-50 pilot — separate authorization required
+
+`artifacts/pilot-conv50-d9a-plan.json` is `approved:false`: 568 turns, 204 original QA, 1,544 logical
+calls, at most 4,632 physical attempts and a USD10 hard cap. Its source/configuration/preflight,
+D3a policy, stage caps and verified compatibility receipt match the completed fixture. No pilot cache,
+run directory or execution exists. A 4,000-token cap and a tiny fixture's cost do not guarantee full
+pilot feasibility or the later four-condition budget.
+
+After separate explicit pilot approval, create `artifacts/pilot-conv50-d9a-approved.json` from the exact
+reviewed plan with approval identity/time. That approved file does not exist at this checkpoint.
+Configure `DEEPSEEK_API_KEY` privately in the process environment; the CLI never loads `.env`.
+The future command is **not executed**:
+
+```sh
+.venv/bin/python -m amem_repro.phases execute \
+  --assets artifacts/assets \
+  --preflight artifacts/compatibility-d9a-preflight.json \
+  --compatibility artifacts/runs/compatibility-d9a-20261101/phase.json \
+  --approval artifacts/pilot-conv50-d9a-approved.json
+```
 
 ## BLK-012 correction and final review
 
@@ -204,5 +238,5 @@ successful halt write. Genuine 429/503/transport retries retain the existing SDK
 Full offline suite: **247 tests and 71 subtests passed**. Repeat Standards review: no actionable defect,
 independent 26-test focused run passed. Repeat Spec review: no unmet safety requirement, independent
 111-test/39-subtest focused run passed. Existing schemas/raw return, later-deviation persistence, asset
-integrity and manifest hashes were checked. BLK-012 is Resolved; this does not resolve BLK-007 live
-compatibility or authorize the pilot. Safe local evidence: `artifacts/blk012-fix/`.
+integrity and manifest hashes were checked. BLK-012 is Resolved. D9a's later live verification mitigates
+BLK-007 as recorded above; pilot authorization remains separate. Safe local evidence: `artifacts/blk012-fix/`.

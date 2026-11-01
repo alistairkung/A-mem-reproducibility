@@ -5,6 +5,7 @@ evidence, not provider invoices or an upper bound on unmeasured conditions.
 """
 
 from decimal import Decimal, InvalidOperation
+from .config import stage_output_limits
 
 
 PILOT_COUNTS = {
@@ -70,7 +71,7 @@ def forecast_scope(pilot_events, pilot_summary, study_ledger_summary, *,
                 raise ValueError("Unknown attempt usage blocks a scope decision")
             inp, out = usage.get("prompt_tokens"), usage.get("completion_tokens")
             if (type(inp) is not int or type(out) is not int
-                or not 0 <= inp <= 1048576 or not 0 <= out <= 1000
+                or not 0 <= inp <= 1048576 or not 0 <= out <= stage_output_limits()[event["stage"]]
                 or ("total_tokens" in usage and (type(usage["total_tokens"]) is not int
                                                 or usage["total_tokens"] != inp + out))):
                 raise ValueError("Invalid physical attempt usage")

@@ -8,6 +8,7 @@ import subprocess
 AUTHOR_REVISION = "f9a173dec325d84fcc97e7828775c7b241c33466"
 STRICT_PROVIDER_POLICY = "strict-original-v1"
 INDEX_STRING_POLICY = "canonical-index-strings-v1"
+OUTPUT_TOKEN_POLICY = "d9a-shared-decision-4000-v1"
 
 
 def validate_provider_policy(policy):
@@ -29,6 +30,8 @@ DEFAULT_CONFIG = {
         "temperature": 0.7,
         "temperature_c5": 0.5,
         "max_tokens": 1000,
+        "shared_decision_max_tokens": 4000,
+        "output_token_policy": OUTPUT_TOKEN_POLICY,
         "stream": False,
         "concurrency": 1,
     },
@@ -56,6 +59,16 @@ DEFAULT_CONFIG = {
         "pilot_allocation_usd": [5, 10],
     },
 }
+
+
+def stage_output_limits():
+    """The approved D9a limits; return a fresh map for immutable run bindings."""
+    generation = DEFAULT_CONFIG["generation"]
+    return {stage: generation["shared_decision_max_tokens"] if stage == "shared_decision"
+            else generation["max_tokens"]
+            for stage in ("metadata", "shared_decision", "query_keywords", "answer")}
+
+
 _SECRET_KEYS = {
     "api_key",
     "secret",

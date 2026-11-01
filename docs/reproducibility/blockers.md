@@ -12,21 +12,21 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-004](#blk-004) | Historical adversarial overlap scores reward a different reference | Mitigated | T4, T5, T8 | Author fix `b31a1dd`; scoring tests |
 | [BLK-005](#blk-005) | Original cache provenance cannot isolate the planned study | Mitigated | T3, T5–T8 | Runner cache keys; cache rejection tests |
 | [BLK-006](#blk-006) | Local runtime readiness required verified assets and active lock markers | Resolved | T5 local preflight | Initial/final preflight receipts; local T5 commit |
-| [BLK-007](#blk-007) | DeepSeek strict function returned string connection indices | Investigating | T5 compatibility; downstream T6–T8 | Archived response; [offline policy tests](blk-007-compatibility-review.md) |
+| [BLK-007](#blk-007) | DeepSeek strict function returned string connection indices | Mitigated | T5 compatibility; downstream T6–T8 | Archived violations; audited complete D9a fixture |
 | [BLK-008](#blk-008) | Local tokenizer equivalence to hosted DeepSeek is unverified | Open | T4, T5, T8 token reporting | Pinned tokenizer recipe; final preflight receipt |
 | [BLK-009](#blk-009) | Four-condition affordability lacks representative pilot evidence | Open | T5 scope decision, T8 | D10/D10a; counts; conservative spending ledger |
 | [BLK-010](#blk-010) | Released retrieval default differs from paper category settings | Accepted Limitation | T5, T8, interpretation | D6; runner default; paper Table 8 |
 | [BLK-011](#blk-011) | T5 execution is not connected to Langfuse tracing/export | Open | T5, T8 observability | Runtime call-path audit; verified synthetic trace |
 | [BLK-012](#blk-012) | Failed usage settlement triggers SDK regeneration | Resolved | T5 and later paid phases | Terminal settlement guard; SQLite fault/retry regressions |
-| [BLK-013](#blk-013) | Shared decision exhausts the frozen 1,000-token output limit | Open | T5 compatibility; baseline readiness | New incomplete phase; exact length-truncation replay |
+| [BLK-013](#blk-013) | Shared decision exhausts the historical 1,000-token output limit | Resolved | T5 compatibility; longer-pilot risk retained | D9a fixture complete; resolution scoped to 18 turns |
 
-Before a paid run: **BLK-007 currently prevents compatibility acceptance and pilot progression**.
-BLK-001's query/answer contracts have not been exercised live. BLK-008 limits token-count claims;
-BLK-009 still requires a separately approved representative pilot and cost-only scope decision.
-BLK-011 requires actual runner wiring; a successful connection probe alone does not enable it.
-BLK-012's terminal settlement guard is verified offline; this does not authorize paid recovery.
-BLK-013 stopped the single fresh authorized phase. Another paid phase or a changed output limit needs
-an explicit decision; the conv-50 pilot is blocked. See [readiness evidence](baseline-readiness.md).
+Before a paid run: the complete D9a fixture verifies all four contracts under the approved boundary
+policy. BLK-007 is Mitigated and BLK-013 is Resolved for that fixture only; strict-provider compliance
+and adequacy for a longer pilot are not guaranteed. BLK-008 limits token-count claims; BLK-009 still
+requires a separately approved representative pilot and cost-only scope decision. BLK-011 live tracing
+remains optional and unwired; local evidence is authoritative. BLK-012's terminal guard remains verified.
+All three compatibility authorizations are consumed. The exact conv-50 plan is unapproved and no pilot
+has run. See [readiness evidence](baseline-readiness.md) before requesting new execution approval.
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -69,8 +69,9 @@ are unavailable unless an experiment receipt supplies them.
 - **Resolution attempts:**
   - 2026-11-01, T2 `82692f7`: extract frozen contracts and test unchanged request/argument semantics offline; passed.
   - 2026-11-01, approved T5 fixture: five metadata and four decision outputs passed; the next decision violated the integer contract. See BLK-007.
-- **Final resolution or limitation:** Adapter mechanics are mitigated, not end-to-end compatibility. Query/answer remain untested live; no alternative parser or schema was introduced.
-- **Verification:** PR #9 records four offline contracts and the 44-call mocked original-agent slice. The actual fixture supplies only partial live evidence; BLK-007 remains a paid-run gate.
+  - 2026-11-01, authorized D9a fixture: all 18 metadata, 18 shared-decision, four query and four answer calls completed. Seven shared decisions needed the approved D3a validation-copy policy; other fields/contracts remained strict and all original argument strings verify.
+- **Final resolution or limitation:** Functional provider compatibility is verified for the full smoke fixture under explicit D3a/D9a controls. Strict-provider enforcement itself remains unreliable; no alternative parser or schema was introduced. This is not full-pilot or benchmark validation.
+- **Verification:** PR #9 supplies offline contracts; `artifacts/runs/compatibility-d9a-20261101/` and `artifacts/compatibility-d9a-verification.json` now supply complete live fixture evidence. Query/answer generation and both saved-prediction scoring views succeeded without metric failures.
 - **Research significance:** A provider-compatible request interface does not establish equivalent structured-output guarantees or equivalent benchmark behavior.
 
 ## BLK-002
@@ -178,14 +179,14 @@ are unavailable unless an experiment receipt supplies them.
 
 - **ID:** BLK-007
 - **Title:** DeepSeek strict function returned string connection indices.
-- **Status:** Investigating
+- **Status:** Mitigated
 - **First observed:** 2026-11-01, T5 `compatibility-20261101`, completed at 06:33:12 UTC with incomplete status.
 - **Category:** Provider compatibility
 - **Expected behaviour:** The unchanged schema requires `suggested_connections` items to be integers, including under strict-function translation.
 - **Observed behaviour:** The fifth decision returned `"suggested_connections": ["2", "3"]`. HTTP 200, `finish_reason=tool_calls`, 640 completion tokens under max_tokens=1,000: the JSON was complete but violated the requested integer contract. The request used `strict:true`, the beta endpoint and the exact original schema.
 - **Evidence:** Safe local `artifacts/compatibility-20261101-reproducer.json` contains exact redacted request/response and violations; `artifacts/runs/compatibility-20261101/events.jsonl`, `phase.json`, `summary.json` and `partial-memory.json` retain the run. Report/regression: `dad8908:docs/reproducibility/t5-compatibility-20261101.md`, `dad8908:tests/test_contracts.py`. [Frozen schema/parser](../../memory_layer.py); [provider strict-mode guide](https://api-docs.deepseek.com/guides/tool_calls/).
 - **Root cause:** **Unknown.** Confirmed provider-contract violation; server-side cause is not established. The prompt's quoted neighbor-ID example may influence generation (**hypothesis**), but does not explain strict-mode enforcement. Existing `as_index` accepts numeric strings; that does not make the returned JSON schema-valid.
-- **Impact:** Compatibility failed before query/answer generation; T5 cannot progress to pilot, and T6–T8 remain downstream. This is not a baseline or accuracy result.
+- **Impact:** The original failure blocked compatibility before query/answer generation. The completed D9a fixture now verifies the approved mitigation; remaining provider-contract deviations must stay visible in every future run. This is not a baseline or accuracy result.
 - **Options considered:** Preserve evidence and stop. Coercion, weakening the schema, skipping validation, changing prompts/settings or switching pipelines were not implemented and require explicit decisions. Repeating the request is paid recovery, not covered by the unspent cap.
 - **Resolution attempts:**
   - 2026-11-01, approved fixture: ten physical requests, no retries; five metadata/four decision payloads valid and one decision invalid. Next metadata event was blocked before transmission, not an eleventh request.
@@ -194,8 +195,9 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01, focused offline investigation: reconstruct the exact pre-decision prompt and pass the raw response to the original parser. Its state and embedding documents match an integer-only control; both counters advance 3→4, while strict rejection stays 3. Added 38 characterization tests; branch suite 92 tests/32 subtests passes. See the [proposal and schema audit](blk-007-offline-investigation.md). A field-scoped validation-copy policy is proposed only; no adapter fix or model request was made. All nine original evidence files remain byte-identical.
   - 2026-11-01, user-approved D3a implementation/offline tests (`48bc2d1`): add opt-in `canonical-index-strings-v1` for canonical ASCII strings in this field only. Validate a copy and return raw arguments unchanged; retain strict default, record hashes/type violations and mark affected runs degraded. Full offline suite: 238 tests/71 subtests passed, including the 44-call mocked phase and frozen-parser state/retrieval/counter comparisons. SDK MockTransport replay of the exact failing response preserves the serialized request and argument bytes. See [implementation evidence and remaining gate](blk-007-compatibility-review.md). Twenty historical evidence files remain byte-identical; no model requests, recovery or pilot occurred.
   - 2026-11-01, separately authorized fresh phase `compatibility-d3a-20261101` on merged PR #11: the fifth shared decision's string indices were admitted with raw/copy hashes and unchanged parser input. One completion/two items were audited and retained after later failure. The sixth decision truncated at the frozen output limit (BLK-013), so the run is incomplete and BLK-007 remains Investigating. No automatic recovery or pilot followed.
-- **Final resolution or limitation:** **Unresolved.** Five notes/index rows preserved, zero of four QA completed; conservative peak-rate ledger cost USD0.005851, with no unknown charges. Response alias `deepseek-flash`, fingerprint `bc19ba97cbe016479903222bb1578db6`; immutable served weights not independently verified.
-- **Verification:** Rejection/spending stop and the approved validation-copy policy are verified offline. Hosted compatibility is not. Future resolution needs a separately authorized live test with the unchanged wire schema and explicitly selected policy, recording residual reliability limits. Offline replay cannot resolve the blocker or erase the provider-contract violation.
+  - 2026-11-01, authorized `compatibility-d9a-20261101`: all 18 turns/four original QA completed; seven shared-decision responses/19 items needed D3a. Every raw/returned argument string and audit hash verifies. Run status is degraded solely by those approved deviations, with no other failures, 44 requests/no retries and USD0.053118 conservative phase charge. Safe evidence: `artifacts/compatibility-d9a-verification.json` and the immutable run directory.
+- **Final resolution or limitation:** **Mitigated, not a restored provider guarantee.** The approved narrow policy works in the complete D9a fixture while strict integer-schema violations still occur. The original five-note/zero-QA failure and its USD0.005851 charge remain unchanged, as does the subsequent truncation failure. Hosted weights/future reliability remain unverified; all future arms must retain the same explicit controls and degraded classification for accepted deviations.
+- **Verification:** Complete live fixture evidence now supplements offline parser-equivalence tests: 18 notes/outcomes, four ordered original questions, unchanged arguments on all 44 calls and both scoring views from identical predictions without metric failures. Source bundle `02dc368e77f1a1e36d7d2deeffe1e6b0c9a7e8de9e715864852566e704ad7285`; no benchmark or pilot success is inferred.
 - **Research significance:** A documented strict API contract and HTTP success do not establish reliable schema compliance; preserving rejected outputs is essential to an honest reproduction diary.
 
 ## BLK-008
@@ -276,6 +278,7 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01: privately load the project's Langfuse settings; verify no different-project environment shadowing and successful CLI authentication.
   - 2026-11-01: send/flush one synthetic configuration span with SDK 5.1.0; read it back and verify name, type, input/output and empty model usage. No LLM was invoked and no old benchmark data was exported.
   - 2026-11-01: document the minimal runner connection and its offline checks for review. That runtime change is not implemented.
+  - 2026-11-01, successful D9a fixture: verify the existing saved-QA exporter with both scoring views. Eight question traces were imported and read back with correct identities/policies, saved predictions, original status/deviation count and cost metadata; no model requests or local artifact/ledger changes. See [reporting verification](langfuse-readiness.md). This mitigates missing experiment results after successful QA, while pre-QA/automatic construction tracing remains unwired.
 - **Final resolution or limitation:** Connectivity is verified; automatic paid-run tracing remains unwired. Keys/connection values are absent from records and `.env` is unchanged. No paid execution is authorized by this setup.
 - **Verification:** Synthetic observation `56d4b434cfe14653` is visible as `A-MEM/langfuse-configuration-smoke`, environment `configuration-preflight`. Verification of actual model-call capture, failure finalization and study-identity exports remains pending.
 - **Research significance:** Valid credentials and an installed observability SDK do not establish that the executed research path emits traces, especially when it fails before evaluation.
@@ -306,20 +309,23 @@ are unavailable unless an experiment receipt supplies them.
 ## BLK-013
 
 - **ID:** BLK-013
-- **Title:** Shared decision exhausts the frozen 1,000-token output limit.
-- **Status:** Open
+- **Title:** Shared decision exhausts the historical 1,000-token output limit.
+- **Status:** Resolved
 - **First observed:** 2026-11-01, fresh authorized T5 phase `compatibility-d3a-20261101`, merged source `167470b`.
 - **Category:** Provider compatibility
 - **Expected behaviour:** Complete original-schema output within the frozen D9 generation settings, processing all 18 turns and four QA before compatibility acceptance.
 - **Observed behaviour:** The sixth shared decision returned HTTP200, `finish_reason=length`, exactly 1,000 output tokens and incomplete tool-argument JSON ending inside a neighbor-tag string. Twelve physical requests were charged; the next metadata attempt was blocked before transmission. Six notes were preserved, zero QA completed.
 - **Evidence:** [Readiness report](baseline-readiness.md); safe local `artifacts/runs/compatibility-d3a-20261101/` and `artifacts/compatibility-d3a-20261101-truncation-reproducer.json`. The exact request retains max_tokens=1000, temperature 0.7, disabled thinking, original schema/prompt. Failed arguments hash `26708080e3e5a0edb08a3f62d9e4265d3eebab088015c6b45526e88211037a9e`.
 - **Root cause:** **Confirmed immediate cause:** output allowance exhausted before valid JSON completion. **Supported explanation, not a universal guarantee:** fuller neighbor payloads and repeated metadata enrichment increase output demand; observed decision token counts were 149, 262, 409, 569, 778, 1000 for zero through five neighbors. No adapter truncation or altered generation cap was found. This differs from BLK-007's complete-but-wrong-type response.
-- **Impact:** Compatibility is incomplete, BLK-007 cannot close, and the pilot cannot be planned as ready. Phase charge USD0.008316 remains recorded; cumulative study charge USD0.014167 includes both failed phases. No benchmark score exists.
+- **Impact:** The historical truncated phase was incomplete and blocked readiness; its USD0.008316 charge remains intact. D9a has now completed the fixture without truncation, enabling an unapproved pilot plan. This provides functional evidence, not a benchmark score or proof of longer-run output bounds.
 - **Options considered:** Proposed controlled D9 amendment: raise only shared-decision output allowance uniformly across arms, with updated hard reservations and a separately approved fresh phase. An unchanged-settings retry also requires separate approval and may recur. Prompt/schema/parser repair or automatic semantic retries are outside the approved protocol and were not attempted.
 - **Resolution attempts:**
   - 2026-11-01: retain full received request/response, partial memory/index, settled costs and audited D3a deviation. Verify phase inventory, original 19 historical files and the first ten ledger attempts/charge.
   - 2026-11-01: exact offline SDK MockTransport replay confirms identical request, truncated response preservation, rejection, terminal halt and blocked subsequent transmission. Pilot planning against the incomplete receipt rejects before execution.
   - 2026-11-01: independent offline source/output audit confirms output growth and original max_tokens=1000. Prepare a proposed 4,000-token shared-decision amendment plus one further USD2 phase for explicit decision; neither change nor new phase has been executed.
-- **Final resolution or limitation:** **Unresolved; material experimental/recovery decision required.** The single fresh live-phase authorization is consumed. Baseline readiness has not been achieved; no pilot/full benchmark or T6–T8 work was started.
-- **Verification:** Failure and safe stop are verified, not successful compatibility. Existing truncation tests and exact saved-response replay show the current adapter correctly rejects incomplete output; increasing the cap or paying for another run cannot be inferred from unspent funds.
+  - 2026-11-01, approved D9a implementation `4e7f82b`: shared-decision-only 4,000-token wire limit, exact stage-cap approval bindings, stage-specific reservations/settlement checks and forecast bounds. Full suite passes 268 tests/92 subtests. Independent Standards (71 tests/60 subtests) and Spec (132 tests/60 subtests) reviews found no material defect. Fresh network-disabled runtime preflight passes. The new live phase is still pending at this checkpoint; no outcome is inferred from offline success.
+  - 2026-11-01, D9a approved after PR #12 merge (`5078459`): implement output policy `d9a-shared-decision-4000-v1`, raising only shared decisions to 4,000 tokens and retaining 1,000 elsewhere uniformly across arms. Preserve prompts/schemas/parsers/temperatures. Bind stage caps and update conservative reservations to 319,373 microUSD for shared decisions / 315,773 for other attempts; retain the USD2 hard phase and USD42 usable study caps. One fresh 44-call/132-attempt phase is authorized after offline verification, review and preflight; no extra probes planned. New live verification has not occurred and no approved execution plan exists yet.
+  - 2026-11-01, authorized D9a live verification: `compatibility-d9a-20261101` completed 18 shared decisions, with maximum observed output1,572 tokens and no `length` finish or rejected response. All 44 physical/logical calls completed, with zero retries/unknown charges; stage bounds and original parser input verify. Full state and both scoring views are retained. The phase cost USD0.053118 and cumulative study cost USD0.067285/66 requests remain in the durable ledger. The exact conv-50 plan is prepared as `approved:false`, not executed.
+- **Final resolution or limitation:** **Resolved for the frozen 18-turn fixture under approved D9a settings.** The 4,000-token allowance avoided this observed failure without altering prompts/schemas/parsers or other stage caps. It does not guarantee that continued metadata growth fits the cap throughout conv-50. All three phase approvals are consumed; pilot/full-benchmark/recovery/T6–T8 remain separately gated.
+- **Verification:** D9a passed 268 tests/92 subtests and independent reviews before the successful live phase. `artifacts/compatibility-d9a-verification.json` verifies stage settings, unchanged arguments, complete state, scoring identity and phase/cache integrity. Historical truncation/replay evidence remains immutable. Only a separately approved pilot can test longer-conversation output adequacy.
 - **Research significance:** Preserving a paper's nominal generation cap under a model substitution can make the released structured-output algorithm operationally infeasible. Output growth, provider representation compatibility and spending safety are separate reproducibility constraints.

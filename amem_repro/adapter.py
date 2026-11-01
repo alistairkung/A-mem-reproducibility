@@ -22,6 +22,7 @@ from .contracts import (
 from .config import (
     reject_credentials, fingerprint, validate_provider_policy,
     STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY,
+    stage_output_limits,
 )
 
 MODEL = "deepseek-flash"
@@ -156,6 +157,7 @@ class DeepSeekController:
                 "Only the four unchanged frozen author contracts are supported"
             )
         stage = matched[0]
+        output_limit = stage_output_limits()[stage]
         if self.stage is not None and self.stage != stage:
             raise ContractError("Explicit stage does not match the author contract")
         if temperature not in ({0.5, 0.7} if stage == "answer" else {0.7}):
@@ -173,7 +175,7 @@ class DeepSeekController:
             "endpoint": BASE_URL + "/chat/completions",
             "documented_model_version": DOCUMENTED_MODEL_VERSION,
             "temperature": temperature,
-            "max_tokens": 1000,
+            "max_tokens": output_limit,
             "thinking": "disabled",
             "output": None,
             "usage": None,
@@ -217,7 +219,7 @@ class DeepSeekController:
                     tool_choice={"type": "function", "function": {"name": name}},
                     extra_body={"thinking": {"type": "disabled"}},
                     temperature=temperature,
-                    max_tokens=1000,
+                    max_tokens=output_limit,
                     stream=False,
                 )
             )

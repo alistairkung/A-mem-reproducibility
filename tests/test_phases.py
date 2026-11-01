@@ -11,7 +11,7 @@ from amem_repro import phases
 from amem_repro.adapter import create_deepseek_controller
 from amem_repro.author import make_agent_factory
 from amem_repro.budget import BudgetStop, ledger_summary
-from amem_repro.config import DEFAULT_CONFIG, fingerprint, INDEX_STRING_POLICY, STRICT_PROVIDER_POLICY
+from amem_repro.config import DEFAULT_CONFIG, fingerprint, INDEX_STRING_POLICY, STRICT_PROVIDER_POLICY, stage_output_limits
 from amem_repro.manifests import build_manifest
 from amem_repro.measurements import TokenCounter
 from amem_repro.scoring import AuthorScorer, rescore_records
@@ -30,6 +30,7 @@ def inputs(policy=STRICT_PROVIDER_POLICY):
         "condition": "full", "repetition": 0, "population": "smoke",
         "model": "deepseek-flash", "endpoint": "https://api.deepseek.com/beta/chat/completions",
         "provider_contract_policy": policy,
+        "max_output_tokens_by_stage": stage_output_limits(),
     }
     return DEFAULT_CONFIG, manifest, sources, binding
 

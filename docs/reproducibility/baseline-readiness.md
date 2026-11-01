@@ -1,9 +1,110 @@
-# T5 baseline readiness — blocked by output truncation
+# T5 baseline readiness — verified D9a fixture; pilot approval pending
 
-Checked 1 November 2026, Hong Kong time. **The conv-50 pilot is not ready to execute.** The one
-authorized fresh compatibility phase is incomplete. Its authorization is consumed; no additional
-paid recovery, pilot or full benchmark has been authorized. See BLK-013 and the pending protocol
-decision below. T5 stays open; T6–T8 are unstarted.
+## Current status — functional compatibility verified
+
+The authorized phase `compatibility-d9a-20261101` completed the frozen 18-turn/four-question fixture
+under D9a and `canonical-index-strings-v1`. Its status is **degraded solely by approved, fully audited
+integer-string deviations**. There were no other processing, metric or provider failures.
+
+| Verification | Result |
+| --- | --- |
+| Reviewed implementation / PR | `4e7f82b`, [PR #13](https://github.com/alistairkung/A-mem-reproducibility/pull/13); user-approved for merge, merge not yet claimed here |
+| Source/configuration bundle | `02dc368e77f1a1e36d7d2deeffe1e6b0c9a7e8de9e715864852566e704ad7285` |
+| Fixture state | 18 notes, 18 evolution outcomes, 18×384 index, evolution counter 17 |
+| QA identities/order | `conv-26:qa:0`, `conv-26:qa:1`, `conv-26:qa:2`, `conv-26:qa:4` |
+| Logical / physical requests; retries | 44 / 44; zero retries and unknown charges |
+| Audited degradation | Seven completions, 19 string indices; raw/returned argument hashes equal |
+| Conservative phase / cumulative study charge | USD0.053118 / USD0.067285; 66 cumulative physical requests |
+| Input / output tokens | 95,676 / 20,330 |
+| Maximum observed output tokens by stage | Metadata 155; shared decision 1,572; query 49; answer 39 |
+| Scoring | Corrected/historical views use the same four saved predictions; no metric failures |
+
+All 44 original argument strings and schema/stage controls verify. Complete cache integrity and phase
+inventory verify. The output policy remains `d9a-shared-decision-4000-v1`: shared decisions 4,000,
+other stages 1,000; no prompts, schemas, parsers, temperatures, retrieval or scoring were changed.
+Offline suite: **268 tests and 92 subtests passed**; independent Standards/Spec reviews and the
+refreshed network-disabled runtime preflight are clear. This fixture verifies functionality, not
+benchmark accuracy or long-conversation robustness.
+
+BLK-007 is **Mitigated**: provider strict-schema violations remain real and audited, while the
+approved boundary policy works in the fixture. BLK-013 is **Resolved for this fixture under D9a**;
+4,000 tokens are not guaranteed sufficient for the full pilot. BLK-012 stays Resolved. Hosted tokenizer
+parity (BLK-008), representative affordability (BLK-009) and live Langfuse tracing (BLK-011) remain Open.
+Optional reporting does not block authoritative local result collection.
+
+The existing saved-result exporter was then verified against the configured Langfuse project:
+two experiments (corrected and historical), four questions each, with all eight question traces
+read back through the current Observations API. Run/condition/population/repetition, scoring and
+provider/output policy IDs, original degraded status, seven deviations, original cost metadata and
+saved predictions match. This is **import timing**, not original inference timing; no model calls or
+new ledger charges occurred. Automatic construction-time tracing remains unwired (BLK-011).
+Receipts: `artifacts/compatibility-d9a-langfuse-export.json` and
+`artifacts/compatibility-d9a-langfuse-verified.json` (headers/SDK key attributes excluded).
+
+- [Corrected scoring experiment](https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=a2ca1a936b9b2427)
+- [Historical scoring experiment](https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=f00c6621e4195c75)
+
+Preserved local evidence:
+
+- `artifacts/runs/compatibility-d9a-20261101/`: immutable approval/preflight, raw events, four predictions,
+  complete summary/phase inventory and both scoring views.
+- `artifacts/cache/2dccf21427d0df63137bb9911fe9cce085bfe5aac0f1b90f2e54ac7db38fba63/`:
+  verified complete memory/index build.
+- `artifacts/compatibility-d9a-verification.json`: raw-argument, cache, outcome and dual-scoring checks.
+- `artifacts/compatibility-d9a-preflight.json` and `artifacts/pilot-conv50-d9a-plan.json`:
+  matched runtime evidence and the exact **unapproved** pilot plan.
+
+The D9a phase authorization is consumed. The pilot plan selects all 568 turns and 204 original QA
+of conv-50, 1,544 logical calls and at most 4,632 physical attempts, with a USD10 hard cap. It is
+`approved:false`; no pilot cache, run or execution exists. Separate explicit authorization and a new
+`artifacts/pilot-conv50-d9a-approved.json` approval artifact are required. API credentials must come
+privately from the process environment; the CLI never loads `.env`. The exact future command is
+**not executed**:
+
+```sh
+.venv/bin/python -m amem_repro.phases execute \
+  --assets artifacts/assets \
+  --preflight artifacts/compatibility-d9a-preflight.json \
+  --compatibility artifacts/runs/compatibility-d9a-20261101/phase.json \
+  --approval artifacts/pilot-conv50-d9a-approved.json
+```
+
+T5 remains open; stop before that pilot, the full benchmark or T6–T8. The following checkpoints
+preserve earlier pending and failed states; their consumed approvals cannot be reused.
+
+## Historical checkpoint — D9a approved; fresh verification pending
+
+After PR #12 merged this failure record (`5078459`), the user approved
+[D9a](decisions.md#d9a--approved-shared-decision-output-allowance-and-one-fresh-verification-phase):
+4,000 output tokens for shared decisions and 1,000 for every other stage, with original temperatures,
+prompts, schemas and parsers retained. The uniform all-arm output policy is
+`d9a-shared-decision-4000-v1`; approvals bind its configuration hash and explicit stage-cap map. Pricing must
+allow the 4,000-token bound while reservations remain stage-specific: 319,373 microUSD for a shared
+decision and 315,773 for another stage. The USD2 phase hard cap and USD42 usable study allowance
+(preserving USD8 contingency) are unchanged.
+
+Exactly **one further fresh** 18-turn/four-question phase is authorized after offline tests, review and
+new runtime preflight: 44 logical calls, at most 132 physical attempts including SDK retries, no extra
+probes planned, and at most USD2 additional expenditure. That phase has not been executed and no
+approved execution plan exists yet. BLK-013 remains Investigating; BLK-007 remains Investigating.
+A 4,000-token limit is not a guarantee of fixture or full-pilot completion. The conv-50 pilot remains
+unready and unauthorized; full benchmark and T6–T8 are also outside this task's execution authority.
+
+The D9a offline suite passes **268 tests and 92 subtests**, including stage-specific SDK requests,
+usage/reservations, rejection of missing/incorrect limits, failed settlements and genuine SDK retries.
+Live verification still requires the final reviewed source and refreshed runtime preflight.
+
+D9a implementation `4e7f82b` has clear independent Standards/Spec reviews (71 tests/60 subtests and
+132 tests/60 subtests respectively). Refreshed network-disabled runtime preflight passes under source
+bundle `02dc368e77f1a1e36d7d2deeffe1e6b0c9a7e8de9e715864852566e704ad7285`.
+These gates permit preparing the newly authorized phase; they do not establish live compatibility.
+
+## Historical checkpoint — consumed 1,000-token phase
+
+Checked 1 November 2026, Hong Kong time. **At this checkpoint the conv-50 pilot was not ready to
+execute.** The one authorized fresh compatibility phase was incomplete and its authorization consumed;
+no further paid phase was then authorized. The following failure evidence and decision request are
+preserved as history. T5 stays open; T6–T8 are unstarted.
 
 ## Engineering and merge evidence
 
@@ -78,7 +179,9 @@ The phase's artifact inventory verifies. Nineteen protected historical files are
 The shared ledger necessarily gained the authorized phase; its original ten attempts and USD0.005851
 charge remain intact. Raw artifacts and credentials are not committed.
 
-## Decision needed before another paid phase
+## Historical decision request before D9a approval
+
+The request below was subsequently approved as D9a; it does not itself record a successful live test.
 
 The frozen D9 cap is 1,000 tokens for every generation. Increasing it is an experimental amendment,
 not a routine repair. Proposed minimum: change **only shared-decision** maximum output to 4,000, keep

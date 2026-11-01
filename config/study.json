@@ -13,7 +13,9 @@
     "temperature_c5": 0.5,
     "max_tokens": 1000,
     "stream": false,
-    "concurrency": 1
+    "concurrency": 1,
+    "shared_decision_max_tokens": 4000,
+    "output_token_policy": "d9a-shared-decision-4000-v1"
   },
   "transport": {
     "timeout_seconds": 120,
