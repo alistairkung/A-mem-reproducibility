@@ -1,6 +1,8 @@
 # T5: bounded compatibility and cost pilot
 
-Status: offline preparation implemented; paid phases require separate explicit approvals.
+Status: offline preparation implemented; the separately approved first compatibility attempt stopped
+on a provider schema violation. See the [attempt report](t5-compatibility-20261101.md).
+Pilot, main execution and recovery remain separately gated.
 Issue: [T5 / #5](https://github.com/alistairkung/A-mem-reproducibility/issues/5).
 The [frozen protocol](experimental-protocol.md) and D1–D13 remain the research authority.
 
@@ -164,9 +166,9 @@ in this command.
 
 | T5 criterion | Current evidence / remaining gate |
 | --- | --- |
-| Offline compatibility first; separate paid approvals | Offline contracts/real local metric smoke pass; neither paid approval obtained |
-| Archive four live schema outcomes and untouched full mode | Mocked fixture covers four schemas; live acceptance/baseline still pending |
-| Measure cost, latency, retries and context expansion | Instrumentation/ledger tested offline; actual API evidence still pending |
+| Offline compatibility first; separate paid approvals | Offline checks pass; first fixture approved and stopped; pilot approval not obtained |
+| Archive four live schema outcomes and untouched full mode | Five metadata/four decision outputs valid, one decision invalid; query/answer and baseline pending |
+| Measure cost, latency, retries and context expansion | Partial fixture usage/latency/cost archived; representative pilot evidence still pending |
 | Cost-only full/fallback choice within USD50 | Forecast tested; actual pilot and explicit main decision still pending |
 | Fresh builds, one repetition, no truncation/tuning | Original full mode only; no repetition/recovery automation |
 | Reuse valid pilot, preserve failures, avoid duplicate charges | Provenance receipts and forecast credit implemented; main baseline orchestration awaits scope decision |

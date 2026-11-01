@@ -142,3 +142,15 @@ Standalone AST loaders now verify frozen bytes, and direct uninstrumented/instru
 tested. Optional reporting requires complete study identity. Default live execution is disabled until T5
 has reviewed, durable phase/request/attempt/USD limits; a Boolean alone cannot enable paid execution.
 No paid calls or T5 execution are authorized by these corrections.
+
+## T5 fixture authorization and first compatibility result
+
+The user subsequently authorized T5 implementation/preflight and then explicitly approved only the
+USD2 compatibility fixture (44 logical calls, at most 132 physical attempts). Pilot, main execution,
+recovery and branch pushing were excluded. See [the attempt report](t5-compatibility-20261101.md).
+
+The first attempt stopped after ten physical requests because DeepSeek returned string connection
+indices under the unchanged integer schema despite strict mode. The conservative ledger cost is
+USD0.005851, with no unknown charges. The run is incomplete and is not compatibility acceptance or
+a baseline result. This is observed evidence, not a revision of D3: preserve the contract and outputs,
+and obtain a separate decision before paid recovery or any semantic/protocol change.

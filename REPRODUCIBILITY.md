@@ -120,6 +120,8 @@ T5 implementation/preflight was authorized on 1 November 2026. The frozen resear
 unchanged. See the [T5 runbook](docs/reproducibility/t5-runbook.md) for reproducible asset preparation,
 offline checks, unapproved execution plans and the acceptance-criteria status.
 
-The real local embedding and author-metric smoke passes with sockets disabled. Hosted beta schema
-acceptance and tokenizer parity remain unverified. No paid compatibility run, pilot, baseline,
-ablation gate, live Langfuse export or T6 replay was executed. The separate HW3 repository is untouched.
+The real local embedding and author-metric smoke passes with sockets disabled. The separately approved
+first paid compatibility attempt stopped on a provider schema violation after ten requests; see the
+[attempt report](docs/reproducibility/t5-compatibility-20261101.md). Compatibility has not passed and
+tokenizer parity remains unverified. No pilot, baseline, ablation gate, live Langfuse export or T6 replay
+was executed. The separate HW3 repository is untouched.

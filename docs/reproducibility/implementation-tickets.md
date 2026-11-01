@@ -15,6 +15,10 @@ The user subsequently invoked `implement-spec issue T5`, authorizing T5 implemen
 preparation. See the [T5 runbook](t5-runbook.md) for controls, evidence and unfinished live criteria.
 This does not grant paid execution, recovery, push or merge permission.
 
+The user later approved only the USD2 compatibility fixture. Its first attempt is incomplete following
+a provider schema violation; see the [archived findings](t5-compatibility-20261101.md). T5 stays open,
+and pilot/main/recovery remain unauthorized.
+
 ## Tracker and dependency map
 
 | Ticket | GitHub issue / deliverable | Direct blockers |
