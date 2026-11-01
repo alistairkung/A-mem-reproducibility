@@ -22,6 +22,11 @@ The D9a offline suite passes **268 tests and 92 subtests**, including stage-spec
 usage/reservations, rejection of missing/incorrect limits, failed settlements and genuine SDK retries.
 Live verification still requires the final reviewed source and refreshed runtime preflight.
 
+D9a implementation `4e7f82b` has clear independent Standards/Spec reviews (71 tests/60 subtests and
+132 tests/60 subtests respectively). Refreshed network-disabled runtime preflight passes under source
+bundle `02dc368e77f1a1e36d7d2deeffe1e6b0c9a7e8de9e715864852566e704ad7285`.
+These gates permit preparing the newly authorized phase; they do not establish live compatibility.
+
 ## Historical checkpoint — consumed 1,000-token phase
 
 Checked 1 November 2026, Hong Kong time. **At this checkpoint the conv-50 pilot was not ready to
