@@ -84,6 +84,21 @@ def verify_study_history(root, sources):
             cost=int((usage['prompt_tokens']*Decimal('.30')+usage['completion_tokens']*Decimal('1.20')).to_integral_value(rounding=ROUND_CEILING))
             if row is None or row[0]!='settled' or json.loads(row[1])!=usage or row[2]!=cost:
                 raise ValueError('Original baseline attempt/usage/charge differs in the shared ledger')
+        # An old ledger snapshot is not a fresh spending allowance. Even partial
+        # main runs retain their approval artifacts and must retain their claims.
+        for path in (root/'artifacts/runs').glob('*/approval.json'):
+            prior=_read(path)
+            if prior.get('phase')!='baseline': continue
+            row=db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(prior['approval_id'],)).fetchone()
+            if row is None or fingerprint(json.loads(row[0]))!=fingerprint(prior):
+                raise ValueError('Archived main run missing from cumulative study ledger')
+            try:
+                claim=db.execute('SELECT study_id,condition,conversation_id FROM study_jobs WHERE approval_id=?',(prior['approval_id'],)).fetchone()
+            except sqlite3.OperationalError:
+                raise ValueError('Archived main run lost its durable cell claim') from None
+            prior_job=prior['binding'].get('study_job',{})
+            if claim!=(prior_job.get('study_id'),prior['binding'].get('condition'),prior_job.get('conversation_id')):
+                raise ValueError('Archived main run lost its durable cell claim')
     with (child_dir/'events.jsonl').open() as stream:
         start=json.loads(next(stream))
     build=next(json.loads(line)['build_id'] for line in (child_dir/'events.jsonl').read_text().splitlines()

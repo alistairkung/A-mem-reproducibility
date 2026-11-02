@@ -149,6 +149,15 @@ def test_forged_completion_cannot_release_frontier_or_continue_transmission(tmp_
         PhasePermit(second,path,second['binding'])
 
 
+def test_lost_cell_claim_cannot_erase_an_existing_main_authority(tmp_path):
+    path=tmp_path/'ledger';funded_ledger(path)
+    auth=study_approval('full');PhasePermit(auth,path,auth['binding'])
+    with sqlite3.connect(path) as db: db.execute('DELETE FROM study_jobs')
+    other=study_approval('full','conv-44','different-cell')
+    with pytest.raises(BudgetStop,match='claim/history'):
+        PhasePermit(other,path,other['binding'])
+
+
 @pytest.mark.parametrize('failure',[None,'decision','first_fingerprint','last_fingerprint'])
 def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,failure):
     import httpx
@@ -262,6 +271,17 @@ def test_original_usage_and_prefix_cannot_be_replaced_or_masked(saved_history,co
             db.execute('DELETE FROM attempts WHERE id=593')
             db.execute('INSERT INTO attempts VALUES (9999,?,?,?,?,?,?,?)',row)
     with pytest.raises(ValueError,match='attempt/usage/charge|prefix'):
+        verify_study_history(root,sources)
+
+
+def test_old_ledger_snapshot_cannot_hide_an_archived_failed_main_run(saved_history):
+    from amem_repro.study import verify_study_history
+    root,sources=saved_history
+    runs=root/'artifacts/runs'
+    original=runs.resolve();runs.unlink();shutil.copytree(original,runs)
+    failed=runs/'old-failed-main';failed.mkdir()
+    (failed/'approval.json').write_text(json.dumps(study_approval('full')))
+    with pytest.raises(ValueError,match='Archived main run missing'):
         verify_study_history(root,sources)
 
 

@@ -210,6 +210,13 @@ class PhasePermit:
         with self._transaction(initialize=True) as db:
             if 'study_job' in binding:
                 job = binding['study_job']
+                for prior_id,raw in db.execute('SELECT approval_id,auth_json FROM phases'):
+                    prior=json.loads(raw)
+                    if prior.get('phase')!='baseline': continue
+                    claim=db.execute('SELECT study_id,condition,conversation_id FROM study_jobs WHERE approval_id=?',(prior_id,)).fetchone()
+                    prior_job=prior['binding'].get('study_job',{})
+                    if claim!=(prior_job.get('study_id'),prior['binding'].get('condition'),prior_job.get('conversation_id')):
+                        raise BudgetStop('Study cell claim/history is missing or changed')
                 historical = db.execute('SELECT COALESCE(SUM(charge),0) FROM attempts').fetchone()[0]
                 if historical < job['initial_study_microusd']:
                     raise BudgetStop('Shared ledger lost historical study spending')
@@ -260,7 +267,9 @@ class PhasePermit:
             if (receipt['budget'].get('charged_or_reserved_microusd')!=cost
                     or receipt['budget'].get('physical_attempts')!=attempts):
                 self._halt(db,'Study receipt costs/attempts differ from the actual ledger')
-            db.execute('UPDATE study_jobs SET complete=1 WHERE approval_id=?', (self.approval_id,))
+            updated=db.execute('UPDATE study_jobs SET complete=1 WHERE approval_id=?', (self.approval_id,))
+            if updated.rowcount!=1:
+                self._halt(db,'Study cell claim missing at completion')
 
     @contextmanager
     def _transaction(self, initialize=False):
