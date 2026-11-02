@@ -210,10 +210,17 @@ class PhasePermit:
         with self._transaction(initialize=True) as db:
             if 'study_job' in binding:
                 job = binding['study_job']
+                for prior_id,raw in db.execute('SELECT approval_id,auth_json FROM phases'):
+                    prior=json.loads(raw)
+                    if prior.get('phase')!='baseline': continue
+                    claim=db.execute('SELECT study_id,condition,conversation_id FROM study_jobs WHERE approval_id=?',(prior_id,)).fetchone()
+                    prior_job=prior['binding'].get('study_job',{})
+                    if claim!=(prior_job.get('study_id'),prior['binding'].get('condition'),prior_job.get('conversation_id')):
+                        raise BudgetStop('Study cell claim/history is missing or changed')
                 historical = db.execute('SELECT COALESCE(SUM(charge),0) FROM attempts').fetchone()[0]
                 if historical < job['initial_study_microusd']:
                     raise BudgetStop('Shared ledger lost historical study spending')
-                if db.execute('SELECT 1 FROM study_jobs WHERE study_id=? AND complete=0', (job['study_id'],)).fetchone():
+                if db.execute('SELECT 1 FROM study_jobs j JOIN phases p ON p.approval_id=j.approval_id WHERE j.study_id=? AND (j.complete=0 OR p.halted IS NOT NULL)', (job['study_id'],)).fetchone():
                     raise BudgetStop('A study job is unfinished; paid recovery requires separate approval')
                 if binding['condition']!='full':
                     full={row[0] for row in db.execute('SELECT conversation_id FROM study_jobs WHERE study_id=? AND condition=? AND complete=1',
@@ -238,7 +245,7 @@ class PhasePermit:
                 db.execute('INSERT INTO checkpoint_claims VALUES (?,?)', (parent, self.approval_id))
 
     def complete_study_job(self, receipt):
-        """Release the serial frontier only after a complete immutable phase receipt exists."""
+        """Verify settled workload before publication; failed publication must halt the cell."""
         if 'study_job' not in self.binding:
             return
         with self._transaction() as db:
@@ -260,7 +267,9 @@ class PhasePermit:
             if (receipt['budget'].get('charged_or_reserved_microusd')!=cost
                     or receipt['budget'].get('physical_attempts')!=attempts):
                 self._halt(db,'Study receipt costs/attempts differ from the actual ledger')
-            db.execute('UPDATE study_jobs SET complete=1 WHERE approval_id=?', (self.approval_id,))
+            updated=db.execute('UPDATE study_jobs SET complete=1 WHERE approval_id=?', (self.approval_id,))
+            if updated.rowcount!=1:
+                self._halt(db,'Study cell claim missing at completion')
 
     @contextmanager
     def _transaction(self, initialize=False):

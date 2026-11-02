@@ -63,7 +63,9 @@ def archive(tmp_path, manifest, condition='full', *, run_id='fixture', status='c
     failures = ([{'type':'failure','kind':'synthetic-retained-fallback','run_id':run_id}] if status=='degraded' else [])
     events = [start] + failures + [{'type':'question_result','run_id':run_id,'question_id':r['question_id'], 'result':r} for r in rows]
     (directory/'events.jsonl').write_text(''.join(json.dumps(e)+'\n' for e in events))
+    preflight={'synthetic':True,'source_sha256':fingerprint(sources),'runtime':{'ok':True,'network_disabled':True}}
     binding = {'manifest_sha256':fingerprint(manifest), 'config_sha256':fingerprint(config),
+               'preflight_sha256':fingerprint(preflight),
                'source_sha256':fingerprint(sources), 'condition':condition, 'population':manifest['scope'],
                'repetition':0, 'model':config['model']['id'],
                'endpoint':config['model']['base_url']+config['model']['route'],
@@ -71,7 +73,7 @@ def archive(tmp_path, manifest, condition='full', *, run_id='fixture', status='c
                'memory_actions':config['conditions'][condition],'action_policy':'released-action-boundaries-v1'}
     write_json(directory/'run.json', {'run_id':run_id,'expected_question_ids':[r['question_id'] for r in rows]})
     write_json(directory/'approval.json', {'approved':True,'run_id':run_id,'phase':'baseline','binding':binding})
-    write_json(directory/'preflight.json', {'synthetic':True})
+    write_json(directory/'preflight.json', preflight)
     write_json(directory/'summary.json', {'run_id':run_id,'status':status,'expected_questions':len(rows),
                                          'completed_questions':len(rows),'failures':failures})
     write_json(directory/'scoring-views.json', views)
@@ -95,17 +97,39 @@ def test_load_verifies_saved_predictions_and_both_policy_views_without_scoring(t
     assert {p:p.read_bytes() for p in before}==before
 
 
-def test_saved_phase_cannot_relabel_changed_scientific_source_as_original(tmp_path):
+@pytest.mark.parametrize('source',['memory_layer.py','amem_repro/scoring.py','amem_repro/measurements.py',
+                                   'config/assets.json','config/study.json','uv.lock','pyproject.toml'])
+def test_saved_phase_cannot_relabel_changed_scientific_source_as_original(tmp_path,source):
     manifest = build_manifest(ROOT/'data/locomo10.json','smoke')
     path = archive(tmp_path,manifest)
     phase=json.loads(path.read_text())
     events=[json.loads(line) for line in (path.parent/'events.jsonl').read_text().splitlines()]
-    events[0]['source_hashes']['files']['memory_layer.py']='0'*64
+    events[0]['source_hashes']['files'][source]='0'*64
     phase['binding']['source_sha256']=fingerprint(events[0]['source_hashes'])
+    preflight=json.loads((path.parent/'preflight.json').read_text())
+    preflight['source_sha256']=phase['binding']['source_sha256']
+    phase['binding']['preflight_sha256']=fingerprint(preflight)
+    write_json(path.parent/'preflight.json',preflight)
     (path.parent/'events.jsonl').write_text(''.join(json.dumps(e)+'\n' for e in events))
     approval=json.loads((path.parent/'approval.json').read_text());approval['binding']=phase['binding']
     write_json(path.parent/'approval.json',approval);seal(path.parent,phase)
     with pytest.raises(ValueError,match='Scientific source'):
+        load_saved_run(path,manifest,root=ROOT,archive_root=tmp_path)
+
+
+@pytest.mark.parametrize('corruption',['binding_hash','source','runtime','network'])
+def test_saved_phase_requires_bound_successful_offline_runtime_preflight(tmp_path,corruption):
+    manifest=build_manifest(ROOT/'data/locomo10.json','smoke')
+    path=archive(tmp_path,manifest);phase=json.loads(path.read_text())
+    preflight=json.loads((path.parent/'preflight.json').read_text())
+    if corruption=='source': preflight['source_sha256']='0'*64
+    elif corruption=='runtime': preflight['runtime']['ok']=False
+    elif corruption=='network': preflight['runtime']['network_disabled']=False
+    phase['binding']['preflight_sha256']='0'*64 if corruption=='binding_hash' else fingerprint(preflight)
+    write_json(path.parent/'preflight.json',preflight)
+    approval=json.loads((path.parent/'approval.json').read_text());approval['binding']=phase['binding']
+    write_json(path.parent/'approval.json',approval);seal(path.parent,phase)
+    with pytest.raises(ValueError,match='Runtime preflight'):
         load_saved_run(path,manifest,root=ROOT,archive_root=tmp_path)
 
 

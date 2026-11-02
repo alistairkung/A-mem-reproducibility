@@ -55,6 +55,56 @@ def _replace_summary(output, summary):
     os.replace(temporary, output / "summary.json")
 
 
+def _publish_study_phase(output, value):
+    """A failed fsync must leave an unpublished temp, never a false final receipt."""
+    if (output/'phase.json').exists():
+        raise FileExistsError('Final study receipt already exists')
+    temporary=output/('.phase-final-'+uuid.uuid4().hex+'.json')
+    _save(temporary,value)
+    os.replace(temporary,output/'phase.json')
+
+
+def _finalize_study_phase(output, value, permit, summary, observer):
+    from .budget import BudgetStop
+    try:
+        if value['usable_for_next_phase']:
+            permit.complete_study_job(value)
+        _publish_study_phase(output,value)
+    except BaseException as error:
+        failure={'type':'failure','kind':'phase_finalization','error_type':type(error).__name__,
+                 'level':'run','question_id':None,'conversation_id':None,'build_id':None}
+        secondary={}
+        try:
+            permit.stop('study_finalization_failed_no_automatic_recovery')
+        except BaseException as halt_error:
+            secondary['halt_error_type']=type(halt_error).__name__
+        try:
+            if observer is not None:
+                observer(failure)
+                observer({'type':'run_abort','level':'run','question_id':None,'conversation_id':None,
+                          'build_id':None,'execution_stage':'study_finalization','error_type':type(error).__name__})
+            if summary is not None:
+                summary['status']='incomplete'
+                summary['failures']=[json.loads(line) for line in (output/'events.jsonl').read_text().splitlines()
+                                     if json.loads(line).get('type')=='failure']
+                _replace_summary(output,summary)
+        except BaseException as report_error:
+            secondary['report_error_type']=type(report_error).__name__
+        value.update(status='incomplete',usable_for_next_phase=False,
+                     error_type=value.get('error_type') or type(error).__name__,finalization_error_type=type(error).__name__)
+        try:
+            value['budget']=permit.summary()
+            _save(output/'finalization-error.json',{'error_type':type(error).__name__,'status':'incomplete',**secondary})
+            value['artifact_sha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                                     for p in sorted(output.iterdir()) if p.is_file() and p.name!='phase.json'}
+            _publish_study_phase(output,value)
+        except BaseException:
+            # Missing final phase.json remains unusable; a halted/unfinished cell
+            # and retained raw events/charges prohibit paid continuation.
+            pass
+        raise BudgetStop('Study finalization failed; paid continuation is prohibited') from error
+
+
 @contextmanager
 def _asset_environment(root):
     values = asset_environment(root)
@@ -314,7 +364,25 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         fingerprints.update(previous["system_fingerprints"])
 
     def controller(observer):
-        c = create_deepseek_controller(paid_authorized=True, observer=observer, phase_permit=permit,
+        def durable_journal(event):
+            from .budget import BudgetStop
+            try:
+                observer(event)
+            except BudgetStop:
+                raise
+            except BaseException as error:
+                try:
+                    permit.stop('critical_generation_journal_failed')
+                except BaseException:
+                    pass
+                try:
+                    _save(output/('generation-journal-failure-'+uuid.uuid4().hex+'.json'),
+                          {'error_type':type(error).__name__,'event':event})
+                except BaseException:
+                    pass
+                raise BudgetStop('Critical generation journal failed; no paid continuation') from error
+        c = create_deepseek_controller(paid_authorized=True,
+                                       observer=durable_journal if approval['phase']=='baseline' else observer, phase_permit=permit,
                                        provider_contract_policy=provider_contract_policy)
         clients.append(c.client)
         return c
@@ -334,16 +402,19 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         if event.get("compatibility_deviation"):
             deviations["completions"] += 1
             deviations["items"] += len(event["compatibility_deviation"]["transformations"])
+        if approval['phase']=='baseline':
+            for field,expected in (('returned_model',binding['expected_returned_models']),
+                                   ('system_fingerprint',binding['expected_system_fingerprints'])):
+                actual=event.get(field)
+                if type(actual) is not str or not actual or actual not in expected:
+                    permit.stop('provider_model_or_fingerprint_invalid_or_changed')
+                    return  # No set insertion or other potentially failing metadata work.
         if event.get("returned_model"):
             versions.add(event["returned_model"])
         if event.get("system_fingerprint"):
             fingerprints.add(event["system_fingerprint"])
         if len(versions) > 1 or len(fingerprints) > 1:
             permit.stop("provider_model_or_fingerprint_changed")
-        if approval['phase']=='baseline' and event.get('attempts') and not event.get('error_type'):
-            if (event.get('returned_model') not in binding['expected_returned_models']
-                    or event.get('system_fingerprint') not in binding['expected_system_fingerprints']):
-                permit.stop('provider_model_or_fingerprint_missing_or_changed')
         if event.get("usage") is None:
             permit.stop("missing_provider_usage")
 
@@ -414,6 +485,11 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
     finally:
         for client in clients:
             client.close()
+        if summary is None and (output/'summary.json').exists():
+            try:
+                summary=json.loads((output/'summary.json').read_text())
+            except (OSError,ValueError):
+                pass  # Unreadable partial accounting never becomes a completed phase.
         budget = permit.summary()
         phase_result = {
             "phase": approval["phase"], "run_id": approval["run_id"],
@@ -442,9 +518,10 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             "artifact_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                                 for p in sorted(output.iterdir()) if p.is_file()},
         }
-        _save(output / "phase.json", phase_result)
-        if phase_result['usable_for_next_phase'] and approval['phase']=='baseline':
-            permit.complete_study_job(phase_result)
+        if approval['phase']=='baseline':
+            _finalize_study_phase(output,phase_result,permit,summary,getattr(locals().get('scorer'),'observer',None))
+        else:
+            _save(output / "phase.json", phase_result)
     return phase_result
 
 
