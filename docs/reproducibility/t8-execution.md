@@ -30,6 +30,13 @@ fresh cells total16936 logical generations and at most50808 physical attempts. E
 its workload, hard spending/request/attempt caps and scientific/source provenance before transmission.
 Unspent allocation is not approval for recovery or an extra repetition.
 
+Use a pooled cumulative allowance: each complete-conversation phase has at most USD10 as a hard
+phase ceiling, while all new phases together remain limited to USD38.974201 by the fixed USD42
+usable study ledger ceiling. Phase caps are not additive spending authority. Avoid artificial
+proportional per-cell limits that could prevent completion despite headroom in the approved pool.
+Reforecast the entire remaining balanced study from usage/cost before each phase; stop if it no
+longer fits. A claimed phase's limit is immutable and never increased automatically.
+
 Official DeepSeek pricing/model documentation was checked2 November2026: request model `deepseek-flash`,
 documented version DeepSeek-V4.1-Flash-1017,1M context and peak cache-miss input/output rates
 USD0.30/1.20 per million tokens remain unchanged. Continue to reserve/charge at these conservative
@@ -64,6 +71,8 @@ and retained decision-call overhead. No stochastic-robustness claim follows from
 Reuse existing local table exports and Langfuse Experiments imports. Imports return saved outputs and
 metrics; they do not run the application or evaluators again. Keep condition/population/scoring-policy/
 repetition/run lineage distinct and retain local evidence even if optional reporting is unavailable.
+Project authentication was rechecked successfully2 November using the CLI (HTTP200); a filtered
+receipt in `artifacts/t8-langfuse-project-readback.json` retains no credentials or request/response headers.
 Pinned Langfuse SDK5.1.0 remains the tested protocol choice; no dependency upgrade is introduced.
 [Saved-result workflow](https://langfuse.com/resources/engineering/evaluate-existing-application),
 [Experiments SDK](https://langfuse.com/docs/evaluation/experiments/experiments-via-sdk).
