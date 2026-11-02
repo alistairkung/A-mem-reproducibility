@@ -23,6 +23,7 @@ from .config import (
     validate_config, source_fingerprint, STRICT_PROVIDER_POLICY, validate_provider_policy,
 )
 from .manifests import expand_manifest
+from .actions import ACTION_POLICY, action_configuration
 
 
 def load_dataset_module(repo_root):
@@ -69,14 +70,20 @@ def run_manifest(
 ):
     """Run an approved manifest. Injected interfaces support deterministic offline contracts.
 
-    T1–T4 supplies orchestration only; non-full action gates and deterministic replay belong to T7/T6.
+    An ablated condition requires the explicitly bound T7 action factory.
     A true paid_authorized value is a declaration of separately obtained user approval, never permission
     inferred from environment credentials or the existence of a planning ticket.
     """
     validate_config(config)
     validate_provider_policy(provider_contract_policy)
-    if condition != "full":
-        raise ValueError("Action gating is not implemented or authorized in T1–T4")
+    actions = action_configuration(condition)
+    bound_condition = getattr(agent_factory, '_repro_condition', None)
+    if ((bound_condition is not None and bound_condition != condition)
+            or (condition != 'full' and bound_condition != condition)):
+        raise ValueError('Condition requires its matching action-gated factory')
+    if checkpoint is not None and condition != 'full':
+        raise ValueError('The frozen full-mode checkpoint cannot seed an ablation')
+    action_implementation = 't7-action-gates' if bound_condition is not None else 'frozen-author'
     if execution_type not in ("fresh_build", "cached_qa", "checkpoint_recovery", "deterministic_replay"):
         raise ValueError("This runner supports fresh_build and cached_qa; replay is T6")
     if execution_type == 'deterministic_replay' and agent_factory is None:
@@ -173,6 +180,9 @@ def run_manifest(
             "manifest": manifest,
             "source_hashes": source_hashes,
             "condition": condition,
+            "memory_actions": actions,
+            "action_policy": ACTION_POLICY,
+            "action_implementation": action_implementation,
             "repetition": repetition,
             "provider_contract_policy": provider_contract_policy,
         }
@@ -188,6 +198,9 @@ def run_manifest(
                 provider_contract_policy=provider_contract_policy,
             )
             identity["condition"] = condition
+            identity['memory_actions'] = actions
+            identity['action_policy'] = ACTION_POLICY
+            identity['action_implementation'] = action_implementation
             if execution_type == 'deterministic_replay':
                 identity['execution_type'] = execution_type
             if checkpoint is not None:
@@ -205,6 +218,10 @@ def run_manifest(
                 )
             saved = cache.load(identity) if execution_type == "cached_qa" else None
             agent = agent_factory(config=config, observer=record)
+            if bound_condition is not None and (
+                    getattr(agent, '_repro_condition', None) != condition
+                    or dict(getattr(agent, '_repro_action_configuration', {})) != actions):
+                raise ValueError('Constructed agent action configuration differs')
             note_type = getattr(agent, "_repro_note_type", SimpleNamespace)
             sample = raw[conversation["sample_index"]]
             if sample["sample_id"] != conversation["original_id"]:
@@ -283,14 +300,20 @@ def run_manifest(
                             and before[key]
                             != {"context": note.context, "tags": list(note.tags)}
                         ]
+                        proposal = decision if isinstance(decision, dict) else {}
+                        proposed_actions = proposal.get('actions')
+                        if not isinstance(proposed_actions, list):
+                            proposed_actions = []
                         outcome = {
                             "turn_id": turn.dia_id,
                             "counter_before": counter_before,
                             "counter_after": agent.memory_system.evo_cnt,
                             "proposed_decision": decision,
                             "changed_existing_note_ids": changed,
-                            "suppressed_actions": [],
-                            "enabled_actions": ["strengthen", "update_neighbor"],
+                            "suppressed_actions": [a for a in proposed_actions
+                                                   if proposal.get('should_evolve') and isinstance(a, str)
+                                                   and a in actions and not actions[a]],
+                            "enabled_actions": [a for a, enabled in actions.items() if enabled],
                         }
                         outcomes.append(outcome)
                         record({"type": "evolution_outcome", **outcome})

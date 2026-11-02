@@ -381,3 +381,13 @@ per-insertion snapshots/query vectors are unavailable, so retain that limitation
 portable fixtures plus frozen-author-derived comparison hashes, verified against recorded checkpoints,
 requests, outcomes, retrieval and scores. This is not new historical evidence or independent live trials.
 No paid model calls, T7 switches, new compatibility policy or additional benchmark experiment is approved.
+
+## Authorization — T7 independent action gates
+
+On 2 November 2026 the user authorized issue #7 implementation, deterministic tests, Standards/Spec
+reviews, routine corrections, documentation/blocker updates, commits/push, a focused PR and merge
+after all tests and full-mode candidate replay pass. Use merged T6 (`87f34d7`) as the fixed oracle;
+run both the frozen reference and the actual T7 candidate against it. Preserve the author source,
+all baseline evidence, scientific settings and D3a/D9a policies. Independently gate only the released
+strengthen and update_neighbor action execution under D7/D8; positive decisions still count even
+when all actions are disabled. This authorizes no paid calls, T8 implementation or ablation collection.

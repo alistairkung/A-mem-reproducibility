@@ -96,6 +96,7 @@ are unavailable unless an experiment receipt supplies them.
 - **Resolution attempts:**
   - 2026-11-01, discovery: traced shared decisions, action boundaries and counter/consolidation semantics; D7–D8 approved.
   - 2026-11-01, ticket review: T6/T7 remain open; no ablation gates or equivalence results exist.
+  - 2026-11-02, separately authorized T7 engineering after T6 merge `87f34d7`: derive only two Boolean guards from the verified frozen `_evolve` AST, bind per instance, retain parsing/validation/action bodies/counting/consolidation, and record condition/actions in run and cache provenance. Initial90 offline tests pass; mandatory reference/candidate archive replays and independent reviews are in progress. No paid ablation has run.
 - **Final resolution or limitation:** Reconstruction is planned, not executed. Archive the original baseline and prove full-mode replay before T7.
 - **Verification:** Required but pending: 16 action/configuration combinations, failure/counter boundaries and full-mode replay. No proposed test is reported as passed.
 - **Research significance:** A published ablation table does not uniquely specify its executable intervention; operational definitions must disclose coupled metadata changes.
