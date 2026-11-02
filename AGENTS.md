@@ -30,10 +30,10 @@ PR #14 is merged as `ca6c68f`. The authorized child `pilot-conv50-checkpoint-chi
 incomplete parent, completed child/cache, raw outputs and cumulative USD3.025799 study ledger.
 All paid approvals are consumed. The cost-only forecast recommends the frozen three-conversation
 fallback; remaining T5 collection, further paid execution/recovery and T6–T8 need separate approval.
-On 2 November the user separately authorized T6 implementation, offline regression/review, commits,
-push, PR and merge when acceptance criteria pass, using the completed conv-50 lineage. See
-`docs/reproducibility/t6-replay.md`. Preserve replay fixtures/oracles and original artifacts; no T7,
-paid requests or additional benchmark collection is authorized.
+T6 now provides the offline replay gate using that completed lineage. Before T7 changes or replay
+verification, read `docs/reproducibility/t6-replay.md` and run its regression commands. Preserve fixed
+fixtures/oracles and original artifacts; inject the candidate full-mode implementation for equivalence
+checks. T7, paid requests and additional benchmark collection require separate authorization.
 Preserve the frozen author files; add support code separately. A consumed phase approval cannot be reused.
 Before any paid phase, read `docs/reproducibility/baseline-readiness.md` for the verified fixture,
 historical plans and consumed approvals. Additional paid execution requires a new decision.

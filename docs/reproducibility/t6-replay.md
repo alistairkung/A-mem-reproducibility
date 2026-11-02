@@ -60,7 +60,10 @@ the reference implementation and claim candidate equivalence.
 and removes only note `last_accessed` wall-clock values. Dataset timestamps, text, tags, keywords,
 links/order, embeddings/dtype/rows and corpus remain exact. Raw artifacts are unchanged. Build failure
 provenance is distinct from memory state; original provider rejection and audits are checked through
-the replay controller and retained baseline archive, while replay status must remain degraded.
+the replay controller and exact ordered failure-record comparison. Only run/build identities are
+removed from that comparison; failure kinds, messages and compatibility audits remain exact. Replay
+status must remain degraded. The one zero-attempt historical stop notice is explicitly verified and
+excluded with its blocked event, rather than inventing a completion for it.
 
 ## T7 regression commands
 
@@ -105,3 +108,22 @@ The portable suite remains usable from a fresh clone; archive validation require
 preserved research artifacts. Replay is not an independent stochastic trial or a benchmark repetition.
 All generated outputs live in a new `artifacts/replays/` directory; original runs/cache/ledger are
 protected by final hash checks. Existing directories and baseline run/cache output locations are refused.
+
+## Verified T6 outcome — 2 November 2026
+
+- Complete offline suite: **333 tests and 92 subtests**, log `artifacts/t6-merged-candidate-suite.txt`.
+- Portable regression command above: **103 tests**, log `artifacts/t6-portable-final-tests.txt`.
+- Reviewed-code fresh-process archive gate: `artifacts/replays/t6-reviewed-20261102/verification.json`.
+  All1,544 requests, 568 insertion hashes/outcomes, five consolidation events, historical states at263/568,
+  all204 retrieval contexts/predictions/primary metrics and both author scoring views match exactly.
+  All376 logical failure/audit records match; classification remains Degraded. The original zero-attempt
+  stop notice remains preserved historical evidence. All protected baseline/cache/ledger hashes match;
+  sockets were denied and no paid call occurred.
+- A deliberate first-row embedding mutation failed at insertion1 (`artifacts/t6-mutant-gate.txt`).
+- Standards and Spec reviews are clear after correction `d0c8168`. The Spec failure-provenance finding
+  is fixed with missing/extra/changed-failure and classification regressions; schema matching also
+  rejects Python's otherwise equal Boolean/integer representations.
+
+BLK-015 remains Mitigated with the historical recording limitation above. T6 supplies the regression
+gate for separately authorized T7; no T7 implementation or paid execution occurred. Raw research runs
+and final replay receipts are local ignored artifacts, not included in a fresh clone.

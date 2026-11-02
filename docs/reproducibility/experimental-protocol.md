@@ -26,6 +26,10 @@ completed all568 turns/204 QA with inherited degradation; its approval is consum
 forecast recommends the frozen fallback (USD42.762234 including USD8 contingency), versus
 USD127.391486 for all10 conversations. See the [verified outcome](t5-conv50-baseline-20261101.md).
 Further collection, paid recovery and T6–T8 still require separate decisions.
+On 2 November the user separately authorized offline T6 implementation, review, commits/push,
+PR and merge based on the completed conv-50 lineage. See [T6 authorization](decisions.md#authorization--t6-deterministic-replay-on-the-completed-conv-50-lineage)
+and [the replay gate](t6-replay.md). This does not authorize T7/T8, further paid collection or a
+population change; T5 remains open for the remaining selected-conversation collection.
 Keep all work inside this repository; the separate FTEC5660 HW3 repository is out of scope.
 Credentials stay in the environment and outside code, public records, logs and committed artifacts.
 

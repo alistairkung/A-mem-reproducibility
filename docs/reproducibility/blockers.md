@@ -1,6 +1,6 @@
 # Reproducibility blockers and resolutions
 
-Last reviewed: 1 November 2026. Scope: the FTEC5660 controlled reproduction defined in the
+Last reviewed: 2 November 2026. Scope: the FTEC5660 controlled reproduction defined in the
 [protocol](experimental-protocol.md), [decisions](decisions.md) and [tickets](implementation-tickets.md).
 This tracker records evidence and investigation history; it grants no execution or protocol-change approval.
 
@@ -29,7 +29,8 @@ by the cost-only fallback forecast (USD42.762234 including USD8), with uncertain
 cost monitoring. BLK-014/BLK-007 are Mitigated, not restored provider guarantees. BLK-013 is resolved
 under D9a for this conversation; other contexts may exceed the cap. BLK-008 limits token-count claims
 and BLK-011 tracing remains optional/unwired. BLK-012's terminal guard remains verified. See the
-[baseline outcome](t5-conv50-baseline-20261101.md) before further decisions; T6–T8 are unstarted.
+[baseline outcome](t5-conv50-baseline-20261101.md) before further decisions. T6's offline gate is
+implemented; T7–T8 remain unstarted and separately gated.
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -385,6 +386,9 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-02: inspect original implementation and immutable archives; find complete logical response coverage, including the malformed decision and accepted D3a audits.
   - 2026-11-02: first socket-denied full replay exactly matches all1,544 requests, 568 outcomes, historical states at263/568, all204 retrieval contexts/predictions and both original scoring views on the pinned CPU environment. No vector/metric tolerance was used; original run/cache/ledger files were read only.
   - 2026-11-02: freeze568 compact T6-derived per-insertion comparison hashes, anchored to parent/child receipts, author revision and dataset. Export only four exact opening responses for portable tests; label their 2D-stub comparison states as new offline characterization, not historical embeddings.
+  - 2026-11-02, implementation `c6d7a57`: fresh-process replay matches all568 pinned hashes, historical checkpoints, requests, outcomes, retrieval/predictions and scoring without numerical tolerance. Explicit consolidation observations match notes101/201/302/402/502 at counters100/200/300/400/500. An injected first-row embedding mutation is rejected at insertion1 (`artifacts/t6-mutant-gate.txt`).
+  - 2026-11-02, Spec review correction `d0c8168`: add exact ordered logical failure/audit comparison and Degraded classification, excluding only the explicitly verified historical zero-attempt stop notice. Negative regressions reject missing/extra/changed failures and a Boolean-schema/integer substitution. Standards and Spec re-reviews independently pass46 replay tests with no remaining findings; complete offline suite passes333 tests/92 subtests, portable T7 gate103 tests.
+  - 2026-11-02, final reviewed-code fresh process: `artifacts/replays/t6-reviewed-20261102/verification.json` verifies all1,544 calls, 568 state hashes, five consolidations, both historical full states, all204 retrieval/prediction/scoring results, both scoring views, all376 logical failure/audit records and Degraded classification exactly. Parent/child artifacts, final cache and study-ledger hashes remain unchanged; sockets are denied and paid calls are zero.
 - **Final resolution or limitation:** Mitigated for T6's regression purpose. Recorded facts and derived reference state remain distinct. Every future full-mode replay must match the fixed intermediate oracle as well as recorded checkpoints/outcomes/QA. Historical unlogged vectors are not claimed recovered independently; another runtime/device must fail or be investigated if exact recomputation differs.
-- **Verification:** First full replay and portable tests pass. A fresh-process oracle-gated replay, explicit consolidation checks, mutation test and final reviews are in progress; later evidence will be appended. No paid calls or baseline regeneration occurred.
+- **Verification:** Final reviewed-code receipt above, fresh-process oracle-gated replay, explicit consolidation checks and mutation rejection pass; Standards and Spec reviews are clear. Test logs are `artifacts/t6-merged-candidate-suite.txt` and `artifacts/t6-portable-final-tests.txt`. No paid calls or baseline regeneration occurred.
 - **Research significance:** Capturing model outputs enables logical replay, but does not alone supply independent evidence of every numerical state. A trustworthy regression gate separates recorded history, deterministic local computation and explicitly derived test oracles.
