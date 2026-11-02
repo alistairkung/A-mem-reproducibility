@@ -1,6 +1,19 @@
-# T5 baseline readiness — conv-50 pilot incomplete
+# T5 conv-50 baseline — completed degraded lineage
 
-## Current status — BLK-014 blocks pilot completion
+## Current status — verified baseline and cost-only forecast
+
+PR #14 merged as `ca6c68f`. The separately authorized checkpoint child completed all remaining 305 turns
+and all 204 original QA: 568 notes/outcomes, 568×384 index and counter 566. Status is **Degraded** because
+the original failed evolution and audited integer-string deviations remain retained. The parent remains
+immutable and Incomplete. No new unexpected processing/metric failure occurred.
+
+Child cost USD2.219082; combined baseline USD2.958514; cumulative study USD3.025799. All approvals are
+consumed. Cost-only recommendation: predefined fallback (USD42.762234 total including USD8 contingency),
+versus USD127.391486 for all 10 conversations. No further collection or T6–T8 was started.
+See the [verified outcome](t5-conv50-baseline-20261101.md) for scores, full provenance, budget uncertainty,
+artifact paths and remaining T5/T6 approval gates. Earlier checkpoints below are historical evidence.
+
+## Historical checkpoint — BLK-014 blocks pilot completion
 
 The user authorized one conv-50 pilot from the D9a plan (USD10 / 1,544 logical calls / 4,632 attempts).
 It ran on merged PR #13 source `c659856` and is **incomplete**: 263 notes/index rows retained, zero

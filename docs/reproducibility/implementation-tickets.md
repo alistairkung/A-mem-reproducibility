@@ -19,11 +19,11 @@ The user later approved only the USD2 compatibility fixture. Its first attempt i
 a provider schema violation; see the [archived findings](t5-compatibility-20261101.md). T5 stays open,
 and pilot/main/recovery remain unauthorized.
 
-Current checkpoint: the D9a fixture completed all 18 turns/four questions with audited degradation.
-The separately authorized conv-50 pilot then stopped on malformed JSON (BLK-014), retaining 263 notes
-and zero QA; see the [pilot record](t5-pilot-conv50-d9a-20261101.md). Both approvals are consumed.
-T5 remains open, with full/fallback affordability pending complete representative coverage. Further
-paid recovery, full benchmark and T6–T8 remain unauthorized and unstarted.
+Current checkpoint: PR #14 is merged and its separately authorized child completed the conv-50
+baseline, retaining the parent's failed evolution: 568 notes, 204 QA, Degraded. See the
+[verified baseline](t5-conv50-baseline-20261101.md). All paid approvals are consumed. The cost-only
+forecast recommends the predefined fallback; T5 remains open for remaining approved-scope baseline
+collection (conv-49/conv-44 under fallback). Further paid phases and T6–T8 require separate approval.
 
 ## Tracker and dependency map
 

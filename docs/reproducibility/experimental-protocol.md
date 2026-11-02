@@ -20,7 +20,12 @@ T6–T8 require separate decisions. Stop after recording this pilot and budget s
 The user subsequently authorized checkpoint recovery implementation/offline tests and a PR, preserving
 the exact 263-note failure state and strict validation; see [engineering authorization](decisions.md#authorization--blk-014-checkpoint-engineering-only).
 The recovery approval must explicitly bind the reviewed support-code migration and new preflight to
-the immutable parent. This grants no paid continuation, JSON repair or acceptance-policy exception.
+the immutable parent. This granted no paid continuation, JSON repair or acceptance-policy exception.
+Subsequently the user authorized PR #14's merge and one USD10 checkpoint child. That child has now
+completed all568 turns/204 QA with inherited degradation; its approval is consumed. The cost-only
+forecast recommends the frozen fallback (USD42.762234 including USD8 contingency), versus
+USD127.391486 for all10 conversations. See the [verified outcome](t5-conv50-baseline-20261101.md).
+Further collection, paid recovery and T6–T8 still require separate decisions.
 Keep all work inside this repository; the separate FTEC5660 HW3 repository is out of scope.
 Credentials stay in the environment and outside code, public records, logs and committed artifacts.
 
