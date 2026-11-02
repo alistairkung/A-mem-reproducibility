@@ -311,7 +311,7 @@ def run_manifest(
                             "proposed_decision": decision,
                             "changed_existing_note_ids": changed,
                             "suppressed_actions": [a for a in proposed_actions
-                                                   if proposal.get('should_evolve') and isinstance(a, str)
+                                                   if agent.memory_system.evo_cnt == counter_before + 1 and isinstance(a, str)
                                                    and a in actions and not actions[a]],
                             "enabled_actions": [a for a, enabled in actions.items() if enabled],
                         }

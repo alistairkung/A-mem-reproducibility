@@ -203,6 +203,31 @@ def test_binding_does_not_leak_between_instances_of_the_same_author_class():
     with pytest.raises(TypeError): agents[0]._repro_action_configuration['strengthen']=True
 
 
+@pytest.mark.parametrize('condition', CONDITIONS)
+def test_rejected_positive_json_is_a_failure_not_gate_suppression(tmp_path, condition):
+    class RejectedDecisionProvider(Provider):
+        def complete(self, **request):
+            response = super().complete(**request)
+            if 'should_evolve' in request['tools'][0]['function']['parameters']['properties']:
+                response['choices'][0]['message']['tool_calls'][0]['function']['arguments'] = json.dumps({
+                    'should_evolve': True, 'actions': ['strengthen', 'update_neighbor']})
+            return response
+    provider = RejectedDecisionProvider(); m = original_memory_module(); m.print = lambda *a, **k: None
+    factory = make_action_agent_factory(ROOT, condition=condition, memory_module=m,
+                controller_factory=lambda observer: DeepSeekController(provider, observer=observer))
+    result = run_manifest(ROOT/'data/locomo10.json', build_manifest(ROOT/'data/locomo10.json', 'smoke'), load_config(),
+                          output_dir=tmp_path/'run', cache_root=tmp_path/'cache', source_hashes={'test':'rejection'},
+                          condition=condition, agent_factory=factory, scorer=AuthorScorer(ROOT, dependencies=dependencies()))
+    events = [json.loads(s) for s in (tmp_path/'run/events.jsonl').read_text().splitlines()]
+    outcomes = [e for e in events if e['type']=='evolution_outcome']
+    assert len(outcomes)==18 and result['status']=='degraded'
+    assert all(e['counter_before']==e['counter_after']==0 for e in outcomes)
+    assert all(e['proposed_decision']=={'should_evolve':True,'actions':['strengthen','update_neighbor']} for e in outcomes)
+    assert all(e['suppressed_actions']==[] for e in outcomes)
+    assert len([e for e in result['failures'] if e['kind']=='provider_completion'])==18
+    assert len([e for e in result['failures'] if e['kind']=='evolve'])==18
+
+
 @pytest.mark.parametrize('condition', [None, True, [], 'other'])
 def test_unknown_conditions_rejected(condition):
     with pytest.raises(ValueError): action_configuration(condition)
