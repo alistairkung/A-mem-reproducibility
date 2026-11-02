@@ -18,14 +18,21 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-010](#blk-010) | Released retrieval default differs from paper category settings | Accepted Limitation | T5, T8, interpretation | D6; runner default; paper Table 8 |
 | [BLK-011](#blk-011) | T5 execution is not connected to Langfuse tracing/export | Open | T5, T8 observability | Runtime call-path audit; verified synthetic trace |
 | [BLK-012](#blk-012) | Failed usage settlement triggers SDK regeneration | Resolved | T5 and later paid phases | Terminal settlement guard; SQLite fault/retry regressions |
-| [BLK-013](#blk-013) | Shared decision exhausts the historical 1,000-token output limit | Resolved | T5; other-conversation cap risk retained | D9a conv-50 complete; maximum child output 3,851 tokens |
+| [BLK-013](#blk-013) | Shared decision exhausts frozen output allowance, including D9a4,000 | Open | T8 full conv-49; paid collection halted | `t8-full-conv49-r0-20261102`; saved length replay |
 | [BLK-014](#blk-014) | Normally finished strict function contains malformed JSON | Mitigated | T5 conv-50; downstream integrity | [Verified degraded lineage](t5-conv50-baseline-20261101.md); raw failure retained |
 | [BLK-015](#blk-015) | Historical intermediate states/query vectors were not recorded | Mitigated | T6–T7 replay claims | [Replay gate and oracle provenance](t6-replay.md) |
 | [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Resolved | T8 conv-49 artifact persistence | Exact real-cache byte/state proof;519-test suite |
 | [BLK-017](#blk-017) | Passive observers swallow critical provenance failures | Resolved | T8 paid-readiness gate | Terminal recorder/identity guards; independent fault rechecks |
 | [BLK-018](#blk-018) | Completion releases the next paid phase before receipt publication | Resolved | T8 phase finalization | Coordinated SQL/publication; threaded and commit-fault rechecks |
 
-Before another paid run: the checkpoint child completed conv-50 (568 notes/204 QA), Degraded, with
+**Current paid hold (2 November2026):** T8 full conv-49 exhausted D9a's4,000-token shared-decision
+allowance at `D22:2`. BLK-013 is reopened. The incomplete run preserves413 notes/counter411,
+zero QA,826 settled requests/USD1.413246,270 D3a deviations/1,066 transformations. Cumulative study
+cost is USD4.439045/2,436 settled attempts, zero unknown charges. Its consumed approval cannot
+authorize recovery; no conv-44 or ablation phase has started. A separate recovery/protocol decision
+is required before any further paid collection. [Investigation and evidence](t8-execution.md#paid-hold--blk-013-recurrence).
+
+Historical readiness checkpoints, retained chronologically below: the checkpoint child completed conv-50 (568 notes/204 QA), Degraded, with
 the original failed evolution and all D3a deviations retained. The parent remains immutable and
 Incomplete. All approvals are consumed; cumulative study cost is USD3.025799. BLK-009 is Mitigated
 by the cost-only fallback forecast (USD42.762234 including USD8), with uncertainty still requiring
@@ -342,15 +349,15 @@ are unavailable unless an experiment receipt supplies them.
 ## BLK-013
 
 - **ID:** BLK-013
-- **Title:** Shared decision exhausts the historical 1,000-token output limit.
-- **Status:** Resolved
+- **Title:** Shared decision exhausts the frozen output allowance (historical1,000; D9a4,000).
+- **Status:** Open
 - **First observed:** 2026-11-01, fresh authorized T5 phase `compatibility-d3a-20261101`, merged source `167470b`.
 - **Category:** Provider compatibility
-- **Expected behaviour:** Complete original-schema output within the frozen D9 generation settings, processing all 18 turns and four QA before compatibility acceptance.
+- **Expected behaviour:** Complete original-schema output within frozen stage limits: historical D9 fixture and, after D9a, full selected-conversation builds with all designated QA.
 - **Observed behaviour:** The sixth shared decision returned HTTP200, `finish_reason=length`, exactly 1,000 output tokens and incomplete tool-argument JSON ending inside a neighbor-tag string. Twelve physical requests were charged; the next metadata attempt was blocked before transmission. Six notes were preserved, zero QA completed.
 - **Evidence:** [Readiness report](baseline-readiness.md); safe local `artifacts/runs/compatibility-d3a-20261101/` and `artifacts/compatibility-d3a-20261101-truncation-reproducer.json`. The exact request retains max_tokens=1000, temperature 0.7, disabled thinking, original schema/prompt. Failed arguments hash `26708080e3e5a0edb08a3f62d9e4265d3eebab088015c6b45526e88211037a9e`.
 - **Root cause:** **Confirmed immediate cause:** output allowance exhausted before valid JSON completion. **Supported explanation, not a universal guarantee:** fuller neighbor payloads and repeated metadata enrichment increase output demand; observed decision token counts were 149, 262, 409, 569, 778, 1000 for zero through five neighbors. No adapter truncation or altered generation cap was found. This differs from BLK-007's complete-but-wrong-type response.
-- **Impact:** The historical truncated phase was incomplete and blocked readiness; its USD0.008316 charge remains intact. D9a has now completed the fixture without truncation, enabling an unapproved pilot plan. This provides functional evidence, not a benchmark score or proof of longer-run output bounds.
+- **Impact:** Historical truncation charges remain intact. D9a completed the fixture/conv-50, but now fails during full conv-49 before QA; T5 selected-scope completion and T8 balanced comparison are blocked. No quality/population conclusion can be drawn from this partial build.
 - **Options considered:** Proposed controlled D9 amendment: raise only shared-decision output allowance uniformly across arms, with updated hard reservations and a separately approved fresh phase. An unchanged-settings retry also requires separate approval and may recur. Prompt/schema/parser repair or automatic semantic retries are outside the approved protocol and were not attempted.
 - **Resolution attempts:**
   - 2026-11-01: retain full received request/response, partial memory/index, settled costs and audited D3a deviation. Verify phase inventory, original 19 historical files and the first ten ledger attempts/charge.
@@ -360,8 +367,11 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01, D9a approved after PR #12 merge (`5078459`): implement output policy `d9a-shared-decision-4000-v1`, raising only shared decisions to 4,000 tokens and retaining 1,000 elsewhere uniformly across arms. Preserve prompts/schemas/parsers/temperatures. Bind stage caps and update conservative reservations to 319,373 microUSD for shared decisions / 315,773 for other attempts; retain the USD2 hard phase and USD42 usable study caps. One fresh 44-call/132-attempt phase is authorized after offline verification, review and preflight; no extra probes planned. New live verification has not occurred and no approved execution plan exists yet.
   - 2026-11-01, authorized D9a live verification: `compatibility-d9a-20261101` completed 18 shared decisions, with maximum observed output1,572 tokens and no `length` finish or rejected response. All 44 physical/logical calls completed, with zero retries/unknown charges; stage bounds and original parser input verify. Full state and both scoring views are retained. The phase cost USD0.053118 and cumulative study cost USD0.067285/66 requests remain in the durable ledger. The exact conv-50 plan is prepared as `approved:false`, not executed.
   - 2026-11-01, authorized checkpoint child on merged PR #14: all remaining 305 shared decisions complete without truncation, maximum output 3,851 under 4,000; combined conv-50 reaches 568 notes/204 QA. The original below-cap malformed response is BLK-014, not length exhaustion. D9a adequacy is now verified for this conversation, not all other conversations/conditions.
-- **Final resolution or limitation:** **Resolved under D9a for the frozen fixture and completed conv-50 lineage.** The 4,000-token allowance avoided new truncation without changing prompts/schemas/parsers or other stage caps. It does not bound metadata growth in other conversations/conditions. All paid approvals are consumed; further phases and T6–T8 remain separately gated.
+  - 2026-11-02, authorized T8 run `t8-full-conv49-r0-20261102` on reviewed source `ae23e291` (launch commit `881b35d`): the413th shared decision, request `8b6bea1e-bc8e-40bf-8b38-22627f0edf4a`, returns HTTP200/`finish_reason=length`,4,000 completion tokens,6,551 prompt tokens and unfinished JSON in a neighbor tag. Saved wire/SDK arguments agree (SHA256 `51be35f7cefb5a2da8623dcf23ea54bdb8fdc3f8e7f4c3c5d2e2d1e66cd1b962`). No request/prompt/schema/adapter truncation was found. This is length exhaustion, not BLK-014's normally finished malformed output.
+  - 2026-11-02, offline saved-response replay: identical SDK request, unchanged frozen schema and exact raw response reproduce terminal rejection with one mock transmission and zero network requests. All825 accepted argument strings match provider bytes;270 D3a deviations/1,066 transformations survive. The author fallback retains the413th note/failed `D22:2` evolution with counter411 and no neighbor changes; the next metadata call is blocked before transmission. Partial413-row stale index and phase inventory verify;826 real attempts settle USD1.413246, zero retries/unknown charges. Preserve `artifacts/runs/t8-full-conv49-r0-20261102/`, `artifacts/t8/live/full-conv49-r0.log` and `artifacts/t8/offline/conv49-length-{reproduce.py,reproducer.json}`. No recovery, output repair or later cell was executed.
+- **Final resolution or limitation:** **Reopened after D9a4,000-token exhaustion.** Earlier fixture/conv-50 success remains valid evidence for those workloads, not an output bound. Further paid collection is halted. Proposed exact-state checkpoint continuation would preserve the failed note/counter/index and unchanged4,000 cap but may encounter further truncation; it needs separately approved engineering/provenance and paid recovery. Raising the cap instead is a scientific-setting amendment across arms and raises comparability/recollection questions for existing4,000-token baselines. Neither option has been executed.
 - **Verification:** D9a passed 268 tests/92 subtests and independent reviews before the successful live phase. `artifacts/compatibility-d9a-verification.json` verifies stage settings, unchanged arguments, complete state, scoring identity and phase/cache integrity. Historical truncation/replay evidence remains immutable. The separately approved child now supplies complete conv-50 evidence; broader adequacy remains unverified.
+  The T8 recurrence's `artifacts/t8/offline/conv49-length-reproducer.json` independently verifies the preserved request/response, inventory, accepted argument identities, partial state and settled ledger. It verifies safe rejection, not resolution of cap exhaustion.
 - **Research significance:** Preserving a paper's nominal generation cap under a model substitution can make the released structured-output algorithm operationally infeasible. Output growth, provider representation compatibility and spending safety are separate reproducibility constraints.
 
 ## BLK-014

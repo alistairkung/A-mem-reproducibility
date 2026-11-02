@@ -1,6 +1,6 @@
 # T8 execution and comparative evidence
 
-Status: implementation and paid main execution authorized2 November2026; no T8 paid request yet.
+Status: first T8 cell Incomplete; paid collection halted2 November2026 after BLK-013 recurrence.
 Authority: [latest decision](decisions.md#authorization--t8-implementation-and-paid-main-execution),
 [issue #8](https://github.com/alistairkung/A-mem-reproducibility/issues/8).
 Integration branch: `codex/t8-study-execution`, based on T7 merge `577a1e3`.
@@ -156,3 +156,65 @@ Local evidence is `artifacts/runs/t8-full-conv49-r0-20261102/`, with the console
 `bc19ba97cbe016479903222bb1578db6`, matching the archived conv-50 baseline. Collection is in progress;
 this entry does not assert completion, final spending or any comparative result. Previously described
 unapproved plans and the pre-paid checkpoint remain historical engineering evidence.
+
+## Paid hold — BLK-013 recurrence
+
+The first T8 cell ended **Incomplete** at12:20:33 UTC on2 November2026. The413th shared decision,
+for `D22:2`, exhausted the unchanged D9a4,000-token cap: HTTP200, `finish_reason=length`,6,551 prompt
+and4,000 completion tokens, unfinished JSON inside a neighbor tag. This reopens BLK-013; it differs
+from BLK-014's normally finished malformed JSON. Request ID `8b6bea1e-bc8e-40bf-8b38-22627f0edf4a`;
+raw arguments SHA256 `51be35f7cefb5a2da8623dcf23ea54bdb8fdc3f8e7f4c3c5d2e2d1e66cd1b962`.
+Wire and SDK argument strings match; original prompts/schema/temperature/thinking/endpoint/cap verify.
+The adapter correctly rejected the incomplete finish before returning arguments to A-MEM.
+
+The author fallback retained the413th note and failed evolution, with no neighbor changes and counter411.
+`partial-memory.json` retains413 ordered notes/index rows, including the original stale embeddings.
+The next metadata operation was blocked before transmission. No failed response was repaired/retried,
+no QA ran, and no conv-44/ablation phase was launched. The partial build is not a reusable completed cache.
+
+| Observation | Verified value |
+| --- | --- |
+| Physical requests / admitted logical calls | 826 /826; zero retries |
+| Generation journal records | 827; includes one blocked, untransmitted metadata notice |
+| Preserved notes / evolution counter | 413 /411 |
+| Questions completed | 0 of196 |
+| Accepted outputs with exact provider-argument identity | 825 |
+| Audited D3a deviations / integer-string transformations | 270 /1,066 |
+| Phase conservative settled spending | USD1.413246 |
+| Cumulative study conservative settled spending | USD4.439045 /2,436 attempts |
+| Unknown charges | 0 |
+| Phase status / usable for next phase | Incomplete /false; durable halt persisted |
+
+Offline saved-response SDK replay makes zero network requests and reproduces the exact request and
+rejection. Evidence: `artifacts/t8/offline/conv49-length-reproduce.py` and
+`artifacts/t8/offline/conv49-length-reproducer.json`; phase inventory/partial state verify. The original
+run directory/log are unchanged. The final519-test/92-subtest suite remains applicable to the unchanged
+code. The observed halt demonstrates safety controls, not successful benchmark completion.
+Independent forensic review agrees; `artifacts/t8/offline/review/conv49-truncation-review.md` verifies
+all826 attempt/usage/charge rows and an exact finite413×384 float32 state round-trip. Read-only ledger
+backup `artifacts/t8/study-ledger-after-conv49-incomplete.sqlite` and its receipt
+`artifacts/t8/offline/post-failure-preservation.json` preserve this financial checkpoint; they never
+replace or reset the cumulative live ledger.
+
+Saved-result inventory: `artifacts/t8/blocked-collection-inventory/`. It retains incomplete conv-49 and
+completed original conv-50 with their costs once; no selected-population condition is complete, and
+no population quality/paired-difference table is presented. T5 issue#5 and T8 issue#8 remain open.
+Langfuse project authentication was verified, but no new completed-population experiment exists to import.
+
+Cost-only reforecast is USD44.183331 including all incurred charges and USD8 contingency. It retains
+whole fresh-cell estimates for all eleven uncompleted cells, without crediting this partial build;
+it is not an approved recovery cost or a guarantee. No new population decision or paid execution follows.
+
+**Resolution proposed for review, not implemented/authorized:** extend the reviewed exact-state
+checkpoint machinery to this conv-49 failure, preserving all413 notes, failed `D22:2`, counter411,
+stale index and parent provenance. Start at `D22:3`:96 remaining turns plus196 QA entail584 logical
+calls, at most1,752 attempts. Keep D9a4,000 and every other scientific setting unchanged. This avoids
+rebuilding prior memories and would inherit degradation, but cap exhaustion can recur. The existing
+checkpoint policy is conv-50-specific, so its approval cannot be reused for this lineage.
+A fresh rebuild costs more and discards reuse without removing the cap risk. Raising the cap across
+arms instead requires an explicit protocol amendment and a decision on comparability/recollection of
+existing4,000-token baselines. No JSON repair, prompt shortening or silent cap increase is proposed.
+
+All further paid collection is stopped pending the separate recovery/scientific decision required by
+the frozen protocol. Unspent main-phase budget is not recovery authorization. PR#17 remains draft;
+no T8 merge authority, balanced-study completion or submission readiness is asserted.

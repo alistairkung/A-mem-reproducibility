@@ -20,6 +20,11 @@ This checklist records preparation, not submission or a completed recording.
 - [ ] Record presentation using the outline below; verify duration at most15 minutes.
 - [ ] Upload report/repository link/presentation according to the course submission instructions.
 
+Current hold: full conv-49 is Incomplete after413 notes/zero QA (BLK-013,4,000-token exhaustion).
+All paid collection is stopped pending a separate recovery/protocol decision. The verified conv-50
+baseline/replay and T7 modification remain valid; no balanced ablation result or submission completion
+is claimed. See [the T8 record](docs/reproducibility/t8-execution.md#paid-hold--blk-013-recurrence).
+
 ## Presentation outline — target14 minutes30 seconds
 
 | Time | Segment | Evidence to show |

@@ -438,3 +438,21 @@ No tuning, dropped questions, context truncation, silent repairs or quality-base
 Issue #8 also authorizes saved-result local exports and Langfuse comparisons using the existing
 author metrics and pinned SDK5.1.0, without model/LLM-judge calls. Local artifacts remain authoritative
 if optional reporting fails. See [T8 execution record](t8-execution.md) for exact plans and outcomes.
+
+## Execution hold — T8 conv-49 cap exhaustion (BLK-013 reopened)
+
+On2 November2026 the authorized first T8 cell `t8-full-conv49-r0-20261102` stopped Incomplete at
+`D22:2`: HTTP200/`finish_reason=length` at the frozen D9a4,000-token shared-decision cap. Preserve
+413 notes, counter411, failed evolution, stale413-row index,270 audited D3a deviations/1,066 items
+and all raw evidence. The next metadata call was blocked without transmission. All826 actual attempts
+settled conservative USD1.413246; cumulative study cost is USD4.439045/2,436 attempts, zero unknown.
+The exact approval is consumed. Conv-44/ablations/recovery remain unexecuted.
+
+This is an observed hold under the existing protocol, **not** a new setting or execution approval.
+Offline saved-response replay confirms identical request/schema/raw response and correct terminal
+rejection, with zero network requests. Remaining scope must not continue automatically after failure.
+See [T8 evidence and proposed choices](t8-execution.md#paid-hold--blk-013-recurrence).
+Checkpoint continuation would need a new conv-49 lineage policy/approval, preserving this exact state
+and starting `D22:3` (96 turns/196 QA;584 logical calls, at most1,752 attempts). Raising the cap instead
+would require an explicit protocol amendment and treatment of existing4,000-token baseline evidence.
+Neither is authorized or implemented by this hold record. T5/T8 remain open and PR#17 remains draft.

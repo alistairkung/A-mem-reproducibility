@@ -90,13 +90,19 @@ cell must remain explicit; no balanced population-quality conclusion is permitte
 question identities verify in each condition. One build per cell supports descriptive results only,
 without claims of stochastic robustness or statistically established superiority.
 
+The first T8 full conv-49 cell stopped before QA:413/509 notes, counter411, zero of196 questions.
+Its shared decision at `D22:2` exhausted D9a4,000 tokens (`finish_reason=length`); BLK-013 is reopened.
+Strict rejection and the spending halt worked. The partial state, raw response and270 prior D3a
+deviations remain archived; no recovery or later cell ran. This is a reproduction challenge, not an
+accuracy result. [Exact investigation and choices](t8-execution.md#paid-hold--blk-013-recurrence).
+
 ## Practical challenges and debug diary
 
 | Blocker | Investigation and response | Evidence or remaining limitation |
 | --- | --- | --- |
 | BLK-002 missing ablation runners | Trace released action boundaries; add two independent guards | T7 full-mode candidate replay passes; historical author ablation code unavailable |
 | BLK-007 integer-string indices | Compare original `as_index`; validate a temporary schema copy only | Raw strings unchanged; narrow D3a audit; affected runs Degraded |
-| BLK-013 output exhaustion | Preserve truncated response; approve shared-only4,000 cap uniformly | D9a fixture/conv-50 succeed; not a guarantee for all future memories |
+| BLK-013 output exhaustion | Preserve truncated response; approve shared-only4,000 cap uniformly | Fixture/conv-50 succeed; full conv-49 later reaches4,000 and halts; blocker reopened |
 | BLK-014 malformed strict JSON | Offline replay proves provider contract failure; reject repair | Approved exact checkpoint recovery completes baseline with inherited degradation |
 | BLK-016 persistence false positive | Reproduce benign corpus-text key as credential-field rejection | Narrow typed-map validation view; exact historical cache proof and final519-test/92-subtest suite pass |
 | BLK-017 critical provenance failures | Inject invalid provider identity and durable-record failures | Terminal halt preserves evidence; optional reporting remains separate; independent reviews pass |
@@ -112,6 +118,10 @@ prove a provider guarantee. Dataset/retrieval differences and a mutable hosted m
 
 Before T8, the study spent conservative USD3.025799 across1,610 settled physical attempts. Full conv-50
 construction/QA accounts for USD2.958514; previous compatibility attempts are retained overhead.
+The incomplete T8 cell adds USD1.413246/826 attempts (metadata USD0.140616, shared decisions
+USD1.272630); cumulative USD4.439045/2,436 attempts, zero retries in that cell and zero unknown charges.
+The whole-fresh-cell point forecast now totals USD44.183331 including incurred costs and USD8 reserve;
+this grants no recovery authority and does not credit the incomplete build as a completed cell.
 The original token-based forecast puts all ten conversations/four conditions at USD127.391486 and
 the frozen fallback at USD42.762234 including incurred spending and contingency. Its2× cost sensitivity
 exceeds USD50: the estimate is not a spending guarantee. T8 will reconcile actual stage costs and
