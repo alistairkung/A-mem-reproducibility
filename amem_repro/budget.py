@@ -244,8 +244,8 @@ class PhasePermit:
                     raise BudgetStop('Checkpoint already claimed; another recovery requires review')
                 db.execute('INSERT INTO checkpoint_claims VALUES (?,?)', (parent, self.approval_id))
 
-    def complete_study_job(self, receipt):
-        """Verify settled workload before publication; failed publication must halt the cell."""
+    def complete_study_job(self, receipt, publish=None):
+        """Hold the serial SQL frontier through verified final-receipt publication."""
         if 'study_job' not in self.binding:
             return
         with self._transaction() as db:
@@ -267,6 +267,19 @@ class PhasePermit:
             if (receipt['budget'].get('charged_or_reserved_microusd')!=cost
                     or receipt['budget'].get('physical_attempts')!=attempts):
                 self._halt(db,'Study receipt costs/attempts differ from the actual ledger')
+            if not callable(publish):
+                self._halt(db,'Study completion requires final receipt publication')
+            # Keep BEGIN IMMEDIATE held: no next-cell claim may observe complete=1
+            # until publication succeeds and this transaction commits.
+            publish()
+            path=self.path.parent/'runs'/self.auth['run_id']/'phase.json'
+            try:
+                published=json.loads(path.read_text())
+                matched=_canonical(published)==_canonical(receipt)
+            except (OSError,ValueError,TypeError):
+                matched=False
+            if not matched:
+                self._halt(db,'Published study receipt does not match the verified workload')
             updated=db.execute('UPDATE study_jobs SET complete=1 WHERE approval_id=?', (self.approval_id,))
             if updated.rowcount!=1:
                 self._halt(db,'Study cell claim missing at completion')
@@ -303,6 +316,12 @@ class PhasePermit:
             self._halt(db,'Phase session or immutable approval mismatch')
         if row[2] and not allow_halted:
             raise BudgetStop(f'Phase stopped: {row[2]}')
+        if not allow_halted and 'study_job' in self.binding:
+            other=db.execute('''SELECT 1 FROM study_jobs j JOIN phases p ON p.approval_id=j.approval_id
+                WHERE j.study_id=? AND j.approval_id!=? AND (j.complete=0 OR p.halted IS NOT NULL)''',
+                (self.binding['study_job']['study_id'],self.approval_id)).fetchone()
+            if other:
+                self._halt(db,'Another study cell is unfinished or failed; no paid continuation')
         return row
 
     def _halt(self, db, reason):

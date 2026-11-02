@@ -133,6 +133,14 @@ def test_saved_phase_requires_bound_successful_offline_runtime_preflight(tmp_pat
         load_saved_run(path,manifest,root=ROOT,archive_root=tmp_path)
 
 
+def test_failed_finalization_marker_cannot_supply_completed_quality(tmp_path):
+    manifest=build_manifest(ROOT/'data/locomo10.json','smoke')
+    path=archive(tmp_path,manifest)
+    write_json(path.parent/'finalization-error.json',{'status':'incomplete','error_type':'OperationalError'})
+    with pytest.raises(ValueError,match='finalization'):
+        load_saved_run(path,manifest,root=ROOT,archive_root=tmp_path)
+
+
 def test_checkpoint_lineage_credits_parent_charge_once_and_rejects_wrong_parent(tmp_path):
     manifest=build_manifest(ROOT/'data/locomo10.json','smoke')
     parent_path=archive(tmp_path,manifest,run_id='parent',status='incomplete')
