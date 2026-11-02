@@ -275,34 +275,44 @@ class BudgetTests(unittest.TestCase):
     def test_study_total_includes_old_unknown_attempts_and_reserves_eight_dollars(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'ledger'
-            first=approval('baseline','42')
-            first['pricing']['input_per_million']='40'
-            permit=PhasePermit(first,path,first['binding'])
-            permit.reserve_attempt(permit.start_logical('metadata'),request())
-            second=approval('baseline','42','phase-two','run-two')
+            # Historical compatibility/pilot phases predate one-shot main-cell bindings.
+            # Four valid USD10 phases retain their unknown maximum reservations.
+            for index in range(4):
+                first=approval('pilot','10',f'historical-{index}',f'historical-{index}')
+                first['pricing']['input_per_million']='9'
+                permit=PhasePermit(first,path,first['binding'])
+                permit.reserve_attempt(permit.start_logical('metadata'),request())
+            second=approval('pilot','10','phase-two','run-two')
+            second['pricing']['input_per_million']='9'
             another=PhasePermit(second,path,second['binding'])
             with self.assertRaises(BudgetStop):
                 another.reserve_attempt(another.start_logical('metadata'),request())
-            self.assertEqual(ledger_summary(path)['charged_or_reserved_microusd'],41944240)
-            self.assertEqual(ledger_summary(path)['physical_attempts'],1)
+            self.assertEqual(ledger_summary(path)['charged_or_reserved_microusd'],37753536)
+            self.assertEqual(ledger_summary(path)['physical_attempts'],4)
 
     def test_fresh_processes_share_study_spending_limit(self):
         with tempfile.TemporaryDirectory() as directory:
             path=str(Path(directory)/'ledger')
+            for index in range(3):
+                historical=approval('pilot','10',f'historical-{index}',f'historical-{index}')
+                historical['pricing']['input_per_million']='9'
+                permit=PhasePermit(historical,path,historical['binding'])
+                token=permit.reserve_attempt(permit.start_logical('metadata'),request())
+                permit.settle(token,{'prompt_tokens':1000000,'completion_tokens':0})
             context=multiprocessing.get_context('spawn')
             outcomes=context.Queue()
             processes=[]
             for index in range(2):
-                auth=approval('baseline','42',f'phase-{index}',f'run-{index}')
-                auth['pricing']['input_per_million']='40'
+                auth=approval('pilot','10',f'phase-{index}',f'run-{index}')
+                auth['pricing']['input_per_million']='9'
                 processes.append(context.Process(target=reserve_from_new_process,args=(path,auth,outcomes)))
             for process in processes:process.start()
             for process in processes:
                 process.join(10)
                 self.assertEqual(process.exitcode,0)
             self.assertCountEqual([outcomes.get(timeout=2) for _ in processes],['reserved','stopped'])
-            self.assertEqual(ledger_summary(path)['physical_attempts'],1)
-            self.assertEqual(ledger_summary(path)['charged_or_reserved_microusd'],41944240)
+            self.assertEqual(ledger_summary(path)['physical_attempts'],4)
+            self.assertEqual(ledger_summary(path)['charged_or_reserved_microusd'],36438384)
 
     def test_new_approval_cannot_reset_an_existing_run_handle(self):
         with tempfile.TemporaryDirectory() as directory:
