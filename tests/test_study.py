@@ -339,6 +339,21 @@ def test_old_ledger_snapshot_cannot_hide_an_archived_failed_main_run(saved_histo
         verify_study_history(root,sources)
 
 
+@pytest.mark.parametrize('receipt_state',['missing','invalid'])
+def test_sql_completion_without_valid_published_receipt_cannot_enable_next_phase(saved_history,receipt_state):
+    from amem_repro.study import verify_study_history
+    root,sources=saved_history
+    runs=root/'artifacts/runs';original=runs.resolve();runs.unlink();shutil.copytree(original,runs)
+    auth=study_approval('full');PhasePermit(auth,root/'artifacts/study-budget.sqlite',auth['binding'])
+    with sqlite3.connect(root/'artifacts/study-budget.sqlite') as db:
+        db.execute('UPDATE study_jobs SET complete=1 WHERE approval_id=?',(auth['approval_id'],))
+    unfinished=runs/'study-one';unfinished.mkdir()
+    (unfinished/'approval.json').write_text(json.dumps(auth))
+    if receipt_state=='invalid': (unfinished/'phase.json').write_text('{}')
+    with pytest.raises(ValueError,match='valid final phase receipt'):
+        verify_study_history(root,sources)
+
+
 def test_balanced_cost_forecast_blocks_overspend_before_paid_approval(saved_history):
     from unittest.mock import patch
     from amem_repro import phases
