@@ -4,7 +4,8 @@ Protocol: [experimental-protocol.md](experimental-protocol.md).
 Decision record: [decisions.md](decisions.md).
 Created 1 November 2026. T1–T4 are merged in PR #9. T5 has a completed conv-50 baseline;
 remaining collection requires separate paid approval. T6's offline replay gate is implemented;
-T7–T8 remain unstarted.
+T7 action gates and full-mode equivalence are verified in [PR #16](https://github.com/alistairkung/A-mem-reproducibility/pull/16);
+T8 remains unstarted.
 See [foundation validation and preflight](../../REPRODUCIBILITY.md).
 
 Issue creation alone is planning authorization. The user subsequently authorized T1–T4 implementation,
@@ -30,6 +31,8 @@ Latest authorization (2 November): the user approved T6 offline implementation/r
 the completed conv-50 lineage without awaiting further paid T5 collection. The implemented gate and
 verification evidence are in [T6 replay](t6-replay.md).
 This is not a population revision or T5 closure; T7/T8 and all additional paid phases remain gated.
+Subsequently the user explicitly authorized T7 engineering, offline regression/review, commits/push,
+PR and merge after acceptance. See [T7 action gates](t7-action-gates.md). T8 and paid phases remain gated.
 
 ## Tracker and dependency map
 

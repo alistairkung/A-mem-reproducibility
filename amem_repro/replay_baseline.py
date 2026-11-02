@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import copy
 from contextlib import redirect_stdout
+from functools import wraps
 import hashlib
 import json
 from pathlib import Path
@@ -114,6 +115,7 @@ def replay_baseline(asset_root, output, *, root=ROOT, factory_builder=None, orac
 
         original_factory = (factory_builder or make_agent_factory)(
             root, controller_factory=controller, token_counter=counter)
+        @wraps(original_factory)
         def factory(**kwargs):
             agent = original_factory(**kwargs)
             system = agent.memory_system
@@ -179,6 +181,7 @@ def replay_baseline(asset_root, output, *, root=ROOT, factory_builder=None, orac
                     require_equal(hashlib.sha256(path.read_bytes()).hexdigest(), digest, f'protected evidence {path.name}')
             result = {'execution_type': 'deterministic_replay', 'network_disabled': True,
                       'paid_calls': 0, 'recorded_calls': replay.position, 'turns': len(outcomes),
+                      'implementation': 't7-action-gates' if getattr(original_factory, '_repro_condition', None) else 'frozen-author',
                       'questions': summary['completed_questions'], 'status': summary['status'],
                       'consolidations': consolidations,
                       'parent_phase_sha256': fingerprint(baseline['parent']),
@@ -202,8 +205,12 @@ def main():
     parser.add_argument('--assets', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--oracle', default=str(ROOT / 'tests/fixtures/conv50-replay-state-hashes.json'))
+    parser.add_argument('--full-mode-candidate', action='store_true', help='Exercise T7 gates, both actions enabled')
     args = parser.parse_args()
-    result = replay_baseline(args.assets, args.output, oracle_path=args.oracle)
+    if args.full_mode_candidate:
+        from .actions import make_action_agent_factory
+    result = replay_baseline(args.assets, args.output, oracle_path=args.oracle,
+                             factory_builder=make_action_agent_factory if args.full_mode_candidate else None)
     print(json.dumps({k: v for k, v in result.items() if k != 'per_insertion_comparison_hashes'}))
 
 
