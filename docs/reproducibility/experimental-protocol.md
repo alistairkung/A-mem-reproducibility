@@ -30,6 +30,10 @@ On 2 November the user separately authorized offline T6 implementation, review, 
 PR and merge based on the completed conv-50 lineage. See [T6 authorization](decisions.md#authorization--t6-deterministic-replay-on-the-completed-conv-50-lineage)
 and [the replay gate](t6-replay.md). This does not authorize T7/T8, further paid collection or a
 population change; T5 remains open for the remaining selected-conversation collection.
+The user subsequently authorized T7 independent action gates, offline tests/reviews and merge after
+both reference and actual full-mode candidate pass T6's fixed regression gate. See
+[T7 authorization](decisions.md#authorization--t7-independent-action-gates) and [action-gate instructions](t7-action-gates.md).
+This grants no T8 implementation, paid requests or additional collection.
 Keep all work inside this repository; the separate FTEC5660 HW3 repository is out of scope.
 Credentials stay in the environment and outside code, public records, logs and committed artifacts.
 
