@@ -81,3 +81,18 @@ Report material must fit10 pages; presentation outline must fit15 minutes. The a
 submission remain human deliverables. Deadline:13 November2026 at midnight Hong Kong time. Preserve
 the debug diary/blocker IDs and separate HW3 repository boundary. Exact phase plans/commands, test
 and review evidence, PR and actual run outcomes will be appended as they become available.
+
+## Pre-paid engineering checkpoint
+
+[Draft PR #17](https://github.com/alistairkung/A-mem-reproducibility/pull/17) contains the integration
+work. The first integrated suite passed472 tests/92 subtests and the network-disabled runtime preflight
+passed. The real-history first-cell planner produced an **unapproved** conv-49 full-mode plan:
+USD10,1,410 logical calls, at most4,230 attempts, with a ledger-rounded balanced forecast USD42.770085
+including contingency. No approval has been claimed and no T8 paid request has occurred.
+
+Independent pre-paid review then found four gaps not covered by that green suite: malformed provider
+identity types could bypass a halt; critical local journal failures were best-effort; failed completion
+SQL could leave a reusable receipt; and saved-result source checks omitted the scoring wrapper.
+The first two are tracked as BLK-017. All corrections, targeted regressions, full-suite tests and
+independent correction reviews are required before paid execution. Initial plans/preflight receipts
+are retained as engineering evidence and must be regenerated if their source fingerprint changes.
