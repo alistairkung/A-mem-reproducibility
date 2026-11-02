@@ -7,7 +7,7 @@ This tracker records evidence and investigation history; it grants no execution 
 | ID | Blocker | Status | Affected phase | Evidence |
 | --- | --- | --- | --- | --- |
 | [BLK-001](#blk-001) | Original structured-output contract needs provider adaptation | Mitigated | T2, T5 | D2–D3; PR #9; BLK-007 |
-| [BLK-002](#blk-002) | Published ablation runners are missing from the frozen release | Open | T6–T8 | Table 3; issue #7; `_evolve` |
+| [BLK-002](#blk-002) | Published ablation runners are missing from the frozen release | Investigating | T6–T8 | Table 3; issue #7; `_evolve` |
 | [BLK-003](#blk-003) | Paper and released benchmark populations differ | Accepted Limitation | T1, T5, T8, report | Paper §4.1; dataset hash; full manifest |
 | [BLK-004](#blk-004) | Historical adversarial overlap scores reward a different reference | Mitigated | T4, T5, T8 | Author fix `b31a1dd`; scoring tests |
 | [BLK-005](#blk-005) | Original cache provenance cannot isolate the planned study | Mitigated | T3, T5–T8 | Runner cache keys; cache rejection tests |
@@ -84,7 +84,7 @@ are unavailable unless an experiment receipt supplies them.
 
 - **ID:** BLK-002
 - **Title:** Published ablation runners are missing from the frozen release.
-- **Status:** Open
+- **Status:** Investigating
 - **First observed:** 2026-11-01, architecture discovery/D1 and D7.
 - **Category:** Reproduction fidelity
 - **Expected behaviour:** Runnable author configurations corresponding to Table 3's neither, linking-only and full conditions.
@@ -98,6 +98,7 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01, ticket review: T6/T7 remain open; no ablation gates or equivalence results exist.
   - 2026-11-02, separately authorized T7 engineering after T6 merge `87f34d7`: derive only two Boolean guards from the verified frozen `_evolve` AST, bind per instance, retain parsing/validation/action bodies/counting/consolidation, and record condition/actions in run and cache provenance. Initial90 offline tests pass; mandatory reference/candidate archive replays and independent reviews are in progress. No paid ablation has run.
   - 2026-11-02, Spec review of `84ec320`: find P2 observational mislabelling of rejected valid-JSON positive responses as gate-suppressed. Reproduce deterministically (three ablated cases fail, full case passes), then condition suppression reporting on the original successful positive counter increment. Retain raw proposals and provider/evolution failures; change no acceptance, parsing or memory logic. Regression/re-review results will be appended after verification.
+  - 2026-11-02, correction `a591ea8`: all96 action tests, mandatory103 T6 portable tests and complete429-test/92-subtest offline suite pass. Standards and Spec re-reviews report no remaining findings. First frozen-reference and actual full-mode candidate archive replays independently match all1,544 calls/568 states/204 QA/both scoring views/376 failure records. Final reviewed-code replay receipts are pending; no paid or ablated live run occurred.
 - **Final resolution or limitation:** Reconstruction is planned, not executed. Archive the original baseline and prove full-mode replay before T7.
 - **Verification:** Required but pending: 16 action/configuration combinations, failure/counter boundaries and full-mode replay. No proposed test is reported as passed.
 - **Research significance:** A published ablation table does not uniquely specify its executable intervention; operational definitions must disclose coupled metadata changes.
