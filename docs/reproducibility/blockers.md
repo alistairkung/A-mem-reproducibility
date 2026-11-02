@@ -22,6 +22,7 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-014](#blk-014) | Normally finished strict function contains malformed JSON | Mitigated | T5 conv-50; downstream integrity | [Verified degraded lineage](t5-conv50-baseline-20261101.md); raw failure retained |
 | [BLK-015](#blk-015) | Historical intermediate states/query vectors were not recorded | Mitigated | T6–T7 replay claims | [Replay gate and oracle provenance](t6-replay.md) |
 | [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Investigating | T8 conv-49 artifact persistence | Offline red/green tests; `artifacts._safe_state` |
+| [BLK-017](#blk-017) | Passive observers swallow critical provenance failures | Investigating | T8 paid-readiness gate | Offline identity/journal fault injections; no live calls |
 
 Before another paid run: the checkpoint child completed conv-50 (568 notes/204 QA), Degraded, with
 the original failed evolution and all D3a deviations retained. The parent remains immutable and
@@ -36,6 +37,8 @@ T8 and further paid collection remain unstarted and separately gated.
 Latest authority: T8 engineering/paid main collection is now authorized within the existing ceiling;
 see [T8 record](t8-execution.md). No T8 transmission has occurred at this checkpoint. BLK-016 was
 found offline and must pass final tests/review before paid collection. Recovery remains separately gated.
+Pre-paid review also found BLK-017: injected provider-identity/journal failures allowed subsequent mock
+transmissions. Paid collection is held until terminal handling, failure evidence and independent rechecks pass.
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -422,3 +425,23 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Proposed narrow artifact-validation correction is implemented offline; no live outcome or completed T8 cell is claimed. Preserve original corpus and index exactly.
 - **Verification:** Red/green evidence above; complete suite, independent review and integrated artifact round-trip verification are pending.
 - **Research significance:** Applying secret-detection heuristics to arbitrary research data can make persistence fail despite a valid memory build. Structural provenance keys and text-keyed retrieval maps require distinct validation contexts without changing the experiment's data.
+
+## BLK-017
+
+- **ID:** BLK-017
+- **Title:** Passive observer boundaries swallow critical paid-run provenance failures.
+- **Status:** Investigating
+- **First observed:** 2026-11-02, pre-paid T8 Spec review of integration `9fb0b86`.
+- **Category:** Infrastructure
+- **Expected behaviour:** A provider identity violation or failed durable generation record halts the phase before a subsequent transmission, retains costs/raw evidence where writable, and cannot yield a reusable completed run. Optional cloud reporting may remain best-effort.
+- **Observed behaviour:** Two independent offline fault injections each permit all1,410 mock full-conv49 requests. (A) A list-valued `system_fingerprint` reaches set insertion, raises `TypeError`, and is swallowed as a reporting failure before the identity halt. (B) An `OSError` on the first durable generation record is swallowed by the adapter's best-effort observer boundary: only1,409 generation records persist, while the permit remains unhalted and the receipt usable. These are mock reproductions, not observed live provider or storage incidents.
+- **Evidence:** `artifacts/t8/offline/review/identity-metadata-red.json` and `journal-red.json`; `amem_repro/phases.py:execute_phase` observer/controller seams, `amem_repro/runner.py:record`, and unchanged `amem_repro/adapter.py` best-effort notification boundary. Actual paid ledger remains at1,610 attempts/USD3.025799.
+- **Root cause:** **Confirmed:** critical identity checks and local provenance persistence are incorrectly routed through handlers intended to tolerate observational failures. Provider SDK objects do not guarantee runtime metadata types, and set insertion precedes validation. Critical journal exceptions are caught without a durable phase halt.
+- **Impact:** A run may consume its authorized workload after provenance loss, undermining identity/response evidence and incorrectly appear reusable. The monetary cap/one-shot claim still bound spending, but do not satisfy the requirement to stop paid collection on provenance failure.
+- **Options considered:** Weakening metadata checks, treating missing records as harmless, or making all optional Langfuse errors fatal are rejected. Validate exact identity types/membership before set operations; wrap only the critical local recorder with terminal budget-stop handling. Preserve original prompts, schemas, argument strings and memory/scoring semantics.
+- **Resolution attempts:**
+  - 2026-11-02: independent Spec review reproduces both failures with real SDK/MockTransport, zero paid calls, preserved synthetic ledger evidence. Standards review separately reproduces a related completion-mark classification gap and an omitted scoring-wrapper provenance hash; both are assigned to the same implementer for narrow correction.
+  - 2026-11-02: implementer is adding first/final-call invalid-metadata regressions, critical recorder/write-failure regressions, terminal halts and truthful incomplete receipts. Final fixes/tests/reviews are pending; no paid call is permitted at this checkpoint.
+- **Final resolution or limitation:** Unresolved pre-paid engineering blocker. No live compatibility failure, new provider policy or successful fix is inferred from the proposed handling.
+- **Verification:** Red evidence above; final targeted/full-suite tests and independent correction reviews are required before transmission.
+- **Research significance:** Best-effort observability is appropriate for optional reporting, but cannot silently cover critical experiment identity or durable evidence. Request/cost caps alone do not establish experimental integrity.
