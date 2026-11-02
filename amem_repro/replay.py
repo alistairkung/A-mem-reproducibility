@@ -82,9 +82,13 @@ class ReplayController:
             self._fail('unsupported generation arguments')
         record = self._next()
         contracts = self._adapter.contracts
-        if (record['stage'] not in contracts or response_format != contracts[record['stage']]
-                or response_format != record['response_format'] or prompt != record['prompt']
-                or temperature != record['temperature']):
+        try:
+            schema_matches = (record['stage'] in contracts
+                and fingerprint(response_format) == fingerprint(contracts[record['stage']])
+                and fingerprint(response_format) == fingerprint(record['response_format']))
+        except (TypeError, ValueError):
+            self._fail('invalid call schema')
+        if not schema_matches or prompt != record['prompt'] or temperature != record['temperature']:
             self._fail('stage, prompt, schema or temperature differs')
         try:
             result = self._adapter.get_completion(prompt, response_format, temperature)
@@ -126,3 +130,9 @@ def memory_view(state):
     for outcome in value['outcomes']:
         outcome['changed_existing_note_ids'] = [identities[key] for key in outcome['changed_existing_note_ids']]
     return value
+
+
+def failure_view(failures):
+    """Comparison copy: preserve failure kind/order/audits, omit only run/build identity."""
+    return [{key: copy.deepcopy(value) for key, value in event.items()
+             if key not in ('run_id', 'build_id')} for event in failures]

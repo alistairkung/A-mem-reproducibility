@@ -16,7 +16,7 @@ from .artifacts import CacheStore, snapshot_memory
 from .config import AUTHOR_REVISION, fingerprint, load_config, source_fingerprint
 from .checkpoint import _read_archive
 from .phases import _verified_phase, _deny_network, _asset_environment, _save
-from .replay import ReplayController, ReplayMismatch, memory_view
+from .replay import ReplayController, ReplayMismatch, memory_view, failure_view
 from .runner import run_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +25,11 @@ ROOT = Path(__file__).resolve().parents[1]
 def require_equal(actual, expected, label):
     if actual != expected:
         raise ReplayMismatch(f'Baseline replay differs: {label}')
+
+
+def require_failure_evidence(summary, expected):
+    require_equal(summary['status'], 'degraded', 'failure classification')
+    require_equal(failure_view(summary['failures']), failure_view(expected), 'failure evidence')
 
 
 def load_lineage(root=ROOT):
@@ -51,6 +56,13 @@ def load_lineage(root=ROOT):
     records = [e for e in old + new if e['type'] == 'generation' and e.get('attempts')]
     require_equal(len(records), 1544, 'generation coverage')
     require_equal(sum(bool(e.get('error_type')) for e in records), 1, 'rejected decision count')
+    blocked = [e for e in old if e['type'] == 'generation' and not e.get('attempts')]
+    require_equal([(e['stage'], e['error_type']) for e in blocked], [('metadata', 'BudgetStop')],
+                  'excluded zero-attempt parent event')
+    failures = [e for e in old + new if e['type'] == 'failure' and not e.get('from_cache')]
+    excluded = [e for e in failures if e.get('kind') == 'provider_completion' and e.get('error_type') == 'BudgetStop']
+    require_equal(len(excluded), 1, 'excluded parent stop notice')
+    failures = [e for e in failures if e not in excluded]
     expected_outcomes = [e for e in old + new if e['type'] == 'evolution_outcome']
     partial = json.loads((parent_dir / 'partial-memory.json').read_text())['state']
     build_id = next(e['build_id'] for e in new if e['type'] == 'build_complete')
@@ -59,7 +71,7 @@ def load_lineage(root=ROOT):
     final = CacheStore(root / 'artifacts/cache').load(identity)
     require_equal(identity['source_hashes'], start['source_hashes'], 'cache source')
     require_equal(identity['checkpoint'], child['binding']['checkpoint'], 'cache lineage')
-    return dict(parent=parent, child=child, records=records, outcomes=expected_outcomes,
+    return dict(parent=parent, child=child, records=records, outcomes=expected_outcomes, failures=failures,
                 partial=partial, final=final, config=config, manifest=manifest,
                 questions=[e['result'] for e in new if e['type'] == 'question_result'],
                 retrieval=[e for e in new if e['type'] == 'retrieval'],
@@ -154,6 +166,7 @@ def replay_baseline(asset_root, output, *, root=ROOT, factory_builder=None, orac
                     run_id='conv50-deterministic-replay',
                     provider_contract_policy=baseline['child']['provider_contract_policy'])
                 replay.finish()
+                require_failure_evidence(summary, baseline['failures'])
                 expected_consolidations = [
                     {'notes': i+1, 'counter': e['counter_after']}
                     for i, e in enumerate(baseline['outcomes'])
@@ -174,6 +187,7 @@ def replay_baseline(asset_root, output, *, root=ROOT, factory_builder=None, orac
                       'normalisation': 'UUID identities by insertion index and last_accessed only',
                       'historical_full_state_checkpoints': [263, 568],
                       'protected_baseline_files_and_ledger_unchanged': True,
+                      'logical_failure_records_exact': len(summary['failures']),
                       'all_recorded_outcomes_requests_retrieval_predictions_scores_exact': True}
             _save(output / 'verification.json', result)
             return result

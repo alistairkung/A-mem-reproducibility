@@ -286,3 +286,28 @@ def test_extra_generation_arguments_latch_even_after_consuming_all_records():
         replay.get_completion(record['prompt'],record['response_format'],max_tokens=1000)
     with pytest.raises(ReplayMismatch):
         replay.finish()
+
+
+def test_full_gate_requires_original_failure_evidence_and_classification():
+    from amem_repro.replay_baseline import require_failure_evidence
+    original=[{'type':'failure','kind':'evolve','run_id':'historical','build_id':'old'},
+              {'type':'failure','kind':'provider_completion','error_type':'AdapterError'}]
+    summary={'status':'degraded','failures':copy.deepcopy(original)}
+    summary['failures'][0].update(run_id='replay',build_id='new')
+    require_failure_evidence(summary,original)
+    for change in ('missing','extra','classification','wrong_kind'):
+        bad=copy.deepcopy(summary)
+        if change=='missing':bad['failures'].pop(0)
+        elif change=='extra':bad['failures'].append({'type':'failure','kind':'reporting'})
+        elif change=='classification':bad['status']='complete'
+        else:bad['failures'][0]['kind']='not-evolution'
+        with pytest.raises(ReplayMismatch):require_failure_evidence(bad,original)
+
+
+def test_schema_identity_does_not_treat_integer_one_as_boolean_true():
+    record=opening()['records'][0]
+    replay=ReplayController([record],provider_contract_policy=POLICY)
+    schema=copy.deepcopy(record['response_format']);schema['json_schema']['strict']=1
+    with pytest.raises(ReplayMismatch,match='schema'):
+        replay.get_completion(record['prompt'],schema)
+    assert replay.position==0
