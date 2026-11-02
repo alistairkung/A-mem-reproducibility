@@ -366,3 +366,18 @@ ongoing cost reconciliation are required for further collection. No performance-
 See [baseline outcome and evidence](t5-conv50-baseline-20261101.md). Before T6, review the degraded
 baseline and scope recommendation, separately approve remaining selected-scope T5 full-mode work
 (two other conversations for fallback) and T6 itself. T6–T8 and further paid phases are unstarted.
+
+## Authorization — T6 deterministic replay on the completed conv-50 lineage
+
+On 2 November 2026 the user explicitly authorized T6 implementation/offline tests, documentation,
+commits/push, focused PR, Standards/Spec review and merge after acceptance. The completed conv-50
+parent/child lineage is the replay reference; this authorizes offline T6 before the still-gated
+remaining selected-conversation T5 collection. It does not close T5 or change the population.
+
+Preserve frozen author/provider/scoring/configuration and all raw evidence. Replay exact captured
+response strings and request identities; distinguish approved D3a deviations and rejected outputs.
+Normalise only incidental UUID identities/wall-clock access fields in comparison copies. Historical
+per-insertion snapshots/query vectors are unavailable, so retain that limitation and use labelled
+portable fixtures plus frozen-author-derived comparison hashes, verified against recorded checkpoints,
+requests, outcomes, retrieval and scores. This is not new historical evidence or independent live trials.
+No paid model calls, T7 switches, new compatibility policy or additional benchmark experiment is approved.

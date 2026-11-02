@@ -1,0 +1,944 @@
+{
+  "origin": {
+    "description": "Exact first two conv-50 turns and four captured model completions; not fabricated responses",
+    "parent_phase_sha256": "a3d90514404a454cb894e9c716ffaccb26a1b054364aa8c8f3cd1f4509d7a231",
+    "generation_record_sha256": [
+      "07524263bd00ae4708ccacdb45fa436e367b7ea24b33b4914c65120ed499f3f3",
+      "d6259d9e5e58312e8f46c3f89b40275740048486a5b121f4dde0f5a8a8e88de4",
+      "b5c42f61cead200ec956da868c227f5ce2090918e0685fe3d61b303de49f9e4a",
+      "2b6be78a517175132acdca3732018a423bad3916fbbb23253c5fdf2547a33e12"
+    ],
+    "oracle_kind": "offline frozen-author characterization with a deterministic 2D embedding stub; not historical embeddings or historical per-step snapshots"
+  },
+  "turns": [
+    {
+      "content": "Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked?",
+      "timestamp": "11:53 am on 23 March, 2023",
+      "turn_id": "D1:1"
+    },
+    {
+      "content": "Speaker Davesays : Hey Calvin! Nice to meet you too! Things have been going well since we last talked. I attended this awesome event recently. It was like a car lover's paradise! They had so many classic cars on show, I was in awe. I even had the opportunity to speak with some of the owners and hear their fascinating stories. It was super inspiring. What about you? Anything exciting happening in your life lately?",
+      "timestamp": "11:53 am on 23 March, 2023",
+      "turn_id": "D1:2"
+    }
+  ],
+  "records": [
+    {
+      "type": "generation",
+      "stage": "metadata",
+      "prompt": "Generate a structured analysis of the following content by:\n            1. Identifying the most salient keywords (focus on nouns, verbs, and key concepts)\n            2. Extracting core themes and contextual elements\n            3. Creating relevant categorical tags\n\n            Format the response as a JSON object:\n            {\n                \"keywords\": [\n                    // several specific, distinct keywords that capture key concepts and terminology\n                    // Order from most to least important\n                    // Don't include keywords that are the name of the speaker or time\n                    // At least three keywords, but don't be too redundant.\n                ],\n                \"context\": \n                    // one sentence summarizing:\n                    // - Main topic/domain\n                    // - Key arguments/points\n                    // - Intended audience/purpose\n                ,\n                \"tags\": [\n                    // several broad categories/themes for classification\n                    // Include domain, format, and type tags\n                    // At least three tags, but don't be too redundant.\n                ]\n            }\n\n            Content for analysis:\n            Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked?",
+      "response_format": {
+        "json_schema": {
+          "name": "response",
+          "schema": {
+            "additionalProperties": false,
+            "properties": {
+              "context": {
+                "type": "string"
+              },
+              "keywords": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "tags": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "keywords",
+              "context",
+              "tags"
+            ],
+            "type": "object"
+          },
+          "strict": true
+        },
+        "type": "json_schema"
+      },
+      "model": "deepseek-flash",
+      "endpoint": "https://api.deepseek.com/beta/chat/completions",
+      "temperature": 0.7,
+      "max_tokens": 1000,
+      "thinking": "disabled",
+      "provider_contract_policy": "canonical-index-strings-v1",
+      "error_type": null,
+      "output": "{\"keywords\": [\"greeting\", \"meeting\", \"catching up\", \"conversation\", \"introduction\"], \"context\": \"This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked.\", \"tags\": [\"casual conversation\", \"dialogue\", \"social interaction\", \"small talk\"]}",
+      "provider_response": {
+        "choices": [
+          {
+            "finish_reason": "tool_calls",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "",
+              "function_call": null,
+              "refusal": null,
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "function": {
+                    "arguments": "{\"keywords\": [\"greeting\", \"meeting\", \"catching up\", \"conversation\", \"introduction\"], \"context\": \"This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked.\", \"tags\": [\"casual conversation\", \"dialogue\", \"social interaction\", \"small talk\"]}",
+                    "name": "response"
+                  },
+                  "id": "call_00_3P5XHVgT8NBROhKyL3EZ7276",
+                  "index": 0,
+                  "type": "function"
+                }
+              ]
+            }
+          }
+        ],
+        "created": 1793530452,
+        "id": "f5762735-6e4c-48a3-9735-745cc0136842",
+        "model": "deepseek-flash",
+        "moderation": null,
+        "object": "chat.completion",
+        "service_tier": null,
+        "system_fingerprint": "bc19ba97cbe016479903222bb1578db6",
+        "usage": {
+          "completion_tokens": 130,
+          "completion_tokens_details": null,
+          "prompt_cache_hit_tokens": 384,
+          "prompt_cache_miss_tokens": 162,
+          "prompt_tokens": 546,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cache_write_tokens": null,
+            "cached_tokens": 384
+          },
+          "total_tokens": 676
+        }
+      },
+      "raw_schema_valid": true,
+      "validation_copy_schema_valid": null,
+      "compatibility_deviation": null,
+      "attempts": [
+        {
+          "request_body": {
+            "max_tokens": 1000,
+            "messages": [
+              {
+                "content": "You must respond with a JSON object.",
+                "role": "system"
+              },
+              {
+                "content": "Generate a structured analysis of the following content by:\n            1. Identifying the most salient keywords (focus on nouns, verbs, and key concepts)\n            2. Extracting core themes and contextual elements\n            3. Creating relevant categorical tags\n\n            Format the response as a JSON object:\n            {\n                \"keywords\": [\n                    // several specific, distinct keywords that capture key concepts and terminology\n                    // Order from most to least important\n                    // Don't include keywords that are the name of the speaker or time\n                    // At least three keywords, but don't be too redundant.\n                ],\n                \"context\": \n                    // one sentence summarizing:\n                    // - Main topic/domain\n                    // - Key arguments/points\n                    // - Intended audience/purpose\n                ,\n                \"tags\": [\n                    // several broad categories/themes for classification\n                    // Include domain, format, and type tags\n                    // At least three tags, but don't be too redundant.\n                ]\n            }\n\n            Content for analysis:\n            Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked?",
+                "role": "user"
+              }
+            ],
+            "model": "deepseek-flash",
+            "stream": false,
+            "temperature": 0.7,
+            "thinking": {
+              "type": "disabled"
+            },
+            "tool_choice": {
+              "function": {
+                "name": "response"
+              },
+              "type": "function"
+            },
+            "tools": [
+              {
+                "function": {
+                  "name": "response",
+                  "parameters": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "context": {
+                        "type": "string"
+                      },
+                      "keywords": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "keywords",
+                      "context",
+                      "tags"
+                    ],
+                    "type": "object"
+                  },
+                  "strict": true
+                },
+                "type": "function"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "generation",
+      "stage": "shared_decision",
+      "prompt": "\n                                You are an AI memory evolution agent responsible for managing and evolving a knowledge base.\n                                Analyze the the new memory note according to keywords and context, also with their several nearest neighbors memory.\n                                Make decisions about its evolution.  \n\n                                The new memory context:\n                                This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked.\n                                content: Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked?\n                                keywords: ['greeting', 'meeting', 'catching up', 'conversation', 'introduction']\n\n                                The nearest neighbors memories:\n                                \n\n                                Based on this information, determine:\n                                1. Should this memory be evolved? Consider its relationships with other memories.\n                                2. What specific actions should be taken (strengthen, update_neighbor)?\n                                   2.1 If choose to strengthen the connection, which memory should it be connected to? Can you give the updated tags of this memory?\n                                   2.2 If choose to update_neighbor, you can update the context and tags of these memories based on the understanding of these memories. If the context and the tags are not updated, the new context and tags should be the same as the original ones. Generate the new context and tags in the sequential order of the input neighbors.\n                                Tags should be determined by the content of these characteristic of these memories, which can be used to retrieve them later and categorize them.\n                                Note that the length of new_tags_neighborhood must equal the number of input neighbors, and the length of new_context_neighborhood must equal the number of input neighbors.\n                                The number of neighbors is 0.\n                                Return your decision in JSON format with the following structure:\n                                {\n                                    \"should_evolve\": True or False,\n                                    \"actions\": [\"strengthen\", \"update_neighbor\"],\n                                    \"suggested_connections\": [\"neighbor_memory_ids\"],\n                                    \"tags_to_update\": [\"tag_1\",...\"tag_n\"], \n                                    \"new_context_neighborhood\": [\"new context\",...,\"new context\"],\n                                    \"new_tags_neighborhood\": [[\"tag_1\",...,\"tag_n\"],...[\"tag_1\",...,\"tag_n\"]],\n                                }\n                                ",
+      "response_format": {
+        "json_schema": {
+          "name": "response",
+          "schema": {
+            "additionalProperties": false,
+            "properties": {
+              "actions": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "new_context_neighborhood": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "new_tags_neighborhood": {
+                "items": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              "should_evolve": {
+                "type": "boolean"
+              },
+              "suggested_connections": {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "tags_to_update": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "should_evolve",
+              "actions",
+              "suggested_connections",
+              "tags_to_update",
+              "new_context_neighborhood",
+              "new_tags_neighborhood"
+            ],
+            "type": "object"
+          },
+          "strict": true
+        },
+        "type": "json_schema"
+      },
+      "model": "deepseek-flash",
+      "endpoint": "https://api.deepseek.com/beta/chat/completions",
+      "temperature": 0.7,
+      "max_tokens": 4000,
+      "thinking": "disabled",
+      "provider_contract_policy": "canonical-index-strings-v1",
+      "error_type": null,
+      "output": "{\"should_evolve\": false, \"actions\": [], \"suggested_connections\": [], \"tags_to_update\": [\"greeting\", \"meeting\", \"catching up\", \"conversation\", \"introduction\"], \"new_context_neighborhood\": [], \"new_tags_neighborhood\": []}",
+      "provider_response": {
+        "choices": [
+          {
+            "finish_reason": "tool_calls",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "",
+              "function_call": null,
+              "refusal": null,
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "function": {
+                    "arguments": "{\"should_evolve\": false, \"actions\": [], \"suggested_connections\": [], \"tags_to_update\": [\"greeting\", \"meeting\", \"catching up\", \"conversation\", \"introduction\"], \"new_context_neighborhood\": [], \"new_tags_neighborhood\": []}",
+                    "name": "response"
+                  },
+                  "id": "call_00_Eyb0DO6jscd0vG5Cx6KC6091",
+                  "index": 0,
+                  "type": "function"
+                }
+              ]
+            }
+          }
+        ],
+        "created": 1793530453,
+        "id": "2cd2d26f-68c9-4a4f-95e7-de18d59893ee",
+        "model": "deepseek-flash",
+        "moderation": null,
+        "object": "chat.completion",
+        "service_tier": null,
+        "system_fingerprint": "bc19ba97cbe016479903222bb1578db6",
+        "usage": {
+          "completion_tokens": 147,
+          "completion_tokens_details": null,
+          "prompt_cache_hit_tokens": 256,
+          "prompt_cache_miss_tokens": 638,
+          "prompt_tokens": 894,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cache_write_tokens": null,
+            "cached_tokens": 256
+          },
+          "total_tokens": 1041
+        }
+      },
+      "raw_schema_valid": true,
+      "validation_copy_schema_valid": null,
+      "compatibility_deviation": null,
+      "attempts": [
+        {
+          "request_body": {
+            "max_tokens": 4000,
+            "messages": [
+              {
+                "content": "You must respond with a JSON object.",
+                "role": "system"
+              },
+              {
+                "content": "\n                                You are an AI memory evolution agent responsible for managing and evolving a knowledge base.\n                                Analyze the the new memory note according to keywords and context, also with their several nearest neighbors memory.\n                                Make decisions about its evolution.  \n\n                                The new memory context:\n                                This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked.\n                                content: Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked?\n                                keywords: ['greeting', 'meeting', 'catching up', 'conversation', 'introduction']\n\n                                The nearest neighbors memories:\n                                \n\n                                Based on this information, determine:\n                                1. Should this memory be evolved? Consider its relationships with other memories.\n                                2. What specific actions should be taken (strengthen, update_neighbor)?\n                                   2.1 If choose to strengthen the connection, which memory should it be connected to? Can you give the updated tags of this memory?\n                                   2.2 If choose to update_neighbor, you can update the context and tags of these memories based on the understanding of these memories. If the context and the tags are not updated, the new context and tags should be the same as the original ones. Generate the new context and tags in the sequential order of the input neighbors.\n                                Tags should be determined by the content of these characteristic of these memories, which can be used to retrieve them later and categorize them.\n                                Note that the length of new_tags_neighborhood must equal the number of input neighbors, and the length of new_context_neighborhood must equal the number of input neighbors.\n                                The number of neighbors is 0.\n                                Return your decision in JSON format with the following structure:\n                                {\n                                    \"should_evolve\": True or False,\n                                    \"actions\": [\"strengthen\", \"update_neighbor\"],\n                                    \"suggested_connections\": [\"neighbor_memory_ids\"],\n                                    \"tags_to_update\": [\"tag_1\",...\"tag_n\"], \n                                    \"new_context_neighborhood\": [\"new context\",...,\"new context\"],\n                                    \"new_tags_neighborhood\": [[\"tag_1\",...,\"tag_n\"],...[\"tag_1\",...,\"tag_n\"]],\n                                }\n                                ",
+                "role": "user"
+              }
+            ],
+            "model": "deepseek-flash",
+            "stream": false,
+            "temperature": 0.7,
+            "thinking": {
+              "type": "disabled"
+            },
+            "tool_choice": {
+              "function": {
+                "name": "response"
+              },
+              "type": "function"
+            },
+            "tools": [
+              {
+                "function": {
+                  "name": "response",
+                  "parameters": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "actions": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "new_context_neighborhood": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "new_tags_neighborhood": {
+                        "items": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      "should_evolve": {
+                        "type": "boolean"
+                      },
+                      "suggested_connections": {
+                        "items": {
+                          "type": "integer"
+                        },
+                        "type": "array"
+                      },
+                      "tags_to_update": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "should_evolve",
+                      "actions",
+                      "suggested_connections",
+                      "tags_to_update",
+                      "new_context_neighborhood",
+                      "new_tags_neighborhood"
+                    ],
+                    "type": "object"
+                  },
+                  "strict": true
+                },
+                "type": "function"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "generation",
+      "stage": "metadata",
+      "prompt": "Generate a structured analysis of the following content by:\n            1. Identifying the most salient keywords (focus on nouns, verbs, and key concepts)\n            2. Extracting core themes and contextual elements\n            3. Creating relevant categorical tags\n\n            Format the response as a JSON object:\n            {\n                \"keywords\": [\n                    // several specific, distinct keywords that capture key concepts and terminology\n                    // Order from most to least important\n                    // Don't include keywords that are the name of the speaker or time\n                    // At least three keywords, but don't be too redundant.\n                ],\n                \"context\": \n                    // one sentence summarizing:\n                    // - Main topic/domain\n                    // - Key arguments/points\n                    // - Intended audience/purpose\n                ,\n                \"tags\": [\n                    // several broad categories/themes for classification\n                    // Include domain, format, and type tags\n                    // At least three tags, but don't be too redundant.\n                ]\n            }\n\n            Content for analysis:\n            Speaker Davesays : Hey Calvin! Nice to meet you too! Things have been going well since we last talked. I attended this awesome event recently. It was like a car lover's paradise! They had so many classic cars on show, I was in awe. I even had the opportunity to speak with some of the owners and hear their fascinating stories. It was super inspiring. What about you? Anything exciting happening in your life lately?",
+      "response_format": {
+        "json_schema": {
+          "name": "response",
+          "schema": {
+            "additionalProperties": false,
+            "properties": {
+              "context": {
+                "type": "string"
+              },
+              "keywords": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "tags": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "keywords",
+              "context",
+              "tags"
+            ],
+            "type": "object"
+          },
+          "strict": true
+        },
+        "type": "json_schema"
+      },
+      "model": "deepseek-flash",
+      "endpoint": "https://api.deepseek.com/beta/chat/completions",
+      "temperature": 0.7,
+      "max_tokens": 1000,
+      "thinking": "disabled",
+      "provider_contract_policy": "canonical-index-strings-v1",
+      "error_type": null,
+      "output": "{\"keywords\": [\"classic cars\", \"car show event\", \"car owners\", \"fascinating stories\", \"inspiring experience\", \"recent catch-up\", \"personal update\"], \"context\": \"A casual conversational message from Dave to Calvin recounting his experience at a classic car event, where he admired the vehicles and chatted with owners about their stories, before asking Calvin for his own recent news; intended as friendly small talk to reconnect.\", \"tags\": [\"casual conversation\", \"personal update\", \"automotive hobby\", \"small talk\", \"social reconnection\", \"message\"]}",
+      "provider_response": {
+        "choices": [
+          {
+            "finish_reason": "tool_calls",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "",
+              "function_call": null,
+              "refusal": null,
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "function": {
+                    "arguments": "{\"keywords\": [\"classic cars\", \"car show event\", \"car owners\", \"fascinating stories\", \"inspiring experience\", \"recent catch-up\", \"personal update\"], \"context\": \"A casual conversational message from Dave to Calvin recounting his experience at a classic car event, where he admired the vehicles and chatted with owners about their stories, before asking Calvin for his own recent news; intended as friendly small talk to reconnect.\", \"tags\": [\"casual conversation\", \"personal update\", \"automotive hobby\", \"small talk\", \"social reconnection\", \"message\"]}",
+                    "name": "response"
+                  },
+                  "id": "call_00_gwYWmQXPUPFKhTy8Bnw36110",
+                  "index": 0,
+                  "type": "function"
+                }
+              ]
+            }
+          }
+        ],
+        "created": 1793530455,
+        "id": "1f2ca080-93f6-4820-8ab0-34e8c845513e",
+        "model": "deepseek-flash",
+        "moderation": null,
+        "object": "chat.completion",
+        "service_tier": null,
+        "system_fingerprint": "bc19ba97cbe016479903222bb1578db6",
+        "usage": {
+          "completion_tokens": 169,
+          "completion_tokens_details": null,
+          "prompt_cache_hit_tokens": 384,
+          "prompt_cache_miss_tokens": 230,
+          "prompt_tokens": 614,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cache_write_tokens": null,
+            "cached_tokens": 384
+          },
+          "total_tokens": 783
+        }
+      },
+      "raw_schema_valid": true,
+      "validation_copy_schema_valid": null,
+      "compatibility_deviation": null,
+      "attempts": [
+        {
+          "request_body": {
+            "max_tokens": 1000,
+            "messages": [
+              {
+                "content": "You must respond with a JSON object.",
+                "role": "system"
+              },
+              {
+                "content": "Generate a structured analysis of the following content by:\n            1. Identifying the most salient keywords (focus on nouns, verbs, and key concepts)\n            2. Extracting core themes and contextual elements\n            3. Creating relevant categorical tags\n\n            Format the response as a JSON object:\n            {\n                \"keywords\": [\n                    // several specific, distinct keywords that capture key concepts and terminology\n                    // Order from most to least important\n                    // Don't include keywords that are the name of the speaker or time\n                    // At least three keywords, but don't be too redundant.\n                ],\n                \"context\": \n                    // one sentence summarizing:\n                    // - Main topic/domain\n                    // - Key arguments/points\n                    // - Intended audience/purpose\n                ,\n                \"tags\": [\n                    // several broad categories/themes for classification\n                    // Include domain, format, and type tags\n                    // At least three tags, but don't be too redundant.\n                ]\n            }\n\n            Content for analysis:\n            Speaker Davesays : Hey Calvin! Nice to meet you too! Things have been going well since we last talked. I attended this awesome event recently. It was like a car lover's paradise! They had so many classic cars on show, I was in awe. I even had the opportunity to speak with some of the owners and hear their fascinating stories. It was super inspiring. What about you? Anything exciting happening in your life lately?",
+                "role": "user"
+              }
+            ],
+            "model": "deepseek-flash",
+            "stream": false,
+            "temperature": 0.7,
+            "thinking": {
+              "type": "disabled"
+            },
+            "tool_choice": {
+              "function": {
+                "name": "response"
+              },
+              "type": "function"
+            },
+            "tools": [
+              {
+                "function": {
+                  "name": "response",
+                  "parameters": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "context": {
+                        "type": "string"
+                      },
+                      "keywords": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "keywords",
+                      "context",
+                      "tags"
+                    ],
+                    "type": "object"
+                  },
+                  "strict": true
+                },
+                "type": "function"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "generation",
+      "stage": "shared_decision",
+      "prompt": "\n                                You are an AI memory evolution agent responsible for managing and evolving a knowledge base.\n                                Analyze the the new memory note according to keywords and context, also with their several nearest neighbors memory.\n                                Make decisions about its evolution.  \n\n                                The new memory context:\n                                A casual conversational message from Dave to Calvin recounting his experience at a classic car event, where he admired the vehicles and chatted with owners about their stories, before asking Calvin for his own recent news; intended as friendly small talk to reconnect.\n                                content: Speaker Davesays : Hey Calvin! Nice to meet you too! Things have been going well since we last talked. I attended this awesome event recently. It was like a car lover's paradise! They had so many classic cars on show, I was in awe. I even had the opportunity to speak with some of the owners and hear their fascinating stories. It was super inspiring. What about you? Anything exciting happening in your life lately?\n                                keywords: ['classic cars', 'car show event', 'car owners', 'fascinating stories', 'inspiring experience', 'recent catch-up', 'personal update']\n\n                                The nearest neighbors memories:\n                                memory index:0\t talk start time:11:53 am on 23 March, 2023\t memory content: Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked?\t memory context: This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked.\t memory keywords: ['greeting', 'meeting', 'catching up', 'conversation', 'introduction']\t memory tags: ['casual conversation', 'dialogue', 'social interaction', 'small talk']\n\n\n                                Based on this information, determine:\n                                1. Should this memory be evolved? Consider its relationships with other memories.\n                                2. What specific actions should be taken (strengthen, update_neighbor)?\n                                   2.1 If choose to strengthen the connection, which memory should it be connected to? Can you give the updated tags of this memory?\n                                   2.2 If choose to update_neighbor, you can update the context and tags of these memories based on the understanding of these memories. If the context and the tags are not updated, the new context and tags should be the same as the original ones. Generate the new context and tags in the sequential order of the input neighbors.\n                                Tags should be determined by the content of these characteristic of these memories, which can be used to retrieve them later and categorize them.\n                                Note that the length of new_tags_neighborhood must equal the number of input neighbors, and the length of new_context_neighborhood must equal the number of input neighbors.\n                                The number of neighbors is 1.\n                                Return your decision in JSON format with the following structure:\n                                {\n                                    \"should_evolve\": True or False,\n                                    \"actions\": [\"strengthen\", \"update_neighbor\"],\n                                    \"suggested_connections\": [\"neighbor_memory_ids\"],\n                                    \"tags_to_update\": [\"tag_1\",...\"tag_n\"], \n                                    \"new_context_neighborhood\": [\"new context\",...,\"new context\"],\n                                    \"new_tags_neighborhood\": [[\"tag_1\",...,\"tag_n\"],...[\"tag_1\",...,\"tag_n\"]],\n                                }\n                                ",
+      "response_format": {
+        "json_schema": {
+          "name": "response",
+          "schema": {
+            "additionalProperties": false,
+            "properties": {
+              "actions": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "new_context_neighborhood": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "new_tags_neighborhood": {
+                "items": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              "should_evolve": {
+                "type": "boolean"
+              },
+              "suggested_connections": {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "tags_to_update": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "should_evolve",
+              "actions",
+              "suggested_connections",
+              "tags_to_update",
+              "new_context_neighborhood",
+              "new_tags_neighborhood"
+            ],
+            "type": "object"
+          },
+          "strict": true
+        },
+        "type": "json_schema"
+      },
+      "model": "deepseek-flash",
+      "endpoint": "https://api.deepseek.com/beta/chat/completions",
+      "temperature": 0.7,
+      "max_tokens": 4000,
+      "thinking": "disabled",
+      "provider_contract_policy": "canonical-index-strings-v1",
+      "error_type": null,
+      "output": "{\"should_evolve\": true, \"actions\": [\"strengthen\", \"update_neighbor\"], \"suggested_connections\": [\"0\"], \"tags_to_update\": [\"casual conversation\", \"dialogue\", \"social interaction\", \"small talk\", \"personal update\", \"classic cars\", \"car show event\", \"recent catch-up\"], \"new_context_neighborhood\": [\"This is a brief casual conversational greeting from Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked; it forms the opening exchange of a friendly catch-up dialogue in which Dave responds with a personal update about attending a classic car event.\"], \"new_tags_neighborhood\": [[\"greeting\", \"meeting\", \"catching up\", \"conversation\", \"introduction\", \"casual conversation\", \"dialogue\", \"social interaction\", \"small talk\", \"recent catch-up\"]]}",
+      "provider_response": {
+        "choices": [
+          {
+            "finish_reason": "tool_calls",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "",
+              "function_call": null,
+              "refusal": null,
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "function": {
+                    "arguments": "{\"should_evolve\": true, \"actions\": [\"strengthen\", \"update_neighbor\"], \"suggested_connections\": [\"0\"], \"tags_to_update\": [\"casual conversation\", \"dialogue\", \"social interaction\", \"small talk\", \"personal update\", \"classic cars\", \"car show event\", \"recent catch-up\"], \"new_context_neighborhood\": [\"This is a brief casual conversational greeting from Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked; it forms the opening exchange of a friendly catch-up dialogue in which Dave responds with a personal update about attending a classic car event.\"], \"new_tags_neighborhood\": [[\"greeting\", \"meeting\", \"catching up\", \"conversation\", \"introduction\", \"casual conversation\", \"dialogue\", \"social interaction\", \"small talk\", \"recent catch-up\"]]}",
+                    "name": "response"
+                  },
+                  "id": "call_00_EDt8ElYqyWM8opAUuPAp3646",
+                  "index": 0,
+                  "type": "function"
+                }
+              ]
+            }
+          }
+        ],
+        "created": 1793530456,
+        "id": "ca8be43d-b15f-4140-b473-7850921fa668",
+        "model": "deepseek-flash",
+        "moderation": null,
+        "object": "chat.completion",
+        "service_tier": null,
+        "system_fingerprint": "bc19ba97cbe016479903222bb1578db6",
+        "usage": {
+          "completion_tokens": 275,
+          "completion_tokens_details": null,
+          "prompt_cache_hit_tokens": 256,
+          "prompt_cache_miss_tokens": 865,
+          "prompt_tokens": 1121,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cache_write_tokens": null,
+            "cached_tokens": 256
+          },
+          "total_tokens": 1396
+        }
+      },
+      "raw_schema_valid": false,
+      "validation_copy_schema_valid": true,
+      "compatibility_deviation": {
+        "affected_field": "$.suggested_connections",
+        "algorithm_input_modified": false,
+        "hash_encoding": "arguments:utf8; values:canonical-json-sha256",
+        "original_arguments_sha256": "3d08625c3228214284850997aeab57f3a0d806271eb2db2ca57cab80de7c57f7",
+        "original_value_sha256": "097475126fd2d0d452caeeffcfae31ddfe766a9739c161b8c2e1cb9c45fa7079",
+        "provider_contract_policy": "canonical-index-strings-v1",
+        "raw_contract_violation": {
+          "expected": "integer",
+          "kind": "schema_type_violation",
+          "observed": "string",
+          "paths": [
+            "$.suggested_connections[0]"
+          ]
+        },
+        "raw_schema_valid": false,
+        "returned_arguments_sha256": "3d08625c3228214284850997aeab57f3a0d806271eb2db2ca57cab80de7c57f7",
+        "transformations": [
+          {
+            "original": "0",
+            "path": "$.suggested_connections[0]",
+            "validation_copy": 0
+          }
+        ],
+        "validation_copy_only": true,
+        "validation_copy_schema_valid": true,
+        "validation_copy_sha256": "e099e1f2b648c3b967711a2028aeefd4a42d059caf83ea514eaec9e4c52bb004"
+      },
+      "attempts": [
+        {
+          "request_body": {
+            "max_tokens": 4000,
+            "messages": [
+              {
+                "content": "You must respond with a JSON object.",
+                "role": "system"
+              },
+              {
+                "content": "\n                                You are an AI memory evolution agent responsible for managing and evolving a knowledge base.\n                                Analyze the the new memory note according to keywords and context, also with their several nearest neighbors memory.\n                                Make decisions about its evolution.  \n\n                                The new memory context:\n                                A casual conversational message from Dave to Calvin recounting his experience at a classic car event, where he admired the vehicles and chatted with owners about their stories, before asking Calvin for his own recent news; intended as friendly small talk to reconnect.\n                                content: Speaker Davesays : Hey Calvin! Nice to meet you too! Things have been going well since we last talked. I attended this awesome event recently. It was like a car lover's paradise! They had so many classic cars on show, I was in awe. I even had the opportunity to speak with some of the owners and hear their fascinating stories. It was super inspiring. What about you? Anything exciting happening in your life lately?\n                                keywords: ['classic cars', 'car show event', 'car owners', 'fascinating stories', 'inspiring experience', 'recent catch-up', 'personal update']\n\n                                The nearest neighbors memories:\n                                memory index:0\t talk start time:11:53 am on 23 March, 2023\t memory content: Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked?\t memory context: This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked.\t memory keywords: ['greeting', 'meeting', 'catching up', 'conversation', 'introduction']\t memory tags: ['casual conversation', 'dialogue', 'social interaction', 'small talk']\n\n\n                                Based on this information, determine:\n                                1. Should this memory be evolved? Consider its relationships with other memories.\n                                2. What specific actions should be taken (strengthen, update_neighbor)?\n                                   2.1 If choose to strengthen the connection, which memory should it be connected to? Can you give the updated tags of this memory?\n                                   2.2 If choose to update_neighbor, you can update the context and tags of these memories based on the understanding of these memories. If the context and the tags are not updated, the new context and tags should be the same as the original ones. Generate the new context and tags in the sequential order of the input neighbors.\n                                Tags should be determined by the content of these characteristic of these memories, which can be used to retrieve them later and categorize them.\n                                Note that the length of new_tags_neighborhood must equal the number of input neighbors, and the length of new_context_neighborhood must equal the number of input neighbors.\n                                The number of neighbors is 1.\n                                Return your decision in JSON format with the following structure:\n                                {\n                                    \"should_evolve\": True or False,\n                                    \"actions\": [\"strengthen\", \"update_neighbor\"],\n                                    \"suggested_connections\": [\"neighbor_memory_ids\"],\n                                    \"tags_to_update\": [\"tag_1\",...\"tag_n\"], \n                                    \"new_context_neighborhood\": [\"new context\",...,\"new context\"],\n                                    \"new_tags_neighborhood\": [[\"tag_1\",...,\"tag_n\"],...[\"tag_1\",...,\"tag_n\"]],\n                                }\n                                ",
+                "role": "user"
+              }
+            ],
+            "model": "deepseek-flash",
+            "stream": false,
+            "temperature": 0.7,
+            "thinking": {
+              "type": "disabled"
+            },
+            "tool_choice": {
+              "function": {
+                "name": "response"
+              },
+              "type": "function"
+            },
+            "tools": [
+              {
+                "function": {
+                  "name": "response",
+                  "parameters": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "actions": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "new_context_neighborhood": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "new_tags_neighborhood": {
+                        "items": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      "should_evolve": {
+                        "type": "boolean"
+                      },
+                      "suggested_connections": {
+                        "items": {
+                          "type": "integer"
+                        },
+                        "type": "array"
+                      },
+                      "tags_to_update": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "should_evolve",
+                      "actions",
+                      "suggested_connections",
+                      "tags_to_update",
+                      "new_context_neighborhood",
+                      "new_tags_neighborhood"
+                    ],
+                    "type": "object"
+                  },
+                  "strict": true
+                },
+                "type": "function"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "comparison_states": [
+    {
+      "evo_cnt": 0,
+      "evo_threshold": 100,
+      "notes": [
+        {
+          "attributes": {
+            "category": "Uncategorized",
+            "content": "Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked?",
+            "context": "This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked.",
+            "evolution_history": [],
+            "id": "note:0",
+            "importance_score": 1.0,
+            "keywords": [
+              "greeting",
+              "meeting",
+              "catching up",
+              "conversation",
+              "introduction"
+            ],
+            "links": [],
+            "retrieval_count": 0,
+            "tags": [
+              "casual conversation",
+              "dialogue",
+              "social interaction",
+              "small talk"
+            ],
+            "timestamp": "11:53 am on 23 March, 2023"
+          },
+          "index": 0,
+          "key": "note:0"
+        }
+      ],
+      "outcomes": [],
+      "retriever": {
+        "corpus": [
+          "content:Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked? context:This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked. keywords: greeting, meeting, catching up, conversation, introduction tags: casual conversation, dialogue, social interaction, small talk"
+        ],
+        "document_ids": {
+          "content:Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked? context:This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked. keywords: greeting, meeting, catching up, conversation, introduction tags: casual conversation, dialogue, social interaction, small talk": 0
+        },
+        "embedding_dtype": null,
+        "embeddings": [
+          [
+            1.0,
+            0.0
+          ]
+        ]
+      }
+    },
+    {
+      "evo_cnt": 1,
+      "evo_threshold": 100,
+      "notes": [
+        {
+          "attributes": {
+            "category": "Uncategorized",
+            "content": "Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked?",
+            "context": "This is a brief casual conversational greeting from Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked; it forms the opening exchange of a friendly catch-up dialogue in which Dave responds with a personal update about attending a classic car event.",
+            "evolution_history": [],
+            "id": "note:0",
+            "importance_score": 1.0,
+            "keywords": [
+              "greeting",
+              "meeting",
+              "catching up",
+              "conversation",
+              "introduction"
+            ],
+            "links": [],
+            "retrieval_count": 0,
+            "tags": [
+              "greeting",
+              "meeting",
+              "catching up",
+              "conversation",
+              "introduction",
+              "casual conversation",
+              "dialogue",
+              "social interaction",
+              "small talk",
+              "recent catch-up"
+            ],
+            "timestamp": "11:53 am on 23 March, 2023"
+          },
+          "index": 0,
+          "key": "note:0"
+        },
+        {
+          "attributes": {
+            "category": "Uncategorized",
+            "content": "Speaker Davesays : Hey Calvin! Nice to meet you too! Things have been going well since we last talked. I attended this awesome event recently. It was like a car lover's paradise! They had so many classic cars on show, I was in awe. I even had the opportunity to speak with some of the owners and hear their fascinating stories. It was super inspiring. What about you? Anything exciting happening in your life lately?",
+            "context": "A casual conversational message from Dave to Calvin recounting his experience at a classic car event, where he admired the vehicles and chatted with owners about their stories, before asking Calvin for his own recent news; intended as friendly small talk to reconnect.",
+            "evolution_history": [],
+            "id": "note:1",
+            "importance_score": 1.0,
+            "keywords": [
+              "classic cars",
+              "car show event",
+              "car owners",
+              "fascinating stories",
+              "inspiring experience",
+              "recent catch-up",
+              "personal update"
+            ],
+            "links": [
+              0
+            ],
+            "retrieval_count": 0,
+            "tags": [
+              "casual conversation",
+              "dialogue",
+              "social interaction",
+              "small talk",
+              "personal update",
+              "classic cars",
+              "car show event",
+              "recent catch-up"
+            ],
+            "timestamp": "11:53 am on 23 March, 2023"
+          },
+          "index": 1,
+          "key": "note:1"
+        }
+      ],
+      "outcomes": [],
+      "retriever": {
+        "corpus": [
+          "content:Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked? context:This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked. keywords: greeting, meeting, catching up, conversation, introduction tags: casual conversation, dialogue, social interaction, small talk",
+          "content:Speaker Davesays : Hey Calvin! Nice to meet you too! Things have been going well since we last talked. I attended this awesome event recently. It was like a car lover's paradise! They had so many classic cars on show, I was in awe. I even had the opportunity to speak with some of the owners and hear their fascinating stories. It was super inspiring. What about you? Anything exciting happening in your life lately? context:A casual conversational message from Dave to Calvin recounting his experience at a classic car event, where he admired the vehicles and chatted with owners about their stories, before asking Calvin for his own recent news; intended as friendly small talk to reconnect. keywords: classic cars, car show event, car owners, fascinating stories, inspiring experience, recent catch-up, personal update tags: casual conversation, dialogue, social interaction, small talk, personal update, classic cars, car show event, recent catch-up"
+        ],
+        "document_ids": {
+          "content:Speaker Calvinsays : Hey Dave! Nice to meet you! How's it going since we talked? context:This is a brief casual conversational greeting from a speaker named Calvin to Dave, reconnecting after a previous conversation and asking how things have been since they last talked. keywords: greeting, meeting, catching up, conversation, introduction tags: casual conversation, dialogue, social interaction, small talk": 0,
+          "content:Speaker Davesays : Hey Calvin! Nice to meet you too! Things have been going well since we last talked. I attended this awesome event recently. It was like a car lover's paradise! They had so many classic cars on show, I was in awe. I even had the opportunity to speak with some of the owners and hear their fascinating stories. It was super inspiring. What about you? Anything exciting happening in your life lately? context:A casual conversational message from Dave to Calvin recounting his experience at a classic car event, where he admired the vehicles and chatted with owners about their stories, before asking Calvin for his own recent news; intended as friendly small talk to reconnect. keywords: classic cars, car show event, car owners, fascinating stories, inspiring experience, recent catch-up, personal update tags: casual conversation, dialogue, social interaction, small talk, personal update, classic cars, car show event, recent catch-up": 1
+        },
+        "embedding_dtype": null,
+        "embeddings": [
+          [
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ]
+      }
+    }
+  ]
+}

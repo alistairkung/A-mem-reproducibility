@@ -25,6 +25,10 @@ baseline, retaining the parent's failed evolution: 568 notes, 204 QA, Degraded. 
 forecast recommends the predefined fallback; T5 remains open for remaining approved-scope baseline
 collection (conv-49/conv-44 under fallback). Further paid phases and T6–T8 require separate approval.
 
+Latest authorization (2 November): the user approved T6 offline implementation/review/merge based on
+the completed conv-50 lineage without awaiting further paid T5 collection. See [T6 replay](t6-replay.md).
+This is not a population revision or T5 closure; T7/T8 and all additional paid phases remain gated.
+
 ## Tracker and dependency map
 
 | Ticket | GitHub issue / deliverable | Direct blockers |

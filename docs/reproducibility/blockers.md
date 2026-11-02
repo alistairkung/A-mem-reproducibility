@@ -20,6 +20,7 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-012](#blk-012) | Failed usage settlement triggers SDK regeneration | Resolved | T5 and later paid phases | Terminal settlement guard; SQLite fault/retry regressions |
 | [BLK-013](#blk-013) | Shared decision exhausts the historical 1,000-token output limit | Resolved | T5; other-conversation cap risk retained | D9a conv-50 complete; maximum child output 3,851 tokens |
 | [BLK-014](#blk-014) | Normally finished strict function contains malformed JSON | Mitigated | T5 conv-50; downstream integrity | [Verified degraded lineage](t5-conv50-baseline-20261101.md); raw failure retained |
+| [BLK-015](#blk-015) | Historical intermediate states/query vectors were not recorded | Mitigated | T6–T7 replay claims | [Replay gate and oracle provenance](t6-replay.md) |
 
 Before another paid run: the checkpoint child completed conv-50 (568 notes/204 QA), Degraded, with
 the original failed evolution and all D3a deviations retained. The parent remains immutable and
@@ -366,3 +367,24 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** **Mitigated by verified checkpoint completion, not a provider repair.** The separately approved child restored the exact prefix and completed 568 notes/204 QA with inherited degradation, original failed evolution and all audits retained. Strict validation remains unchanged; no JSON repair or raw-malformed-output acceptance exception was introduced. Parent files/charges remain immutable, and the parent stays Incomplete. All approvals are consumed; no further paid phase is authorized.
 - **Verification:** Exact no-network replay and artifact/ledger audits verify rejection, unchanged accepted argument strings, durable stop, retained deviations and charges. The completed degraded child is verified in `artifacts/checkpoint-child-final-verification.json`; no provider fix is claimed. Historical tests/replay remain in `artifacts/pilot-conv50-d9a-offline-tests.txt` and `artifacts/pilot-conv50-d9a-offline-replay/result.json`.
 - **Research significance:** Passing a short compatibility fixture and requesting strict mode do not establish long-run structured-output reliability. A normal completion marker cannot replace parser/schema validation, and rare failures can prevent a costly memory build from reaching any benchmark QA.
+
+## BLK-015
+
+- **ID:** BLK-015
+- **Title:** Historical intermediate memory states and query vectors were not recorded.
+- **Status:** Mitigated
+- **First observed:** 2026-11-02, T6 / issue #6 archive inspection.
+- **Category:** Reproduction fidelity
+- **Expected behaviour:** Replay captured responses with enough independent state evidence to compare memory/index transitions and final retrieval/scoring exactly.
+- **Observed behaviour:** T5 retained all 1,544 transmitted completions, per-turn decisions/counters/changed IDs, final QA contexts/results and complete states at notes263/568. It did not retain every per-insertion full snapshot or query embedding. The parent's subsequent blocked metadata event has no response and is not an extra model completion.
+- **Evidence:** Immutable `artifacts/runs/pilot-conv50-{d9a,checkpoint-child}/`, completed cache, [T5 report](t5-conv50-baseline-20261101.md), [T6 reference provenance](t6-replay.md), local `artifacts/replays/t6-conv50-20261102/verification.json` and the labelled `tests/fixtures/conv50-replay-state-hashes.json`.
+- **Root cause:** **Confirmed:** the existing observational runner records outcomes and complete/abort snapshots, not per-insertion vector/state checkpoints or query vectors. This is a recording-scope limit, not missing LLM outputs or evidence of cache contamination.
+- **Impact:** No independent historical numeric oracle exists for every intermediate state. Cross-platform local embedding differences cannot be resolved by silently normalising vectors or replacing retrieval. The two historical checkpoints plus recorded requests/outcomes/QA still support meaningful full replay.
+- **Options considered:** Recollecting paid baseline telemetry is unnecessary and unauthorized. Inventing missing historical responses/vectors or substituting captured neighbour choices would weaken the test. Use pinned local CPU recomputation, verify all historical observations, and label frozen-author-derived per-insertion hashes separately. Small portable fixtures use clearly identified deterministic embedding/metric stubs.
+- **Resolution attempts:**
+  - 2026-11-02: inspect original implementation and immutable archives; find complete logical response coverage, including the malformed decision and accepted D3a audits.
+  - 2026-11-02: first socket-denied full replay exactly matches all1,544 requests, 568 outcomes, historical states at263/568, all204 retrieval contexts/predictions and both original scoring views on the pinned CPU environment. No vector/metric tolerance was used; original run/cache/ledger files were read only.
+  - 2026-11-02: freeze568 compact T6-derived per-insertion comparison hashes, anchored to parent/child receipts, author revision and dataset. Export only four exact opening responses for portable tests; label their 2D-stub comparison states as new offline characterization, not historical embeddings.
+- **Final resolution or limitation:** Mitigated for T6's regression purpose. Recorded facts and derived reference state remain distinct. Every future full-mode replay must match the fixed intermediate oracle as well as recorded checkpoints/outcomes/QA. Historical unlogged vectors are not claimed recovered independently; another runtime/device must fail or be investigated if exact recomputation differs.
+- **Verification:** First full replay and portable tests pass. A fresh-process oracle-gated replay, explicit consolidation checks, mutation test and final reviews are in progress; later evidence will be appended. No paid calls or baseline regeneration occurred.
+- **Research significance:** Capturing model outputs enables logical replay, but does not alone supply independent evidence of every numerical state. A trustworthy regression gate separates recorded history, deterministic local computation and explicitly derived test oracles.
