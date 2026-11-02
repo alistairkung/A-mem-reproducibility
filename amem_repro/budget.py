@@ -220,7 +220,7 @@ class PhasePermit:
                 historical = db.execute('SELECT COALESCE(SUM(charge),0) FROM attempts').fetchone()[0]
                 if historical < job['initial_study_microusd']:
                     raise BudgetStop('Shared ledger lost historical study spending')
-                if db.execute('SELECT 1 FROM study_jobs WHERE study_id=? AND complete=0', (job['study_id'],)).fetchone():
+                if db.execute('SELECT 1 FROM study_jobs j JOIN phases p ON p.approval_id=j.approval_id WHERE j.study_id=? AND (j.complete=0 OR p.halted IS NOT NULL)', (job['study_id'],)).fetchone():
                     raise BudgetStop('A study job is unfinished; paid recovery requires separate approval')
                 if binding['condition']!='full':
                     full={row[0] for row in db.execute('SELECT conversation_id FROM study_jobs WHERE study_id=? AND condition=? AND complete=1',
@@ -245,7 +245,7 @@ class PhasePermit:
                 db.execute('INSERT INTO checkpoint_claims VALUES (?,?)', (parent, self.approval_id))
 
     def complete_study_job(self, receipt):
-        """Release the serial frontier only after a complete immutable phase receipt exists."""
+        """Verify settled workload before publication; failed publication must halt the cell."""
         if 'study_job' not in self.binding:
             return
         with self._transaction() as db:

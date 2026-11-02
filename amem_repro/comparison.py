@@ -73,13 +73,20 @@ def load_saved_run(phase_path, manifest, *, root=ROOT, archive_root=None):
         raise ValueError('Scientific run provenance mismatch')
     science = ['memory_layer.py', 'test_advanced.py', 'utils.py', 'load_dataset.py',
                'amem_repro/author.py', 'amem_repro/adapter.py', 'amem_repro/contracts.py',
-               'amem_repro/config.py']
+               'amem_repro/config.py','amem_repro/scoring.py','amem_repro/measurements.py',
+               'config/study.json','config/assets.json','uv.lock','pyproject.toml']
     if condition != 'full' or 'amem_repro/actions.py' in start['source_hashes']['files']:
         science.append('amem_repro/actions.py')
     if (start['source_hashes'].get('author_revision') != AUTHOR_REVISION
             or any(start['source_hashes']['files'].get(name) != hashlib.sha256((root/name).read_bytes()).hexdigest()
                    for name in science)):
         raise ValueError('Scientific source differs from the frozen implementation')
+    preflight=_read(Path(phase_path).parent/'preflight.json')
+    if (binding.get('preflight_sha256')!=fingerprint(preflight)
+            or preflight.get('source_sha256')!=binding['source_sha256']
+            or preflight.get('runtime',{}).get('ok') is not True
+            or preflight.get('runtime',{}).get('network_disabled') is not True):
+        raise ValueError('Runtime preflight provenance mismatch')
     if (condition != 'full' and (start.get('memory_actions') != flags or binding.get('memory_actions') != flags
                                  or start.get('action_policy') != 'released-action-boundaries-v1'
                                  or binding.get('action_policy') != 'released-action-boundaries-v1')):

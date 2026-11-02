@@ -89,16 +89,23 @@ def verify_study_history(root, sources):
         for path in (root/'artifacts/runs').glob('*/approval.json'):
             prior=_read(path)
             if prior.get('phase')!='baseline': continue
-            row=db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(prior['approval_id'],)).fetchone()
+            row=db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',(prior['approval_id'],)).fetchone()
             if row is None or fingerprint(json.loads(row[0]))!=fingerprint(prior):
                 raise ValueError('Archived main run missing from cumulative study ledger')
             try:
-                claim=db.execute('SELECT study_id,condition,conversation_id FROM study_jobs WHERE approval_id=?',(prior['approval_id'],)).fetchone()
+                claim=db.execute('SELECT study_id,condition,conversation_id,complete FROM study_jobs WHERE approval_id=?',(prior['approval_id'],)).fetchone()
             except sqlite3.OperationalError:
                 raise ValueError('Archived main run lost its durable cell claim') from None
             prior_job=prior['binding'].get('study_job',{})
-            if claim!=(prior_job.get('study_id'),prior['binding'].get('condition'),prior_job.get('conversation_id')):
+            if claim is None or claim[:3]!=(prior_job.get('study_id'),prior['binding'].get('condition'),prior_job.get('conversation_id')):
                 raise ValueError('Archived main run lost its durable cell claim')
+            if claim[3]:
+                try:
+                    if row[1] is not None:
+                        raise ValueError('Completed ledger cell is halted')
+                    _verified_phase(path.parent/'phase.json',root)
+                except (ValueError,OSError,KeyError):
+                    raise ValueError('Completed main ledger cell lacks a valid final phase receipt') from None
     with (child_dir/'events.jsonl').open() as stream:
         start=json.loads(next(stream))
     build=next(json.loads(line)['build_id'] for line in (child_dir/'events.jsonl').read_text().splitlines()

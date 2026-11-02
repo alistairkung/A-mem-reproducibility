@@ -158,10 +158,16 @@ def test_lost_cell_claim_cannot_erase_an_existing_main_authority(tmp_path):
         PhasePermit(other,path,other['binding'])
 
 
-@pytest.mark.parametrize('failure',[None,'decision','first_fingerprint','last_fingerprint'])
+INVALID_METADATA = [[],{},1,True,None,'']
+@pytest.mark.parametrize('failure', [None,'decision','first_fingerprint','last_fingerprint','finalization','publication',
+    'journal_first','journal_last','journal_fallback'] +
+    [pytest.param(('metadata',field,value,position),id=f'metadata-{field}-{type(value).__name__}-{position}')
+     for field in ('model','system_fingerprint')
+     for value in INVALID_METADATA for position in ('first','last')])
 def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,failure):
     import httpx
     from unittest.mock import patch
+    from contextlib import nullcontext
     from amem_repro import phases
     from amem_repro.adapter import create_deepseek_controller
     from amem_repro.author import make_agent_factory
@@ -170,6 +176,7 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
     from test_foundation import Provider, original_memory_module
     from test_scoring import dependencies
     from amem_repro.adapter import AdapterError
+    from amem_repro.artifacts import RunLedger
     (tmp_path/'data').symlink_to(ROOT/'data',target_is_directory=True)
     auth=study_approval('full');manifest=build_manifest(ROOT/'data/locomo10.json','fallback')
     funded_ledger(tmp_path/'artifacts/study-budget.sqlite')
@@ -186,22 +193,51 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
         if ((failure=='first_fingerprint' and len(provider.requests)==1)
                 or (failure=='last_fingerprint' and len(provider.requests)==1410)):
             response['system_fingerprint']='changed-provider'
+        if isinstance(failure,tuple) and failure[0]=='metadata':
+            _,field,value,position=failure
+            if len(provider.requests)==(1 if position=='first' else 1410):
+                response[field]=value
         return httpx.Response(200,json=response)
     def controller(**kwargs):
         return create_deepseek_controller(**kwargs,http_transport=httpx.MockTransport(handler))
     def factory(root,**kwargs):
         module=original_memory_module();module.print=lambda *a,**k:None
         return make_agent_factory(ROOT,memory_module=module,**kwargs)
+    original_save=phases._save
+    published=False
+    def publish(path,value):
+        nonlocal published
+        if failure=='publication' and Path(path).name.startswith('.phase-final-') and not published:
+            published=True
+            original_save(path,value)
+            raise OSError('offline phase publication failure')
+        if failure=='journal_fallback' and Path(path).name.startswith('generation-journal-failure-'):
+            raise OSError('offline fallback artifact write failure')
+        return original_save(path,value)
+    original_record=RunLedger.record
+    journal_failed=False
+    def journal(ledger,event):
+        nonlocal journal_failed
+        if failure in ('journal_first','journal_last','journal_fallback'):
+            target=1410 if failure=='journal_last' else 1
+            if event.get('type')=='generation' and len(provider.requests)==target and not journal_failed:
+                journal_failed=True
+                raise OSError('offline critical generation journal/fsync failure')
+        return original_record(ledger,event)
     with patch.object(phases,'_phase_inputs',return_value=(load_config(),manifest,{'test':'source'},auth['binding'])), \
          patch('amem_repro.adapter.create_deepseek_controller',side_effect=controller), \
          patch('amem_repro.author.make_agent_factory',side_effect=factory), \
          patch.object(phases,'make_token_counter',return_value=TokenCounter(str.split,'offline','test')), \
          patch('amem_repro.scoring.AuthorScorer',side_effect=lambda root:AuthorScorer(ROOT,dependencies=dependencies())), \
-         patch.dict('os.environ',{'DEEPSEEK_API_KEY':'offline-placeholder'}):
+         patch.dict('os.environ',{'DEEPSEEK_API_KEY':'offline-placeholder'}), \
+         patch.object(phases,'_save',side_effect=publish), \
+         patch.object(RunLedger,'record',new=journal), \
+         (patch.object(PhasePermit,'complete_study_job',side_effect=sqlite3.OperationalError('offline SQL finalization failure'))
+          if failure=='finalization' else nullcontext()):
         if failure is None:
             result=phases.execute_phase(auth,{'assets':{}},tmp_path/'assets',root=tmp_path)
         else:
-            with pytest.raises((BudgetStop,AdapterError)):
+            with pytest.raises((BudgetStop,AdapterError,sqlite3.OperationalError,OSError)):
                 phases.execute_phase(auth,{'assets':{}},tmp_path/'assets',root=tmp_path)
             result=json.loads((tmp_path/'artifacts/runs/study-one/phase.json').read_text())
         count=len(provider.requests)
@@ -210,7 +246,10 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
         assert len(provider.requests)==count
     events=[json.loads(line) for line in (tmp_path/'artifacts/runs/study-one/events.jsonl').read_text().splitlines()]
     assert result['conversation_ids']==['conv-49'] and result['expected_questions']==196
-    assert result['budget']['physical_attempts']=={None:1410,'decision':6,'first_fingerprint':1,'last_fingerprint':1410}[failure]
+    expected_calls=(1 if failure[3]=='first' else 1410) if isinstance(failure,tuple) else {
+        None:1410,'decision':6,'first_fingerprint':1,'last_fingerprint':1410,
+        'finalization':1410,'publication':1410,'journal_first':1,'journal_last':1410,'journal_fallback':1}[failure]
+    assert result['budget']['physical_attempts']==expected_calls
     assert result['status']==('degraded' if failure is None else 'incomplete')
     assert result['usable_for_next_phase'] is (failure is None)
     assert result['budget']['unknown_attempts']==0
@@ -219,9 +258,24 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
         assert len(partial['state']['notes'])==3 and partial['state']['evo_cnt']==2
         assert any(e.get('kind')=='provider_contract_deviation' for e in events)
         assert any(e.get('kind')=='evolve' for e in events)
-    if failure=='last_fingerprint':
+    if failure in ('last_fingerprint','finalization','publication'):
         assert result['completed_questions']==196
         assert json.loads((tmp_path/'artifacts/runs/study-one/summary.json').read_text())['status']=='incomplete'
+    if failure in ('finalization','publication'):
+        assert result['budget']['halted']
+        assert (tmp_path/'artifacts/runs/study-one/finalization-error.json').exists()
+    if isinstance(failure,tuple):
+        assert result['budget']['halted']
+        assert result['completed_questions']==(0 if failure[3]=='first' else 196)
+    if failure in ('journal_first','journal_last','journal_fallback'):
+        assert result['budget']['halted']
+        assert result['completed_questions']==(195 if failure=='journal_last' else 0)
+        fallback=list((tmp_path/'artifacts/runs/study-one').glob('generation-journal-failure-*.json'))
+        assert len(fallback)==(0 if failure=='journal_fallback' else 1)
+        if fallback:
+            preserved=json.loads(fallback[0].read_text())['event']
+            assert preserved['attempts'][0]['usage'] is not None
+            assert preserved['output']==preserved['provider_response']['choices'][0]['message']['tool_calls'][0]['function']['arguments']
     next_auth=study_approval('full','conv-44','next-cell')
     if failure:
         with pytest.raises(BudgetStop):
