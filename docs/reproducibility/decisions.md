@@ -403,3 +403,38 @@ and both run source fingerprints match current source. Original run/cache/ledger
 no paid calls or ablation experiments occurred. See [T7 evidence and commands](t7-action-gates.md).
 BLK-002 is Mitigated by operational reconstructions; unavailable historical ablation code and BLK-015's
 recording/runtime limits remain explicit. T8 and further paid collection still need separate approval.
+
+## Authorization — T8 implementation and paid main execution
+
+On 2 November 2026, after T7 merge `577a1e3`, the user invoked `implement-spec T8` and explicitly
+authorized paid execution. This authorizes T8 implementation/offline tests/reviews, the skill's
+integration branch/commits/push/draft PR workflow, and the frozen one-build-per-conversation/condition
+study within the existing USD50 total ceiling including USD8 contingency. It is not permission to
+increase the ceiling, add repetitions, change scientific settings or automatically recover paid failures.
+The skill ends with a PR ready for review; no new T8 merge authorization is inferred.
+
+D10a's predefined fallback is activated using the existing completed-pilot cost-only forecast:
+full scope USD127.391486 does not fit; fallback USD42.762234 including incurred spending/contingency
+does. Population remains exactly conv-49, conv-50, conv-44, all turns/questions, across four conditions.
+The archived full-mode conv-50 lineage is credited once. Complete full-mode conv-49/conv-44 (T5)
+before the remaining nine ablation cells (T8); do not duplicate the existing baseline or claim T5 closed
+before its remaining selected-scope collection verifies.
+
+At authorization, the read-only cumulative ledger verifies1610 settled attempts / USD3.025799,
+zero unknown charges, SHA256 `dcdb729c7f291da2d07949b374bdebc18952668548f691802f744da2ea1141c2`.
+Thus at most USD38.974201 additional is usable while preserving the USD8 contingency. Remaining
+nominal workload is16936 logical calls, at most50808 physical attempts, partitioned into eleven fresh
+complete-conversation phases. Each needs a fresh immutable approval bound to its exact condition,
+action flags, population partition, repetition0, current source/preflight and unchanged provider policy.
+Use the same durable study ledger; all earlier approvals remain consumed and historical artifacts immutable.
+
+Verify/review the main-phase controls and compatibility-source migration offline before transmission.
+Retain DeepSeek/D3a/D9a, original prompts/schemas/parsing/retrieval/scoring and T7 action implementation;
+financial/report support changes cannot redefine that scientific reference. Reconcile measured usage
+and cost-only affordability between phases. On a provider/contract, provenance or spending failure,
+preserve all evidence/charges and stop paid collection; recovery/reruns require a separate decision.
+No tuning, dropped questions, context truncation, silent repairs or quality-based retries are authorized.
+
+Issue #8 also authorizes saved-result local exports and Langfuse comparisons using the existing
+author metrics and pinned SDK5.1.0, without model/LLM-judge calls. Local artifacts remain authoritative
+if optional reporting fails. See [T8 execution record](t8-execution.md) for exact plans and outcomes.
