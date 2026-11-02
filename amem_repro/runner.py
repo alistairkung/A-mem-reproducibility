@@ -67,6 +67,7 @@ def run_manifest(
     token_counter=None,
     provider_contract_policy=STRICT_PROVIDER_POLICY,
     checkpoint=None,
+    conversation_ids=None,
 ):
     """Run an approved manifest. Injected interfaces support deterministic offline contracts.
 
@@ -96,6 +97,14 @@ def run_manifest(
     dataset_path = Path(dataset_path).resolve()
     root = dataset_path.parent.parent
     manifest = expand_manifest(dataset_path, manifest)
+    conversations = manifest['conversations']
+    if conversation_ids is not None:
+        if type(conversation_ids) is not list or not conversation_ids:
+            raise ValueError('Execution partition must be a nonempty list of whole frozen conversations')
+        selected = [c for c in conversations if c['original_id'] in conversation_ids]
+        if [c['original_id'] for c in selected] != conversation_ids:
+            raise ValueError('Execution partition must select whole frozen conversations in original order')
+        conversations = selected
     if agent_factory is None:
         actual_sources = source_fingerprint(root)
         if source_hashes is not None and source_hashes != actual_sources:
@@ -115,7 +124,6 @@ def run_manifest(
     score_fn = scorer.score if hasattr(scorer, "score") else scorer
     parser = load_dataset_module(root)
     raw = json.loads(dataset_path.read_bytes())
-    conversations = manifest["conversations"]
     expected = [q["question_id"] for c in conversations for q in c["questions"]]
     ledger = RunLedger(output_dir, run_id or uuid.uuid4().hex, expected,
                        provider_contract_policy=provider_contract_policy)
@@ -178,6 +186,7 @@ def run_manifest(
             "execution_type": execution_type,
             "configuration": config,
             "manifest": manifest,
+            "conversation_ids": [c['original_id'] for c in conversations],
             "source_hashes": source_hashes,
             "condition": condition,
             "memory_actions": actions,

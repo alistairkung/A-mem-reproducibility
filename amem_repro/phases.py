@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PHASES = {
     "compatibility": {"population": "smoke", "calls": 44, "cap": 2},
     "pilot": {"population": "pilot", "calls": 1544, "cap": 10},
+    "baseline": {"population": "fallback", "calls": 0, "cap": 42},
 }
 
 
@@ -160,8 +161,16 @@ def _verified_phase(path, root):
 
 
 def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
-                  provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None):
+                  provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None,
+                  condition='full', conversation_id=None):
     validate_provider_policy(provider_contract_policy)
+    if phase == 'baseline':
+        if checkpoint is not None or compatibility is not None:
+            raise ValueError('Main execution cannot reuse a checkpoint or fixture approval')
+        from .study import baseline_inputs
+        return baseline_inputs(receipt,asset_root,root,condition,conversation_id,provider_contract_policy)
+    if condition != 'full' or conversation_id is not None:
+        raise ValueError('Only baseline phases support complete-conversation partitions/action conditions')
     if phase not in PHASES:
         raise ValueError("Only separately approved compatibility and pilot phases are enabled")
     spec = PHASES[phase]
@@ -203,23 +212,34 @@ def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
 
 
 def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibility=None,
-               provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None):
+               provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None,
+               condition='full', conversation_id=None):
     root = Path(root)
     _, manifest, _, binding = _phase_inputs(
         phase, receipt, asset_root, root, compatibility,
         provider_contract_policy=provider_contract_policy,
         checkpoint=checkpoint,
+        condition=condition, conversation_id=conversation_id,
     )
     run_id = run_id or f"{phase}-{uuid.uuid4().hex[:12]}"
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run_id must be a safe, unique local artifact name")
     spec = PHASES[phase]
-    calls = binding.get('checkpoint', {}).get('remaining_logical_calls', spec['calls'])
+    calls = binding.get('study_job',{}).get('expected_logical_calls',
+                binding.get('checkpoint', {}).get('remaining_logical_calls', spec['calls']))
+    cap = spec['cap']
+    population = manifest['totals']
+    if phase == 'baseline':
+        from .budget import STUDY_JOB_CAPS, MICROS
+        from decimal import Decimal
+        cap = str(Decimal(STUDY_JOB_CAPS[(binding['condition'],binding['study_job']['conversation_id'])])/MICROS)
+        selected = next(c for c in manifest['conversations'] if c['original_id']==binding['study_job']['conversation_id'])
+        population = {'conversations':1,'turns':len(selected['turn_ids']),'questions':len(selected['questions'])}
     return {
         "approval_id": str(uuid.uuid4()), "approved": False,
         "approved_by": None, "approved_at": None, "run_id": run_id, "phase": phase,
         "binding": binding,
-        "limits": {"phase_usd": spec["cap"], "max_logical_calls": calls,
+        "limits": {"phase_usd": cap, "max_logical_calls": calls,
                    "max_attempts": calls * 3},
         "pricing": {
             "pricing_id": "deepseek-flash-peak-2026-11-01",
@@ -227,7 +247,7 @@ def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibil
             "input_per_million": .30, "output_per_million": 1.20,
             "max_context_tokens": 1048576, "max_output_tokens": max(stage_output_limits().values()),
         },
-        "population": manifest["totals"],
+        "population": population,
         "stop_policy": "No subsequent request after provider/contract failure; no automatic recovery",
         "token_count_limitation": receipt["assets"]["tokenizer_limitation"],
     }
@@ -251,6 +271,8 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         approval["phase"], receipt, asset_root, root, compatibility,
         provider_contract_policy=provider_contract_policy,
         checkpoint=checkpoint,
+        condition=approval['binding'].get('condition','full'),
+        conversation_id=approval['binding'].get('study_job',{}).get('conversation_id'),
     )
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", approval["run_id"]):
         raise ValueError("Invalid run identity")
@@ -280,6 +302,9 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         _save(output / 'checkpoint.json', recovered['lineage'])
     clients = []
     versions, fingerprints, schema_outcomes = set(), set(), {}
+    if approval['phase'] == 'baseline':
+        versions.update(binding['expected_returned_models'])
+        fingerprints.update(binding['expected_system_fingerprints'])
     deviations = {"completions": 0, "items": 0}
     inherited_deviations = [e for e in recovered['failures']
                            if e.get('kind') == 'provider_contract_deviation'] if recovered else []
@@ -315,6 +340,10 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             fingerprints.add(event["system_fingerprint"])
         if len(versions) > 1 or len(fingerprints) > 1:
             permit.stop("provider_model_or_fingerprint_changed")
+        if approval['phase']=='baseline' and event.get('attempts') and not event.get('error_type'):
+            if (event.get('returned_model') not in binding['expected_returned_models']
+                    or event.get('system_fingerprint') not in binding['expected_system_fingerprints']):
+                permit.stop('provider_model_or_fingerprint_missing_or_changed')
         if event.get("usage") is None:
             permit.stop("missing_provider_usage")
 
@@ -323,7 +352,11 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         with _asset_environment(asset_root):
             counter = make_token_counter(asset_root, receipt["assets"], root / "config/assets.json")
             scorer = AuthorScorer(root)
-            factory = make_agent_factory(root, controller_factory=controller, token_counter=counter)
+            if approval['phase']=='baseline' and binding['condition']!='full':
+                from .actions import make_action_agent_factory
+                factory=make_action_agent_factory(root,condition=binding['condition'],controller_factory=controller,token_counter=counter)
+            else:
+                factory = make_agent_factory(root, controller_factory=controller, token_counter=counter)
             summary = run_manifest(
                 root / "data/locomo10.json", manifest, config,
                 output_dir=output, cache_root=root / "artifacts/cache", source_hashes=sources,
@@ -331,7 +364,12 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
                 provider_contract_policy=provider_contract_policy,
                 execution_type='checkpoint_recovery' if recovered else 'fresh_build',
                 checkpoint=recovered,
+                condition=binding['condition'],
+                conversation_ids=binding.get('conversation_ids'),
             )
+            if approval['phase']=='baseline' and (permit.summary().get('halted') or permit.summary()['unknown_attempts']):
+                from .budget import BudgetStop
+                raise BudgetStop('Halted study phase cannot be completed or continue to another cell')
             events = [json.loads(line) for line in (output / "events.jsonl").read_text().splitlines()]
             # The two views consume saved predictions and cannot make model calls.
             predictions = [e["result"] for e in events if e["type"] == "question_result"]
@@ -369,7 +407,7 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             scorer.observer({"type": "run_abort", "error_type": error_type,
                              "level": "run", "question_id": None,
                              "conversation_id": None, "build_id": None,
-                             "execution_stage": "postprocessing"})
+                             "execution_stage": "phase_validation" if permit.summary().get('halted') and approval['phase']=='baseline' else "postprocessing"})
             summary["status"] = "incomplete"
             _replace_summary(output, summary)
         raise
@@ -380,7 +418,7 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         phase_result = {
             "phase": approval["phase"], "run_id": approval["run_id"],
             "population": binding["population"],
-            "conversation_ids": [c["original_id"] for c in manifest["conversations"]],
+            "conversation_ids": binding.get('conversation_ids',[c["original_id"] for c in manifest["conversations"]]),
             "binding": binding, "status": summary["status"] if summary and error_type is None else "incomplete",
             "provider_contract_policy": provider_contract_policy,
             "provider_contract_deviation_count": deviations["completions"],
@@ -388,7 +426,7 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             'inherited_provider_contract_deviation_count': len(inherited_deviations),
             'inherited_validation_copy_transformed_item_count': sum(
                 len(e['compatibility_deviation']['transformations']) for e in inherited_deviations),
-            "expected_questions": manifest["totals"]["questions"],
+            "expected_questions": binding.get('expected_questions',manifest["totals"]["questions"]),
             "completed_questions": summary["completed_questions"] if summary else 0,
             "error_type": error_type, "budget": budget,
             "study_budget": ledger_summary(ledger_path),
@@ -396,8 +434,8 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             "usable_for_next_phase": bool(summary and not budget["halted"]
                 and budget["unknown_attempts"] == 0
                 and error_type is None and summary['status'] in ('complete', 'degraded')
-                and budget["logical_calls"] == binding.get('checkpoint', {}).get(
-                    'remaining_logical_calls', PHASES[approval["phase"]]["calls"])
+                and budget["logical_calls"] == binding.get('study_job',{}).get('expected_logical_calls',
+                    binding.get('checkpoint', {}).get('remaining_logical_calls', PHASES[approval["phase"]]["calls"]))
                 and set(schema_outcomes) == {"metadata", "shared_decision", "query_keywords", "answer"}),
             "returned_models": sorted(versions), "system_fingerprints": sorted(fingerprints),
             "completed_at": datetime.now(timezone.utc).isoformat(),
@@ -405,6 +443,8 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
                                 for p in sorted(output.iterdir()) if p.is_file()},
         }
         _save(output / "phase.json", phase_result)
+        if phase_result['usable_for_next_phase'] and approval['phase']=='baseline':
+            permit.complete_study_job(phase_result)
     return phase_result
 
 
