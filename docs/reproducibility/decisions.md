@@ -319,3 +319,65 @@ must remain explicit: the reviewed migration permits only checkpoint/runner/phas
 support changes, while author files, provider adapter, scoring and scientific settings match the parent.
 Retain inherited failures/deviations and charges once; child completion is degraded and the parent
 remains incomplete. See the [recovery runbook](checkpoint-recovery.md).
+
+## Authorization — merge PR #14 and one paid checkpoint child
+
+On 1 November 2026 the user explicitly authorized merging reviewed PR #14 after the complete offline
+suite and normal check gates. The exact reviewed head `77afc36` passed 287 tests/92 subtests. GitHub
+reported no required checks or branch rules; the normal merge produced
+`ca6c68f0f109b474a5206f59085474b683a4f9ca`, now local `main`. Frozen author/provider/schema/scoring/
+retrieval/configuration files remain unchanged.
+
+Exactly one paid child of `pilot-conv50-d9a` is authorized under `blk014-checkpoint-v1` and
+`canonical-index-strings-v1`, model `deepseek-flash`: restore 263 notes, failed evolution, original
+stale index and counter261; resume at `D15:8`; process 305 remaining turns and all 204 original QA.
+Hard additional cap USD10, at most 1,018 new logical calls / 3,054 physical attempts, with existing
+per-call retry limits. Use a new bound approval/run identity and the existing shared ledger, retaining
+all USD0.806717 prior charges and preserving USD8 contingency within USD50. No output repair or
+scientific-setting change is authorized.
+
+After completion, verify all 568 turns/204 questions, both scoring views, complete cache, inherited
+failures/deviations and degraded classification; forecast full versus predefined fallback using cost
+evidence only. If a new malformed response, contract violation or spending/provenance failure stops
+the phase, preserve partial evidence/charges and investigate offline. No second paid phase/restart/
+recovery, full benchmark or T6–T8 is authorized. Stop at completed reporting/forecast or a material blocker.
+
+### Outcome — completed degraded conv-50 lineage and cost-only recommendation
+
+`pilot-conv50-checkpoint-child` completed all 305 remaining turns and 204 original QA on merged main
+`ca6c68f`, restoring the exact 263-note prefix and resuming at `D15:8`. Final cache: 568 notes/outcomes,
+568×384 index, counter566. The parent remains immutable and Incomplete; the completed lineage is
+Degraded with the original failed evolution and all compatibility audits retained. No JSON repair,
+new acceptance exception, scientific change or unexpected new failure occurred.
+
+Child calls: 1,018 logical/physical, zero retries/unknown charges, USD2.219082 conservative charge.
+Combined baseline: 1,544 calls / USD2.958514. Cumulative study, including prior compatibility phases:
+1,610 calls / USD3.025799. The sole child authorization is consumed; no further paid request is approved.
+All accepted argument bytes, QA identities/order, complete cache, historical ledger rows and both
+saved-prediction scoring views verify. The full pre-merge suite passed 287 tests/92 subtests.
+
+The forecast was generated before inspecting quality summaries. At one build per conversation/arm,
+all ten conversations project USD127.391486 total; the frozen fallback projects USD42.762234,
+each including incurred spending and USD8 contingency, crediting this baseline once. Recommend
+`conv-49`, `conv-50`, `conv-44` under D10a's cost-only rule; no further execution followed. The fallback's
+2× remaining-cost diagnostic is USD74.498668, so it is not a guaranteed bound. Review/approval and
+ongoing cost reconciliation are required for further collection. No performance-based selection occurred.
+
+See [baseline outcome and evidence](t5-conv50-baseline-20261101.md). Before T6, review the degraded
+baseline and scope recommendation, separately approve remaining selected-scope T5 full-mode work
+(two other conversations for fallback) and T6 itself. T6–T8 and further paid phases are unstarted.
+
+## Authorization — T6 deterministic replay on the completed conv-50 lineage
+
+On 2 November 2026 the user explicitly authorized T6 implementation/offline tests, documentation,
+commits/push, focused PR, Standards/Spec review and merge after acceptance. The completed conv-50
+parent/child lineage is the replay reference; this authorizes offline T6 before the still-gated
+remaining selected-conversation T5 collection. It does not close T5 or change the population.
+
+Preserve frozen author/provider/scoring/configuration and all raw evidence. Replay exact captured
+response strings and request identities; distinguish approved D3a deviations and rejected outputs.
+Normalise only incidental UUID identities/wall-clock access fields in comparison copies. Historical
+per-insertion snapshots/query vectors are unavailable, so retain that limitation and use labelled
+portable fixtures plus frozen-author-derived comparison hashes, verified against recorded checkpoints,
+requests, outcomes, retrieval and scores. This is not new historical evidence or independent live trials.
+No paid model calls, T7 switches, new compatibility policy or additional benchmark experiment is approved.

@@ -77,8 +77,10 @@ def run_manifest(
     validate_provider_policy(provider_contract_policy)
     if condition != "full":
         raise ValueError("Action gating is not implemented or authorized in T1–T4")
-    if execution_type not in ("fresh_build", "cached_qa", "checkpoint_recovery"):
+    if execution_type not in ("fresh_build", "cached_qa", "checkpoint_recovery", "deterministic_replay"):
         raise ValueError("This runner supports fresh_build and cached_qa; replay is T6")
+    if execution_type == 'deterministic_replay' and agent_factory is None:
+        raise PermissionError('Replay requires an explicit offline controller/agent factory')
     if ((checkpoint is not None and execution_type not in ('checkpoint_recovery', 'cached_qa'))
             or (checkpoint is None and execution_type == 'checkpoint_recovery')):
         raise ValueError('Checkpoint state requires explicit recovery execution')
@@ -186,6 +188,8 @@ def run_manifest(
                 provider_contract_policy=provider_contract_policy,
             )
             identity["condition"] = condition
+            if execution_type == 'deterministic_replay':
+                identity['execution_type'] = execution_type
             if checkpoint is not None:
                 identity['checkpoint'] = checkpoint['lineage']
             build_id = cache.path_for(identity).name

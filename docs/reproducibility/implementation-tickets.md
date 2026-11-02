@@ -2,8 +2,9 @@
 
 Protocol: [experimental-protocol.md](experimental-protocol.md).
 Decision record: [decisions.md](decisions.md).
-Created 1 November 2026. T1–T4 are merged in PR #9. T5 implementation/preflight is in progress;
-paid phases require separate approval. T6–T8 remain unstarted.
+Created 1 November 2026. T1–T4 are merged in PR #9. T5 has a completed conv-50 baseline;
+remaining collection requires separate paid approval. T6's offline replay gate is implemented;
+T7–T8 remain unstarted.
 See [foundation validation and preflight](../../REPRODUCIBILITY.md).
 
 Issue creation alone is planning authorization. The user subsequently authorized T1–T4 implementation,
@@ -19,11 +20,16 @@ The user later approved only the USD2 compatibility fixture. Its first attempt i
 a provider schema violation; see the [archived findings](t5-compatibility-20261101.md). T5 stays open,
 and pilot/main/recovery remain unauthorized.
 
-Current checkpoint: the D9a fixture completed all 18 turns/four questions with audited degradation.
-The separately authorized conv-50 pilot then stopped on malformed JSON (BLK-014), retaining 263 notes
-and zero QA; see the [pilot record](t5-pilot-conv50-d9a-20261101.md). Both approvals are consumed.
-T5 remains open, with full/fallback affordability pending complete representative coverage. Further
-paid recovery, full benchmark and T6–T8 remain unauthorized and unstarted.
+Current checkpoint: PR #14 is merged and its separately authorized child completed the conv-50
+baseline, retaining the parent's failed evolution: 568 notes, 204 QA, Degraded. See the
+[verified baseline](t5-conv50-baseline-20261101.md). All paid approvals are consumed. The cost-only
+forecast recommends the predefined fallback; T5 remains open for remaining approved-scope baseline
+collection (conv-49/conv-44 under fallback). Further paid phases and T6–T8 require separate approval.
+
+Latest authorization (2 November): the user approved T6 offline implementation/review/merge based on
+the completed conv-50 lineage without awaiting further paid T5 collection. The implemented gate and
+verification evidence are in [T6 replay](t6-replay.md).
+This is not a population revision or T5 closure; T7/T8 and all additional paid phases remain gated.
 
 ## Tracker and dependency map
 
