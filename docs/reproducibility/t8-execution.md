@@ -133,3 +133,26 @@ Reproducible preparation commands, from the repository root (fresh output filena
 Execution requires the separately materialized, user-authorized approval, not the unapproved plan.
 Only the key needed by the process is loaded privately from `.env`; no key/header is printed or stored.
 Actual approval/run identities, commands and outcomes follow below when execution begins.
+
+## Main collection: full conv-49
+
+On2 November2026 the reviewed gates above passed and the user's T8 paid authority was materialized
+as immutable approval `artifacts/t8/approvals/t8-full-conv49-r0-20261102.json`, approval ID
+`d21bb38c-7a87-4661-bb79-8b3071319cb2`, run ID `t8-full-conv49-r0-20261102`.
+It binds509 turns/196 questions,1,410 logical calls, at most4,230 physical attempts and a USD10
+phase ceiling under the pooled USD42 usable study limit. Source fingerprint remains `42ee5de8` above;
+code commit is `881b35d`. This approval is consumed when claimed and cannot authorize recovery.
+
+Execution uses the reviewed executor with only the needed provider key privately loaded:
+
+```sh
+.venv/bin/python -m amem_repro.study run \
+  --approval artifacts/t8/approvals/t8-full-conv49-r0-20261102.json \
+  --receipt artifacts/t8/preflight-final.json --assets artifacts/assets
+```
+
+Local evidence is `artifacts/runs/t8-full-conv49-r0-20261102/`, with the console log at
+`artifacts/t8/live/full-conv49-r0.log`. The initial responses return `deepseek-flash` and fingerprint
+`bc19ba97cbe016479903222bb1578db6`, matching the archived conv-50 baseline. Collection is in progress;
+this entry does not assert completion, final spending or any comparative result. Previously described
+unapproved plans and the pre-paid checkpoint remain historical engineering evidence.
