@@ -31,6 +31,8 @@ def _archive(path, archive_root):
     if path.name != 'phase.json' or not path.is_relative_to((archive_root/'artifacts/runs').resolve()):
         raise ValueError('Expected an archived study phase receipt')
     phase = _read(path)
+    if (path.parent/'finalization-error.json').exists() and phase.get('status')!='incomplete':
+        raise ValueError('Failed finalization marker prohibits completed quality results')
     required = {'approval.json', 'preflight.json', 'events.jsonl', 'summary.json', 'run.json'}
     if not required.issubset(phase.get('artifact_sha256', {})):
         raise ValueError('Missing phase inventory')

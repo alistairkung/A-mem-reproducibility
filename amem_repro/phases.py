@@ -68,8 +68,9 @@ def _finalize_study_phase(output, value, permit, summary, observer):
     from .budget import BudgetStop
     try:
         if value['usable_for_next_phase']:
-            permit.complete_study_job(value)
-        _publish_study_phase(output,value)
+            permit.complete_study_job(value,lambda:_publish_study_phase(output,value))
+        else:
+            _publish_study_phase(output,value)
     except BaseException as error:
         failure={'type':'failure','kind':'phase_finalization','error_type':type(error).__name__,
                  'level':'run','question_id':None,'conversation_id':None,'build_id':None}
@@ -95,6 +96,8 @@ def _finalize_study_phase(output, value, permit, summary, observer):
         try:
             value['budget']=permit.summary()
             _save(output/'finalization-error.json',{'error_type':type(error).__name__,'status':'incomplete',**secondary})
+            if (output/'phase.json').exists():
+                os.replace(output/'phase.json',output/'phase-unconfirmed.json')
             value['artifact_sha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest()
                                      for p in sorted(output.iterdir()) if p.is_file() and p.name!='phase.json'}
             _publish_study_phase(output,value)
@@ -194,6 +197,8 @@ def _verified_phase(path, root):
     path = Path(path).resolve()
     if not path.is_relative_to((root / "artifacts/runs").resolve()):
         raise ValueError("Phase receipt must belong to this study's archived runs")
+    if (path.parent/'finalization-error.json').exists():
+        raise ValueError('Failed phase finalization cannot supply a completed phase')
     value = json.loads(path.read_text())
     required = {"approval.json", "preflight.json", "events.jsonl", "summary.json", "run.json", "scoring-views.json"}
     if not required.issubset(value.get("artifact_sha256", {})):

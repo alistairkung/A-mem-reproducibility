@@ -158,9 +158,24 @@ def test_lost_cell_claim_cannot_erase_an_existing_main_authority(tmp_path):
         PhasePermit(other,path,other['binding'])
 
 
+def test_already_claimed_permit_cannot_transmit_after_another_cell_fails(tmp_path):
+    path=tmp_path/'ledger';funded_ledger(path)
+    first_auth=study_approval('full');first=PhasePermit(first_auth,path,first_auth['binding'])
+    # Simulate the old premature-release race so the per-transmission guard is
+    # independently exercised even when the constructor race is also corrected.
+    with sqlite3.connect(path) as db: db.execute('UPDATE study_jobs SET complete=1')
+    second_auth=study_approval('full','conv-44','prevalidated-next')
+    second=PhasePermit(second_auth,path,second_auth['binding'])
+    first.stop('offline publication failure')
+    with pytest.raises(BudgetStop):
+        logical=second.start_logical('metadata')
+        second.reserve_attempt(logical,request()|{'provider_contract_policy':INDEX_STRING_POLICY})
+    assert ledger_summary(path)['physical_attempts']==1  # Only the synthetic historical charge.
+
+
 INVALID_METADATA = [[],{},1,True,None,'']
 @pytest.mark.parametrize('failure', [None,'decision','first_fingerprint','last_fingerprint','finalization','publication',
-    'journal_first','journal_last','journal_fallback'] +
+    'journal_first','journal_last','journal_fallback','interleaved_publication','commit_after_publication'] +
     [pytest.param(('metadata',field,value,position),id=f'metadata-{field}-{type(value).__name__}-{position}')
      for field in ('model','system_fingerprint')
      for value in INVALID_METADATA for position in ('first','last')])
@@ -177,6 +192,7 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
     from test_scoring import dependencies
     from amem_repro.adapter import AdapterError
     from amem_repro.artifacts import RunLedger
+    import threading
     (tmp_path/'data').symlink_to(ROOT/'data',target_is_directory=True)
     auth=study_approval('full');manifest=build_manifest(ROOT/'data/locomo10.json','fallback')
     funded_ledger(tmp_path/'artifacts/study-budget.sqlite')
@@ -205,8 +221,24 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
         return make_agent_factory(ROOT,memory_module=module,**kwargs)
     original_save=phases._save
     published=False
+    interleaved_permits=[];interleaved_errors=[];interleaved_threads=[]
     def publish(path,value):
         nonlocal published
+        if failure=='interleaved_publication' and Path(path).name.startswith('.phase-final-') and not published:
+            published=True
+            started=threading.Event();claimed=threading.Event()
+            def try_next_cell():
+                started.set()
+                next_auth=study_approval('full','conv-44','interleaving-cell')
+                try:
+                    interleaved_permits.append(PhasePermit(next_auth,tmp_path/'artifacts/study-budget.sqlite',next_auth['binding']))
+                    claimed.set()
+                except BaseException as error:
+                    interleaved_errors.append(error)
+            worker=threading.Thread(target=try_next_cell);worker.start();interleaved_threads.append(worker)
+            assert started.wait(2)
+            claimed.wait(.2)
+            raise OSError('offline publication failure with interleaved next-cell claim')
         if failure=='publication' and Path(path).name.startswith('.phase-final-') and not published:
             published=True
             original_save(path,value)
@@ -224,6 +256,18 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
                 journal_failed=True
                 raise OSError('offline critical generation journal/fsync failure')
         return original_record(ledger,event)
+    original_connect=sqlite3.connect
+    commit_failed=False
+    class CommitFailure(sqlite3.Connection):
+        def commit(self):
+            nonlocal commit_failed
+            if failure=='commit_after_publication' and not commit_failed and (tmp_path/'artifacts/runs/study-one/phase.json').exists():
+                commit_failed=True
+                raise sqlite3.OperationalError('offline COMMIT failure after phase publication')
+            return super().commit()
+    def connect(*args,**kwargs):
+        kwargs['factory']=CommitFailure
+        return original_connect(*args,**kwargs)
     with patch.object(phases,'_phase_inputs',return_value=(load_config(),manifest,{'test':'source'},auth['binding'])), \
          patch('amem_repro.adapter.create_deepseek_controller',side_effect=controller), \
          patch('amem_repro.author.make_agent_factory',side_effect=factory), \
@@ -232,6 +276,7 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
          patch.dict('os.environ',{'DEEPSEEK_API_KEY':'offline-placeholder'}), \
          patch.object(phases,'_save',side_effect=publish), \
          patch.object(RunLedger,'record',new=journal), \
+         (patch('amem_repro.budget.sqlite3.connect',side_effect=connect) if failure=='commit_after_publication' else nullcontext()), \
          (patch.object(PhasePermit,'complete_study_job',side_effect=sqlite3.OperationalError('offline SQL finalization failure'))
           if failure=='finalization' else nullcontext()):
         if failure is None:
@@ -244,11 +289,14 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
         with pytest.raises(FileExistsError):
             phases.execute_phase(auth,{'assets':{}},tmp_path/'assets',root=tmp_path)
         assert len(provider.requests)==count
+    for worker in interleaved_threads:
+        worker.join(10);assert not worker.is_alive()
     events=[json.loads(line) for line in (tmp_path/'artifacts/runs/study-one/events.jsonl').read_text().splitlines()]
     assert result['conversation_ids']==['conv-49'] and result['expected_questions']==196
     expected_calls=(1 if failure[3]=='first' else 1410) if isinstance(failure,tuple) else {
         None:1410,'decision':6,'first_fingerprint':1,'last_fingerprint':1410,
-        'finalization':1410,'publication':1410,'journal_first':1,'journal_last':1410,'journal_fallback':1}[failure]
+        'finalization':1410,'publication':1410,'journal_first':1,'journal_last':1410,'journal_fallback':1,
+        'interleaved_publication':1410,'commit_after_publication':1410}[failure]
     assert result['budget']['physical_attempts']==expected_calls
     assert result['status']==('degraded' if failure is None else 'incomplete')
     assert result['usable_for_next_phase'] is (failure is None)
@@ -258,12 +306,18 @@ def test_main_execution_preserves_cells_costs_and_terminal_failures(tmp_path,fai
         assert len(partial['state']['notes'])==3 and partial['state']['evo_cnt']==2
         assert any(e.get('kind')=='provider_contract_deviation' for e in events)
         assert any(e.get('kind')=='evolve' for e in events)
-    if failure in ('last_fingerprint','finalization','publication'):
+    if failure in ('last_fingerprint','finalization','publication','interleaved_publication','commit_after_publication'):
         assert result['completed_questions']==196
         assert json.loads((tmp_path/'artifacts/runs/study-one/summary.json').read_text())['status']=='incomplete'
-    if failure in ('finalization','publication'):
+    if failure in ('finalization','publication','interleaved_publication','commit_after_publication'):
         assert result['budget']['halted']
         assert (tmp_path/'artifacts/runs/study-one/finalization-error.json').exists()
+    if failure=='interleaved_publication':
+        assert not interleaved_permits and len(interleaved_errors)==1
+        assert isinstance(interleaved_errors[0],BudgetStop)
+    if failure=='commit_after_publication':
+        assert commit_failed
+        assert (tmp_path/'artifacts/runs/study-one/phase-unconfirmed.json').exists()
     if isinstance(failure,tuple):
         assert result['budget']['halted']
         assert result['completed_questions']==(0 if failure[3]=='first' else 196)
@@ -336,6 +390,21 @@ def test_old_ledger_snapshot_cannot_hide_an_archived_failed_main_run(saved_histo
     failed=runs/'old-failed-main';failed.mkdir()
     (failed/'approval.json').write_text(json.dumps(study_approval('full')))
     with pytest.raises(ValueError,match='Archived main run missing'):
+        verify_study_history(root,sources)
+
+
+@pytest.mark.parametrize('receipt_state',['missing','invalid'])
+def test_sql_completion_without_valid_published_receipt_cannot_enable_next_phase(saved_history,receipt_state):
+    from amem_repro.study import verify_study_history
+    root,sources=saved_history
+    runs=root/'artifacts/runs';original=runs.resolve();runs.unlink();shutil.copytree(original,runs)
+    auth=study_approval('full');PhasePermit(auth,root/'artifacts/study-budget.sqlite',auth['binding'])
+    with sqlite3.connect(root/'artifacts/study-budget.sqlite') as db:
+        db.execute('UPDATE study_jobs SET complete=1 WHERE approval_id=?',(auth['approval_id'],))
+    unfinished=runs/'study-one';unfinished.mkdir()
+    (unfinished/'approval.json').write_text(json.dumps(auth))
+    if receipt_state=='invalid': (unfinished/'phase.json').write_text('{}')
+    with pytest.raises(ValueError,match='valid final phase receipt'):
         verify_study_history(root,sources)
 
 
