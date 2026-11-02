@@ -103,6 +103,24 @@ JSON being reported as failure rather than suppression.
 The mandatory103-test T6 portable gate and complete429-test/92-subtest offline suite pass. Standards
 and Spec re-reviews are clear after `a591ea8` fixes an observational rejection/suppression distinction;
 its regression first reproduced three failing ablated cases and then passed all four conditions.
-The first reference/candidate archive pair also passes; final reviewed-code receipts will be appended
-after completion. BLK-015's historical recording/runtime limitations still apply; offline equivalence
-is not evidence of stochastic ablation performance.
+Both the first and final reviewed-code archive pairs pass. Final evidence, local and ignored by Git:
+
+- `artifacts/replays/t7-reviewed-reference/verification.json`: frozen-author receipt SHA256
+  `552b0e86057c9da7d2e0d03ac04a5b4db1c26e6ca25abaf5cec8878655d5d4d1`.
+- `artifacts/replays/t7-reviewed-candidate/verification.json`: actual gated candidate receipt SHA256
+  `3bcf45c32a874f12850df6ab509c8983c13d49a7011af4598b163212762ecdc6`.
+- Each independently matches all1,544 captured requests,568 insertion hashes/outcomes, historical
+  full states at263/568, five consolidations, all204 retrieval contexts/predictions/primary scores,
+  both rescoring views and376 logical failure/audit records. Classification remains Degraded.
+- `artifacts/t7-equivalence-comparison.json`: all verification fields match between reference/candidate
+  except the explicit implementation label. Both run-start source fingerprints equal the current source,
+  fingerprint `2206fa3f23e6f9b36f3721a4e6d75383f3a0db21081d5ed6308313f5cbb237d3`.
+  Sockets were denied, paid calls were zero, and protected original run/cache/ledger hashes match.
+- Logs: `artifacts/t7-reviewed-{reference,candidate}.log`, `artifacts/t7-reviewed-action-tests.txt`,
+  `artifacts/t7-mandatory-portable-tests.txt`, `artifacts/t7-reviewed-offline-suite.txt`.
+  The reproduced review failure is preserved in `artifacts/t7-review-suppression-red.txt`.
+
+[PR #16](https://github.com/alistairkung/A-mem-reproducibility/pull/16) supplies the implementation and
+verification record. BLK-002 is Mitigated by these operational gates, not recovery of historical author
+ablation code. BLK-015's recording/runtime limitations still apply; offline equivalence is not evidence
+of stochastic ablation performance. T8 and paid collection remain unauthorized.

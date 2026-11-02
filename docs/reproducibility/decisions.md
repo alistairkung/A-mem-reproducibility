@@ -391,3 +391,15 @@ run both the frozen reference and the actual T7 candidate against it. Preserve t
 all baseline evidence, scientific settings and D3a/D9a policies. Independently gate only the released
 strengthen and update_neighbor action execution under D7/D8; positive decisions still count even
 when all actions are disabled. This authorizes no paid calls, T8 implementation or ablation collection.
+
+### Verified T7 outcome
+
+Implementation `84ec320`, observational review correction `a591ea8`, PR #16. All96 action tests,
+mandatory103-test T6 portable gate and complete429-test/92-subtest offline suite pass. Standards
+and Spec re-reviews are clear. The final frozen-reference and actual T7 full-mode candidate each
+match1,544 requests,568 fixed state hashes/outcomes,204 QA, both scoring views and376 logical
+failure/audit records; both remain Degraded. Direct receipts differ only by implementation label,
+and both run source fingerprints match current source. Original run/cache/ledger hashes are unchanged;
+no paid calls or ablation experiments occurred. See [T7 evidence and commands](t7-action-gates.md).
+BLK-002 is Mitigated by operational reconstructions; unavailable historical ablation code and BLK-015's
+recording/runtime limits remain explicit. T8 and further paid collection still need separate approval.

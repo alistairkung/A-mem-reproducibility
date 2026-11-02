@@ -4,7 +4,8 @@ Protocol: [experimental-protocol.md](experimental-protocol.md).
 Decision record: [decisions.md](decisions.md).
 Created 1 November 2026. T1–T4 are merged in PR #9. T5 has a completed conv-50 baseline;
 remaining collection requires separate paid approval. T6's offline replay gate is implemented;
-T7 action gates are implemented pending final verification/merge; T8 remains unstarted.
+T7 action gates and full-mode equivalence are verified in [PR #16](https://github.com/alistairkung/A-mem-reproducibility/pull/16);
+T8 remains unstarted.
 See [foundation validation and preflight](../../REPRODUCIBILITY.md).
 
 Issue creation alone is planning authorization. The user subsequently authorized T1–T4 implementation,

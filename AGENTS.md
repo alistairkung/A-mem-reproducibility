@@ -33,8 +33,8 @@ fallback; remaining T5 collection, further paid execution/recovery and T6–T8 n
 T6 now provides the offline replay gate using that completed lineage. Before T7 changes or replay
 verification, read `docs/reproducibility/t6-replay.md` and run its regression commands. Preserve fixed
 fixtures/oracles and original artifacts; inject the candidate full-mode implementation for equivalence
-checks. The user separately authorized T7 action-gate implementation, offline review, commits/push,
-PR and merge after all gates pass. Before changing action gates or preparing T8, read
+checks. T7's four action gates now pass the full-mode equivalence gate and offline reviews (PR #16).
+Before changing action gates or preparing T8, read
 `docs/reproducibility/t7-action-gates.md`. T8, paid requests and further collection require separate approval.
 Preserve the frozen author files; add support code separately. A consumed phase approval cannot be reused.
 Before any paid phase, read `docs/reproducibility/baseline-readiness.md` for the verified fixture,
