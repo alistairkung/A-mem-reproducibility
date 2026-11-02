@@ -21,6 +21,7 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-013](#blk-013) | Shared decision exhausts the historical 1,000-token output limit | Resolved | T5; other-conversation cap risk retained | D9a conv-50 complete; maximum child output 3,851 tokens |
 | [BLK-014](#blk-014) | Normally finished strict function contains malformed JSON | Mitigated | T5 conv-50; downstream integrity | [Verified degraded lineage](t5-conv50-baseline-20261101.md); raw failure retained |
 | [BLK-015](#blk-015) | Historical intermediate states/query vectors were not recorded | Mitigated | T6–T7 replay claims | [Replay gate and oracle provenance](t6-replay.md) |
+| [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Investigating | T8 conv-49 artifact persistence | Offline red/green tests; `artifacts._safe_state` |
 
 Before another paid run: the checkpoint child completed conv-50 (568 notes/204 QA), Degraded, with
 the original failed evolution and all D3a deviations retained. The parent remains immutable and
@@ -32,6 +33,9 @@ and BLK-011 tracing remains optional/unwired. BLK-012's terminal guard remains v
 [baseline outcome](t5-conv50-baseline-20261101.md) before further decisions. T6's offline gate is
 implemented; T7's four gates and full-mode equivalence are verified in [PR #16](https://github.com/alistairkung/A-mem-reproducibility/pull/16).
 T8 and further paid collection remain unstarted and separately gated.
+Latest authority: T8 engineering/paid main collection is now authorized within the existing ceiling;
+see [T8 record](t8-execution.md). No T8 transmission has occurred at this checkpoint. BLK-016 was
+found offline and must pass final tests/review before paid collection. Recovery remains separately gated.
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -295,6 +299,7 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01: send/flush one synthetic configuration span with SDK 5.1.0; read it back and verify name, type, input/output and empty model usage. No LLM was invoked and no old benchmark data was exported.
   - 2026-11-01: document the minimal runner connection and its offline checks for review. That runtime change is not implemented.
   - 2026-11-01, successful D9a fixture: verify the existing saved-QA exporter with both scoring views. Eight question traces were imported and read back with correct identities/policies, saved predictions, original status/deviation count and cost metadata; no model requests or local artifact/ledger changes. See [reporting verification](langfuse-readiness.md). This mitigates missing experiment results after successful QA, while pre-QA/automatic construction tracing remains unwired.
+  - 2026-11-02, T8 preparation: configured project CLI authentication/readback succeeds (HTTP200). An isolated temporary npm cache avoids an unrelated local cache-permission failure. Filtered evidence `artifacts/t8-langfuse-project-readback.json` retains no headers/credentials. No new result export or live generation tracing is claimed by this authentication check.
 - **Final resolution or limitation:** Connectivity is verified; automatic paid-run tracing remains unwired. Keys/connection values are absent from records and `.env` is unchanged. No paid execution is authorized by this setup.
 - **Verification:** Synthetic observation `56d4b434cfe14653` is visible as `A-MEM/langfuse-configuration-smoke`, environment `configuration-preflight`. Verification of actual model-call capture, failure finalization and study-identity exports remains pending.
 - **Research significance:** Valid credentials and an installed observability SDK do not establish that the executed research path emits traces, especially when it fails before evaluation.
@@ -397,3 +402,23 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Mitigated for T6's regression purpose. Recorded facts and derived reference state remain distinct. Every future full-mode replay must match the fixed intermediate oracle as well as recorded checkpoints/outcomes/QA. Historical unlogged vectors are not claimed recovered independently; another runtime/device must fail or be investigated if exact recomputation differs.
 - **Verification:** Final reviewed-code receipt above, fresh-process oracle-gated replay, explicit consolidation checks and mutation rejection pass; Standards and Spec reviews are clear. Test logs are `artifacts/t6-merged-candidate-suite.txt` and `artifacts/t6-portable-final-tests.txt`. No paid calls or baseline regeneration occurred.
 - **Research significance:** Capturing model outputs enables logical replay, but does not alone supply independent evidence of every numerical state. A trustworthy regression gate separates recorded history, deterministic local computation and explicitly derived test oracles.
+
+## BLK-016
+
+- **ID:** BLK-016
+- **Title:** Benign indexed document text is mistaken for a credential-field name.
+- **Status:** Investigating
+- **First observed:** 2026-11-02, T8 offline complete-conversation partition test for conv-49.
+- **Category:** Infrastructure
+- **Expected behaviour:** Preserve all original corpus text and its document-to-row index while rejecting actual credential fields in artifact/provenance structures.
+- **Observed behaviour:** `snapshot_memory` raises `ValueError: Provenance contains a credential field` before a complete conv-49 build can be saved. One of509 source turns contains the ordinary word “secret”; the index uses complete corpus documents as dictionary keys. No paid run discovered this failure.
+- **Evidence:** Frozen `data/locomo10.json` / conv-49, `amem_repro/config.py:reject_credentials`, `amem_repro/artifacts.py:snapshot_memory`; preserved local `artifacts/t8/offline/blk016-red.txt` (two failures), `artifacts/t8/offline/blk016-green.txt` (six passes).
+- **Root cause:** **Confirmed:** recursive field-name validation treats arbitrary `retriever.document_ids` corpus text as structured credential-field names. Corpus text is already stored as ordinary string values; it is not a configuration key or authorization header.
+- **Impact:** A paid build could complete its model calls but fail artifact persistence, preventing trustworthy reuse/reporting. The selected population includes this conversation, so offline readiness requires correction before transmission.
+- **Options considered:** Dropping/redacting the turn, changing embedding text or weakening the global credential validator would alter data/security and are rejected. Validate only the known document-to-row map as data while retaining all other field-name checks.
+- **Resolution attempts:**
+  - 2026-11-02: reproduce through complete frozen conv-49 runner partition and a focused dynamic-document-key case; both fail before correction. Independently verify source population has509 turns and exactly one containing “secret”.
+  - 2026-11-02: implement temporary validation view only after proving every map key equals its indexed corpus row and every row is a proper in-range integer. Keep raw/saved state unchanged, validate all other keys and retain global `reject_credentials`. Six narrow artifact/runner regressions pass, including credential-field and malformed-map rejection. Full-suite/source-migration review remains pending.
+- **Final resolution or limitation:** Proposed narrow artifact-validation correction is implemented offline; no live outcome or completed T8 cell is claimed. Preserve original corpus and index exactly.
+- **Verification:** Red/green evidence above; complete suite, independent review and integrated artifact round-trip verification are pending.
+- **Research significance:** Applying secret-detection heuristics to arbitrary research data can make persistence fail despite a valid memory build. Structural provenance keys and text-keyed retrieval maps require distinct validation contexts without changing the experiment's data.
