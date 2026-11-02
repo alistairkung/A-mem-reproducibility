@@ -23,6 +23,7 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-015](#blk-015) | Historical intermediate states/query vectors were not recorded | Mitigated | T6–T7 replay claims | [Replay gate and oracle provenance](t6-replay.md) |
 | [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Investigating | T8 conv-49 artifact persistence | Offline red/green tests; `artifacts._safe_state` |
 | [BLK-017](#blk-017) | Passive observers swallow critical provenance failures | Investigating | T8 paid-readiness gate | Offline identity/journal fault injections; no live calls |
+| [BLK-018](#blk-018) | Completion releases the next paid phase before receipt publication | Investigating | T8 phase finalization | Offline interleaving/finalization faults; no live calls |
 
 Before another paid run: the checkpoint child completed conv-50 (568 notes/204 QA), Degraded, with
 the original failed evolution and all D3a deviations retained. The parent remains immutable and
@@ -39,6 +40,8 @@ see [T8 record](t8-execution.md). No T8 transmission has occurred at this checkp
 found offline and must pass final tests/review before paid collection. Recovery remains separately gated.
 Pre-paid review also found BLK-017: injected provider-identity/journal failures allowed subsequent mock
 transmissions. Paid collection is held until terminal handling, failure evidence and independent rechecks pass.
+BLK-018 additionally requires receipt publication and SQL frontier release to be coordinated before
+any next-phase transmission; a green non-concurrent fault suite is insufficient.
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -445,3 +448,23 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Unresolved pre-paid engineering blocker. No live compatibility failure, new provider policy or successful fix is inferred from the proposed handling.
 - **Verification:** Red evidence above; final targeted/full-suite tests and independent correction reviews are required before transmission.
 - **Research significance:** Best-effort observability is appropriate for optional reporting, but cannot silently cover critical experiment identity or durable evidence. Request/cost caps alone do not establish experimental integrity.
+
+## BLK-018
+
+- **ID:** BLK-018
+- **Title:** Completion exposes a paid-next-phase window before final receipt publication.
+- **Status:** Investigating
+- **First observed:** 2026-11-02, T8 correction Spec review of integration `b41d825`.
+- **Category:** Cost
+- **Expected behaviour:** A next study cell cannot claim/transmit until the preceding cell has a verified published receipt and committed completion; failed finalization blocks both new and already-claimed continuation.
+- **Observed behaviour:** Offline interleaving commits conv-49's `complete=1`, claims a prevalidated conv-44 permit before receipt publication, then injects conv-49 publication failure. Although conv-49 is halted/incomplete, the new permit can still start/reserve another transmission (synthetic attempt1412). No live or paid call occurred.
+- **Evidence:** `artifacts/t8/offline/review/finalization-concurrency-red.json`; `amem_repro/phases.py:_finalize_study_phase`, `amem_repro/budget.py:complete_study_job` and phase ownership checks.
+- **Root cause:** **Confirmed:** SQL completion commits before filesystem publication, opening the serial frontier prematurely. A previously claimed permit validates only its own phase at transmission, so a later preceding-cell halt is not observed.
+- **Impact:** Concurrent/prevalidated callers could continue paid collection after a provenance/finalization failure, contrary to the one-shot serial study protocol. Root's planned serial schedule does not substitute for enforcing this boundary.
+- **Options considered:** Assuming callers never overlap is rejected. Simply swapping SQL/publication order without handling failure reintroduces the earlier false-success receipt problem. Coordinate publication with the SQL release and check shared study failure state before transmission; preserve failed-publication evidence and charges.
+- **Resolution attempts:**
+  - 2026-11-02, initial review of `9fb0b86`: SQL completion failure after writing a usable receipt left misleading status. Correction `84d354a` moved SQL completion before atomic publication and added truthful failure finalization; ordinary SQL/publication regressions passed.
+  - 2026-11-02, independent correction review: deterministic interleaving exposes the resulting publication window. Same implementer is adding coordinated release, shared-failure checks and a concurrency/post-publication commit-failure regression. The earlier correction remains recorded rather than described as sufficient.
+- **Final resolution or limitation:** Unresolved pre-paid safety blocker; no T8 paid phase has started. Financial/memory/scoring settings remain unchanged.
+- **Verification:** New red interleaving above; integrated regression/full-suite and independent correction reviews are pending.
+- **Research significance:** Durable accounting and durable research artifacts span different resources. A completion flag alone is not evidence that the preceding experiment is safe to reuse or that a subsequent paid phase may start.
