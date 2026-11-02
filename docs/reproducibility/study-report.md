@@ -98,7 +98,9 @@ without claims of stochastic robustness or statistically established superiority
 | BLK-007 integer-string indices | Compare original `as_index`; validate a temporary schema copy only | Raw strings unchanged; narrow D3a audit; affected runs Degraded |
 | BLK-013 output exhaustion | Preserve truncated response; approve shared-only4,000 cap uniformly | D9a fixture/conv-50 succeed; not a guarantee for all future memories |
 | BLK-014 malformed strict JSON | Offline replay proves provider contract failure; reject repair | Approved exact checkpoint recovery completes baseline with inherited degradation |
-| BLK-016 persistence false positive | Reproduce benign corpus-text key as credential-field rejection | Verify map structure before temporary validation view; preserve state; final T8 checks pending |
+| BLK-016 persistence false positive | Reproduce benign corpus-text key as credential-field rejection | Narrow typed-map validation view; exact historical cache proof and final519-test/92-subtest suite pass |
+| BLK-017 critical provenance failures | Inject invalid provider identity and durable-record failures | Terminal halt preserves evidence; optional reporting remains separate; independent reviews pass |
+| BLK-018 completion-publication race | Interleave next-cell claim with failed receipt publication | SQL lock spans publication/readback; failure markers block continuation; six safeguards pass independently |
 | BLK-004 scoring history | Rescore saved outputs using both author policies | Distinct references explain c5 differences; historical overlap is not correctness |
 | BLK-009 costs and failures | Retain durable pre-request reservations/attempts, forecast fixed fallback | Hard USD50 total including USD8 reserve; no automatic paid recovery |
 
