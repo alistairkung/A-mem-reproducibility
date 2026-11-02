@@ -21,9 +21,9 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-013](#blk-013) | Shared decision exhausts the historical 1,000-token output limit | Resolved | T5; other-conversation cap risk retained | D9a conv-50 complete; maximum child output 3,851 tokens |
 | [BLK-014](#blk-014) | Normally finished strict function contains malformed JSON | Mitigated | T5 conv-50; downstream integrity | [Verified degraded lineage](t5-conv50-baseline-20261101.md); raw failure retained |
 | [BLK-015](#blk-015) | Historical intermediate states/query vectors were not recorded | Mitigated | T6–T7 replay claims | [Replay gate and oracle provenance](t6-replay.md) |
-| [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Investigating | T8 conv-49 artifact persistence | Offline red/green tests; `artifacts._safe_state` |
-| [BLK-017](#blk-017) | Passive observers swallow critical provenance failures | Investigating | T8 paid-readiness gate | Offline identity/journal fault injections; no live calls |
-| [BLK-018](#blk-018) | Completion releases the next paid phase before receipt publication | Investigating | T8 phase finalization | Offline interleaving/finalization faults; no live calls |
+| [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Resolved | T8 conv-49 artifact persistence | Exact real-cache byte/state proof;519-test suite |
+| [BLK-017](#blk-017) | Passive observers swallow critical provenance failures | Resolved | T8 paid-readiness gate | Terminal recorder/identity guards; independent fault rechecks |
+| [BLK-018](#blk-018) | Completion releases the next paid phase before receipt publication | Resolved | T8 phase finalization | Coordinated SQL/publication; threaded and commit-fault rechecks |
 
 Before another paid run: the checkpoint child completed conv-50 (568 notes/204 QA), Degraded, with
 the original failed evolution and all D3a deviations retained. The parent remains immutable and
@@ -42,6 +42,10 @@ Pre-paid review also found BLK-017: injected provider-identity/journal failures 
 transmissions. Paid collection is held until terminal handling, failure evidence and independent rechecks pass.
 BLK-018 additionally requires receipt publication and SQL frontier release to be coordinated before
 any next-phase transmission; a green non-concurrent fault suite is insufficient.
+Verified update: T8 source `ae23e291` resolves BLK-016/017/018;519 tests/92 subtests, final runtime
+preflight and both independent reviews pass. The original ledger/cache remain unchanged before
+transmission. Historical hold records above are retained; see [the paid execution record](t8-execution.md)
+for current phase approvals and actual outcomes.
 Issue closure, mitigation or unspent allocation is not permission for a paid run or recovery.
 
 ## Maintenance and evidence conventions
@@ -152,6 +156,7 @@ are unavailable unless an experiment receipt supplies them.
   - Upstream `b31a1dd`: introduce corrected reference, legacy flag and adversarial diagnostic.
   - 2026-11-01, T4/review: add immutable dual rescoring, failure notices and original/instrumented metric parity tests; passed offline.
   - 2026-11-01, completed conv-50: both saved-output views use identical 204 predictions/QA IDs without metric failures or new model calls. Corrected overall F1/BLEU-1 0.482178/0.435322; historical 0.417370/0.371892. Category-5 adversarial correctness is separately 29/46. These local results do not recover historical author predictions.
+  - 2026-11-02, T8 pre-paid review: a re-sealed synthetic archive with a changed scoring-wrapper hash was accepted because only the underlying author scorer was checked. Correction `84d354a` pins the wrapper and runtime/asset/dependency sources plus bound preflight, without rescoring predictions. Thirty-one comparison regressions and the final519-test/92-subtest suite pass; actual original204-QA import remains unchanged.
 - **Final resolution or limitation:** Scoring interpretation is mitigated through explicit policies. Completed local conv-50 QA and both views are now available; the authors' historical saved predictions remain unavailable.
 - **Verification:** PR #9 verifies unchanged author math, aggregates and saved predictions without model calls. The failed fixture completed no QA, so it adds no live scoring evidence.
 - **Research significance:** Reproducing a numerical score can reproduce a scoring defect; factual quality and historical compatibility require distinct views.
@@ -263,6 +268,7 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01, first fixture: retain conservative USD0.005851 for ten requests, including the invalid response; no pilot or scope decision followed.
   - 2026-11-01, authorized conv-50 pilot: retain USD0.739432/526 requests, including the malformed response. Cumulative USD0.806717 leaves USD41.193283 usable after USD8 contingency. No QA or late-construction usage exists; the original forecast command rejects the incomplete inventory. Preserve partial stage measurements without extrapolating them into a full/fallback scope decision; see [pilot budget record](t5-pilot-conv50-d9a-20261101.md#budget-status-and-forecast-limitation).
   - 2026-11-01, completed checkpoint lineage: full 568-turn/204-QA usage and known costs support the cost-only forecast before quality inspection. Credit conv-50 once; retain 1,610 study requests/USD3.025799. Recommend the frozen fallback with one build per arm and no scope tuning. No further execution occurred. See `artifacts/checkpoint-child-cost-forecast.json`.
+  - 2026-11-02, separately authorized T8: activate D10a's fixed fallback and credit full conv-50 once. Eleven remaining one-shot cells have a pooled additional ceiling USD38.974201, per-phase ceiling USD10 and unchanged usable study ceiling USD42; caps are not additive authority. Close an unused unbound baseline-permit path, retain global-cap/concurrency assertions through valid historical pilot fixtures, and verify archived main approvals/claims so an older ledger cannot reset spending. Cost-only just-in-time plans reconcile all remaining balanced cells. Final519 tests/92 subtests, preflight and independent reviews pass before paid transmission.
 - **Final resolution or limitation:** The completed cost-only forecast recommends the predefined fallback: USD3.025799 incurred + USD31.736435 remaining + USD8 contingency = USD42.762234. All 10 conversations project USD127.391486. The fallback's 2× diagnostic is USD74.498668; one conversation/full-mode is not a bound on other arms. Further execution requires approval and reconciliation against new usage; unknown charges retain reservations. This is measured planning evidence, not guaranteed affordability.
 - **Verification:** Offline cap/retry/restart tests and completed pilot usage support the saved forecast. Main execution and acceptance of remaining scope/spending still require separate approval; the forecast is not a measured upper bound.
 - **Research significance:** Construction, QA, retries and failed attempts all consume budget; controlling spending and estimating scientific study feasibility are separate problems.
@@ -413,7 +419,7 @@ are unavailable unless an experiment receipt supplies them.
 
 - **ID:** BLK-016
 - **Title:** Benign indexed document text is mistaken for a credential-field name.
-- **Status:** Investigating
+- **Status:** Resolved
 - **First observed:** 2026-11-02, T8 offline complete-conversation partition test for conv-49.
 - **Category:** Infrastructure
 - **Expected behaviour:** Preserve all original corpus text and its document-to-row index while rejecting actual credential fields in artifact/provenance structures.
@@ -425,15 +431,16 @@ are unavailable unless an experiment receipt supplies them.
 - **Resolution attempts:**
   - 2026-11-02: reproduce through complete frozen conv-49 runner partition and a focused dynamic-document-key case; both fail before correction. Independently verify source population has509 turns and exactly one containing “secret”.
   - 2026-11-02: implement temporary validation view only after proving every map key equals its indexed corpus row and every row is a proper in-range integer. Keep raw/saved state unchanged, validate all other keys and retain global `reject_credentials`. Six narrow artifact/runner regressions pass, including credential-field and malformed-map rejection. Full-suite/source-migration review remains pending.
-- **Final resolution or limitation:** Proposed narrow artifact-validation correction is implemented offline; no live outcome or completed T8 cell is claimed. Preserve original corpus and index exactly.
-- **Verification:** Red/green evidence above; complete suite, independent review and integrated artifact round-trip verification are pending.
+  - 2026-11-02, implementation `3948120`, integrated final source `ae23e291`: current-code real568-note cache load/serialization is byte-identical; restore/export preserves all notes, float32 embeddings/order, counter and outcomes. Original files/377 build-failure records remain intact. `artifacts/t8/offline/final-integrity-proof.json` verifies this with sockets denied and zero paid calls. Independent audit/reviews and final519-test/92-subtest suite pass.
+- **Final resolution or limitation:** Resolved by the narrow typed-map validation view. Global credential checks and all stored scientific data are unchanged. No live T8 completion is inferred from the artifact fix.
+- **Verification:** Red/green, current-code byte/state proof and complete-suite logs above; Standards/Spec reviews clear. Source fingerprint `42ee5de8ffb64090fbafa564bd4ea3e41fd042e846271349ff18b370991a9fe0`.
 - **Research significance:** Applying secret-detection heuristics to arbitrary research data can make persistence fail despite a valid memory build. Structural provenance keys and text-keyed retrieval maps require distinct validation contexts without changing the experiment's data.
 
 ## BLK-017
 
 - **ID:** BLK-017
 - **Title:** Passive observer boundaries swallow critical paid-run provenance failures.
-- **Status:** Investigating
+- **Status:** Resolved
 - **First observed:** 2026-11-02, pre-paid T8 Spec review of integration `9fb0b86`.
 - **Category:** Infrastructure
 - **Expected behaviour:** A provider identity violation or failed durable generation record halts the phase before a subsequent transmission, retains costs/raw evidence where writable, and cannot yield a reusable completed run. Optional cloud reporting may remain best-effort.
@@ -445,15 +452,16 @@ are unavailable unless an experiment receipt supplies them.
 - **Resolution attempts:**
   - 2026-11-02: independent Spec review reproduces both failures with real SDK/MockTransport, zero paid calls, preserved synthetic ledger evidence. Standards review separately reproduces a related completion-mark classification gap and an omitted scoring-wrapper provenance hash; both are assigned to the same implementer for narrow correction.
   - 2026-11-02: implementer is adding first/final-call invalid-metadata regressions, critical recorder/write-failure regressions, terminal halts and truthful incomplete receipts. Final fixes/tests/reviews are pending; no paid call is permitted at this checkpoint.
-- **Final resolution or limitation:** Unresolved pre-paid engineering blocker. No live compatibility failure, new provider policy or successful fix is inferred from the proposed handling.
-- **Verification:** Red evidence above; final targeted/full-suite tests and independent correction reviews are required before transmission.
+  - 2026-11-02, correction `84d354a`, final source `ae23e291`: exact provider identity validation precedes set insertion; the baseline critical-local-recorder wrapper persists a halt, retains a safe raw-event companion where writable and always raises terminal `BudgetStop`, including when fallback writing fails. Final-call journal failure preserves195 completed QA rather than falsely reporting zero. Optional cloud reporting remains separate; adapter/prompts/argument strings are unchanged.
+- **Final resolution or limitation:** Resolved critical-observer control defect. This is not a guarantee that providers or storage never fail; such failures now stop paid continuation and retain their evidence/charges.
+- **Verification:** First/final identity types, first/late journal faults and failed fallback writes pass; independent reviews clear. Final519 tests/92 subtests pass in `artifacts/t8/offline/final-serial-frontier-suite.txt`; sixteen SDK warnings arise only from intentionally malformed test metadata. No paid request was used for verification.
 - **Research significance:** Best-effort observability is appropriate for optional reporting, but cannot silently cover critical experiment identity or durable evidence. Request/cost caps alone do not establish experimental integrity.
 
 ## BLK-018
 
 - **ID:** BLK-018
 - **Title:** Completion exposes a paid-next-phase window before final receipt publication.
-- **Status:** Investigating
+- **Status:** Resolved
 - **First observed:** 2026-11-02, T8 correction Spec review of integration `b41d825`.
 - **Category:** Cost
 - **Expected behaviour:** A next study cell cannot claim/transmit until the preceding cell has a verified published receipt and committed completion; failed finalization blocks both new and already-claimed continuation.
@@ -465,6 +473,7 @@ are unavailable unless an experiment receipt supplies them.
 - **Resolution attempts:**
   - 2026-11-02, initial review of `9fb0b86`: SQL completion failure after writing a usable receipt left misleading status. Correction `84d354a` moved SQL completion before atomic publication and added truthful failure finalization; ordinary SQL/publication regressions passed.
   - 2026-11-02, independent correction review: deterministic interleaving exposes the resulting publication window. Same implementer is adding coordinated release, shared-failure checks and a concurrency/post-publication commit-failure regression. The earlier correction remains recorded rather than described as sufficient.
-- **Final resolution or limitation:** Unresolved pre-paid safety blocker; no T8 paid phase has started. Financial/memory/scoring settings remain unchanged.
-- **Verification:** New red interleaving above; integrated regression/full-suite and independent correction reviews are pending.
+  - 2026-11-02, correction `022fd46`, integrated as `ae23e291`: hold `BEGIN IMMEDIATE` through atomic receipt publication/readback and completion commit. Before logical-call and physical-attempt admission, reject other failed/unfinished study cells; allow settlement of already incurred usage. Post-publication commit failures preserve the unconfirmed candidate and failure marker, halt and publish truthful Incomplete evidence; paid/report readers reject marked stale completion.
+- **Final resolution or limitation:** Resolved at the study-control boundary. Ordinary partial/model/storage failures still require their approved handling; no paid recovery or generation retry is introduced.
+- **Verification:** Threaded interleaving, previously claimed next permit, commit-after-publication failure, missing/invalid receipts and stale-marker rejection pass. Both reviewers independently pass six safeguards (`artifacts/t8/offline/review/{spec,standards}-final-race-green.txt`). Final suite519 tests/92 subtests and current-source runtime preflight pass, with no paid calls or original artifact changes.
 - **Research significance:** Durable accounting and durable research artifacts span different resources. A completion flag alone is not evidence that the preceding experiment is safe to reuse or that a subsequent paid phase may start.

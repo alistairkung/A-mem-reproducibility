@@ -96,3 +96,40 @@ SQL could leave a reusable receipt; and saved-result source checks omitted the s
 The first two are tracked as BLK-017. All corrections, targeted regressions, full-suite tests and
 independent correction reviews are required before paid execution. Initial plans/preflight receipts
 are retained as engineering evidence and must be regenerated if their source fingerprint changes.
+
+## Final pre-transmission verification
+
+Reviewed source commit `ae23e291`, source fingerprint
+`42ee5de8ffb64090fbafa564bd4ea3e41fd042e846271349ff18b370991a9fe0`:
+
+- Complete offline suite: **519 tests and92 subtests passed**,16 intentional invalid-metadata SDK
+  serialization warnings; `artifacts/t8/offline/final-serial-frontier-suite.txt`.
+- Current runtime preflight: `artifacts/t8/preflight-final.json`, assets ready/runtime pass, sockets denied.
+- Both final Standards/Spec reviews clear; independent threaded/fault rechecks each pass six tests.
+  BLK-016/017/018 are Resolved as implementation defects, not provider-reliability guarantees.
+- Exact original cache serialization/restore, historical phase inventories and all ledger-prefix charges
+  verify in `artifacts/t8/offline/final-integrity-proof.json`. The ledger remains1610 settled attempts /
+  USD3.025799 /zero unknown; original cache files and scientific sources/fixtures are unchanged.
+- Financial/artifact support migration is explicit. The historical T6 guard is unchanged; prior T7
+  numerical replay evidence is not relabelled as a test of new T8 financial controls.
+
+The first exact plan is `artifacts/t8/plan-final-full49.json`: full-mode conv-49,509 turns/196 QA,
+USD10 phase ceiling,1,410 logical calls and at most4,230 attempts, within the pooled allowance.
+Its planner output is unapproved. The user's existing explicit T8 paid authority permits a separate
+immutable approved copy after these gates; it does not permit recovery, extra repetitions or raising caps.
+
+Reproducible preparation commands, from the repository root (fresh output filenames required):
+
+```sh
+.venv/bin/pytest -q
+.venv/bin/python -m amem_repro.phases preflight \
+  --assets artifacts/assets --output artifacts/t8/preflight-final.json
+.venv/bin/python -m amem_repro.study plan \
+  --receipt artifacts/t8/preflight-final.json --assets artifacts/assets \
+  --condition full --conversation conv-49 --run-id t8-full-conv49-r0-20261102 \
+  --output artifacts/t8/plan-final-full49.json
+```
+
+Execution requires the separately materialized, user-authorized approval, not the unapproved plan.
+Only the key needed by the process is loaded privately from `.env`; no key/header is printed or stored.
+Actual approval/run identities, commands and outcomes follow below when execution begins.
