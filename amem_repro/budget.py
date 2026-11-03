@@ -126,14 +126,28 @@ def _validate(auth, binding):
         max_calls = {'compatibility':44, 'pilot':1544, 'baseline':15736}[phase]
         if logical > max_calls or attempts > 3*logical:
             raise BudgetStop('Request limits exceed the approved phase or retry protocol')
-        if study_job is not None and logical != study_job['expected_logical_calls']:
+        if study_job is not None and logical != binding.get('checkpoint',{}).get('remaining_logical_calls',study_job['expected_logical_calls']):
             raise BudgetStop('Main request limit differs from the complete conversation')
         if 'checkpoint' in binding:
             checkpoint = binding['checkpoint']
-            if (phase != 'pilot' or not isinstance(checkpoint, dict)
-                    or checkpoint.get('policy') != 'blk014-checkpoint-v1'
-                    or checkpoint.get('completed_turns') != 263
-                    or checkpoint.get('remaining_logical_calls') != 1018 or logical > 1018):
+            if phase == 'baseline':
+                from .checkpoint import STUDY_CHECKPOINT_POLICY, STUDY_PARENT_SHA256
+                valid = (isinstance(checkpoint,dict) and binding['condition']=='full'
+                    and study_job['conversation_id']=='conv-49'
+                    and checkpoint.get('policy')==STUDY_CHECKPOINT_POLICY
+                    and checkpoint.get('parent_phase_sha256')==STUDY_PARENT_SHA256
+                    and checkpoint.get('parent_run_id')=='t8-full-conv49-r0-20261102'
+                    and isinstance(checkpoint.get('parent_approval_id'),str)
+                    and bool(checkpoint['parent_approval_id'])
+                    and type(checkpoint.get('completed_turns')) is int and checkpoint['completed_turns']==413
+                    and type(checkpoint.get('remaining_logical_calls')) is int
+                    and checkpoint['remaining_logical_calls']==584 and logical==584)
+            else:
+                valid = (phase=='pilot' and isinstance(checkpoint,dict)
+                    and checkpoint.get('policy')=='blk014-checkpoint-v1'
+                    and checkpoint.get('completed_turns')==263
+                    and checkpoint.get('remaining_logical_calls')==1018 and logical<=1018)
+            if not valid:
                 raise BudgetStop('Checkpoint request limits or policy differ')
             for name in ('parent_phase_sha256', 'parent_snapshot_sha256',
                          'parent_events_sha256', 'parent_source_sha256'):
@@ -186,7 +200,51 @@ CREATE TABLE IF NOT EXISTS study_jobs (
  approval_id TEXT UNIQUE NOT NULL REFERENCES phases, complete INTEGER NOT NULL DEFAULT 0,
  PRIMARY KEY(study_id,condition,conversation_id)
 );
+CREATE TABLE IF NOT EXISTS study_recovery_edges (
+ parent_approval_id TEXT PRIMARY KEY REFERENCES phases,
+ child_approval_id TEXT UNIQUE NOT NULL REFERENCES phases,
+ study_id TEXT NOT NULL, condition TEXT NOT NULL, conversation_id TEXT NOT NULL
+);
 '''
+
+
+def study_job_claim(db, approval_id):
+    # Retain the failed parent's historical claim while its one child owns the cell.
+    direct=db.execute('SELECT study_id,condition,conversation_id,complete FROM study_jobs WHERE approval_id=?',
+                      (approval_id,)).fetchone()
+    try:
+        edge=db.execute('SELECT parent_approval_id,child_approval_id,study_id,condition,conversation_id FROM study_recovery_edges WHERE parent_approval_id=? OR child_approval_id=?',
+                        (approval_id,approval_id)).fetchone()
+    except sqlite3.OperationalError:
+        edge=None  # Historical pre-recovery databases have no edge table.
+    row=db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(approval_id,)).fetchone()
+    auth=json.loads(row[0]) if row else {}
+    if edge is None:
+        if auth.get('binding',{}).get('checkpoint') and auth.get('phase')=='baseline':
+            return None
+        return direct
+    parent_id,child_id,study,condition,conversation=edge
+    child=db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(child_id,)).fetchone()
+    child_binding=json.loads(child[0])['binding'] if child else {}
+    checkpoint=child_binding.get('checkpoint',{})
+    parent=db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',(parent_id,)).fetchone()
+    parent_auth=json.loads(parent[0]) if parent else {}
+    from .checkpoint import STUDY_PARENT_SHA256,STUDY_CHECKPOINT_POLICY
+    claim=db.execute('SELECT study_id,condition,conversation_id,complete FROM study_jobs WHERE approval_id=?',(child_id,)).fetchone()
+    exclusive=db.execute('SELECT approval_id FROM checkpoint_claims WHERE parent_phase_sha256=?',(checkpoint.get('parent_phase_sha256'),)).fetchone()
+    if (parent is None or not parent[1] or parent_auth.get('run_id')!=checkpoint.get('parent_run_id')
+            or parent_auth.get('binding',{}).get('source_sha256')!=checkpoint.get('parent_source_sha256')
+            or checkpoint.get('parent_approval_id')!=parent_id or checkpoint.get('parent_phase_sha256')!=STUDY_PARENT_SHA256
+            or checkpoint.get('policy')!=STUDY_CHECKPOINT_POLICY or exclusive!=(child_id,)
+            or claim is None or claim[:3]!=(study,condition,conversation)
+            or child_binding.get('condition')!=condition
+            or child_binding.get('study_job',{}).get('study_id')!=study
+            or child_binding.get('study_job',{}).get('conversation_id')!=conversation
+            or parent_id==child_id):
+        return None
+    if approval_id==parent_id:
+        return (study,condition,conversation,0) if direct is None else None
+    return claim
 
 
 def validate_approval(auth, binding):
@@ -213,21 +271,37 @@ class PhasePermit:
                 for prior_id,raw in db.execute('SELECT approval_id,auth_json FROM phases'):
                     prior=json.loads(raw)
                     if prior.get('phase')!='baseline': continue
-                    claim=db.execute('SELECT study_id,condition,conversation_id FROM study_jobs WHERE approval_id=?',(prior_id,)).fetchone()
+                    claim=study_job_claim(db,prior_id)
+                    claim=claim[:3] if claim else None
                     prior_job=prior['binding'].get('study_job',{})
                     if claim!=(prior_job.get('study_id'),prior['binding'].get('condition'),prior_job.get('conversation_id')):
                         raise BudgetStop('Study cell claim/history is missing or changed')
                 historical = db.execute('SELECT COALESCE(SUM(charge),0) FROM attempts').fetchone()[0]
                 if historical < job['initial_study_microusd']:
                     raise BudgetStop('Shared ledger lost historical study spending')
-                if db.execute('SELECT 1 FROM study_jobs j JOIN phases p ON p.approval_id=j.approval_id WHERE j.study_id=? AND (j.complete=0 OR p.halted IS NOT NULL)', (job['study_id'],)).fetchone():
+                recovery=binding.get('checkpoint')
+                parent_id=recovery['parent_approval_id'] if recovery else ''
+                if recovery:
+                    from .checkpoint import _read_archive,STUDY_PARENT_SHA256
+                    parent_path=self.path.parent/'runs'/recovery['parent_run_id']/'phase.json'
+                    _,parent_phase=_read_archive(parent_path,self.path.parent.parent,STUDY_PARENT_SHA256)
+                    parent_auth=db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',(parent_id,)).fetchone()
+                    if (parent_auth is None or not parent_auth[1]
+                            or json.loads(parent_auth[0])['run_id']!=recovery['parent_run_id']
+                            or parent_phase['binding']!=json.loads(parent_auth[0])['binding']
+                            or study_job_claim(db,parent_id)!=(job['study_id'],'full','conv-49',0)
+                            or recovery['parent_snapshot_sha256']!=parent_phase['artifact_sha256']['partial-memory.json']
+                            or recovery['parent_events_sha256']!=parent_phase['artifact_sha256']['events.jsonl']
+                            or recovery['parent_source_sha256']!=parent_phase['binding']['source_sha256']):
+                        raise BudgetStop('Checkpoint parent ownership/provenance differs')
+                if db.execute('SELECT 1 FROM study_jobs j JOIN phases p ON p.approval_id=j.approval_id WHERE j.study_id=? AND j.approval_id!=? AND (j.complete=0 OR p.halted IS NOT NULL)', (job['study_id'],parent_id)).fetchone():
                     raise BudgetStop('A study job is unfinished; paid recovery requires separate approval')
                 if binding['condition']!='full':
                     full={row[0] for row in db.execute('SELECT conversation_id FROM study_jobs WHERE study_id=? AND condition=? AND complete=1',
                                                       (job['study_id'],'full'))}
                     if not {'conv-49','conv-44'}<=full:
                         raise BudgetStop('Complete the original full-mode study jobs before ablations')
-                if db.execute('SELECT 1 FROM study_jobs WHERE study_id=? AND condition=? AND conversation_id=?',
+                if not recovery and db.execute('SELECT 1 FROM study_jobs WHERE study_id=? AND condition=? AND conversation_id=?',
                               (job['study_id'],binding['condition'],job['conversation_id'])).fetchone():
                     raise BudgetStop('Study job already claimed; repeated builds require separate approval')
             if db.execute('SELECT 1 FROM phases WHERE approval_id=? OR run_id=?',
@@ -236,8 +310,16 @@ class PhasePermit:
             db.execute('INSERT INTO phases VALUES (?,?,?,?,?,NULL)',
                        (self.approval_id, auth['run_id'], _canonical(auth), self.owner, cap))
             if 'study_job' in binding:
-                db.execute('INSERT INTO study_jobs(study_id,condition,conversation_id,approval_id) VALUES (?,?,?,?)',
-                           (job['study_id'],binding['condition'],job['conversation_id'],self.approval_id))
+                if recovery:
+                    db.execute('INSERT INTO study_recovery_edges VALUES (?,?,?,?,?)',
+                        (parent_id,self.approval_id,job['study_id'],binding['condition'],job['conversation_id']))
+                    updated=db.execute('UPDATE study_jobs SET approval_id=? WHERE approval_id=? AND complete=0',
+                                       (self.approval_id,parent_id))
+                    if updated.rowcount!=1:
+                        raise BudgetStop('Checkpoint cell ownership changed')
+                else:
+                    db.execute('INSERT INTO study_jobs(study_id,condition,conversation_id,approval_id) VALUES (?,?,?,?)',
+                               (job['study_id'],binding['condition'],job['conversation_id'],self.approval_id))
             if 'checkpoint' in binding:
                 parent = binding['checkpoint']['parent_phase_sha256']
                 if db.execute('SELECT 1 FROM checkpoint_claims WHERE parent_phase_sha256=?', (parent,)).fetchone():
@@ -258,7 +340,8 @@ class PhasePermit:
                 self._halt(db,'Incomplete study receipt cannot release the next paid job')
             turns,questions={'conv-49':(509,196),'conv-50':(568,204),'conv-44':(675,158)}[self.binding['study_job']['conversation_id']]
             stages=dict(db.execute('SELECT stage,COUNT(*) FROM logical_calls WHERE approval_id=? GROUP BY stage',(self.approval_id,)))
-            expected={'metadata':turns,'shared_decision':turns,'query_keywords':questions,'answer':questions}
+            remaining_turns=turns-self.binding.get('checkpoint',{}).get('completed_turns',0)
+            expected={'metadata':remaining_turns,'shared_decision':remaining_turns,'query_keywords':questions,'answer':questions}
             missing=db.execute('SELECT COUNT(*) FROM logical_calls l WHERE l.approval_id=? AND NOT EXISTS (SELECT 1 FROM attempts a WHERE a.logical_id=l.id)',(self.approval_id,)).fetchone()[0]
             unknown=db.execute("SELECT COUNT(*) FROM attempts WHERE approval_id=? AND status!='settled'",(self.approval_id,)).fetchone()[0]
             if stages!=expected or missing or unknown:
@@ -317,6 +400,10 @@ class PhasePermit:
         if row[2] and not allow_halted:
             raise BudgetStop(f'Phase stopped: {row[2]}')
         if not allow_halted and 'study_job' in self.binding:
+            claim=study_job_claim(db,self.approval_id)
+            job=self.binding['study_job']
+            if claim is None or claim[:3]!=(job['study_id'],self.binding['condition'],job['conversation_id']):
+                self._halt(db,'Study cell ownership/history differs')
             other=db.execute('''SELECT 1 FROM study_jobs j JOIN phases p ON p.approval_id=j.approval_id
                 WHERE j.study_id=? AND j.approval_id!=? AND (j.complete=0 OR p.halted IS NOT NULL)''',
                 (self.binding['study_job']['study_id'],self.approval_id)).fetchone()

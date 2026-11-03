@@ -26,7 +26,7 @@ REPLAY_RECEIPTS = {
     't7-reviewed-candidate':'3bcf45c32a874f12850df6ab509c8983c13d49a7011af4598b163212762ecdc6',
 }
 SUPPORT_MIGRATION = {'amem_repro/budget.py','amem_repro/phases.py','amem_repro/runner.py',
-                     'amem_repro/artifacts.py','amem_repro/study.py','amem_repro/comparison.py'}
+                     'amem_repro/artifacts.py','amem_repro/study.py','amem_repro/comparison.py','amem_repro/checkpoint.py'}
 
 
 def _read(path):
@@ -93,7 +93,8 @@ def verify_study_history(root, sources):
             if row is None or fingerprint(json.loads(row[0]))!=fingerprint(prior):
                 raise ValueError('Archived main run missing from cumulative study ledger')
             try:
-                claim=db.execute('SELECT study_id,condition,conversation_id,complete FROM study_jobs WHERE approval_id=?',(prior['approval_id'],)).fetchone()
+                from .budget import study_job_claim
+                claim=study_job_claim(db,prior['approval_id'])
             except sqlite3.OperationalError:
                 raise ValueError('Archived main run lost its durable cell claim') from None
             prior_job=prior['binding'].get('study_job',{})
@@ -104,6 +105,15 @@ def verify_study_history(root, sources):
                     if row[1] is not None:
                         raise ValueError('Completed ledger cell is halted')
                     _verified_phase(path.parent/'phase.json',root)
+                    if 'checkpoint' in prior['binding']:
+                        from .checkpoint import verify_study_checkpoint
+                        child_start=json.loads((path.parent/'events.jsonl').open().readline())
+                        lineage=prior['binding']['checkpoint']
+                        recovered=verify_study_checkpoint(root/'artifacts/runs'/lineage['parent_run_id']/'phase.json',
+                            root,child_start['manifest'],child_start['configuration'],child_start['source_hashes'],
+                            _read(path.parent/'preflight.json'))
+                        if recovered['lineage']!=lineage:
+                            raise ValueError('Completed child recovery lineage differs')
                 except (ValueError,OSError,KeyError):
                     raise ValueError('Completed main ledger cell lacks a valid final phase receipt') from None
     with (child_dir/'events.jsonl').open() as stream:
@@ -125,7 +135,24 @@ def balanced_cost_forecast(root,manifest):
     base_ids=[_read(root/'artifacts/runs'/name/'approval.json')['approval_id']
               for name in ('pilot-conv50-d9a','pilot-conv50-checkpoint-child')]
     with sqlite3.connect(ledger.resolve().as_uri()+'?mode=ro',uri=True) as db:
+        def cost_lineage(ids):
+            # A recovered cell's retained prefix is part of the same measured
+            # build. Charge its parent once, rather than using suffix-only means.
+            values=set(ids)
+            from .budget import study_job_claim
+            for ident in set(ids):
+                row=db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(ident,)).fetchone()
+                prior=json.loads(row[0]) if row else {}
+                if prior.get('phase')=='baseline' and 'checkpoint' in prior.get('binding',{}):
+                    if study_job_claim(db,ident) is None:
+                        raise ValueError('Recovered cost lineage lost its durable ownership edge')
+                    parent=db.execute('SELECT parent_approval_id FROM study_recovery_edges WHERE child_approval_id=?',(ident,)).fetchone()
+                    if parent is None:
+                        raise ValueError('Recovered cost lineage is missing its parent')
+                    values.add(parent[0])
+            return sorted(values)
         def means(ids):
+            ids=cost_lineage(ids)
             marks=','.join('?' for _ in ids)
             rows=db.execute(f'''SELECT l.stage,COUNT(DISTINCT l.id),SUM(a.charge)
                 FROM logical_calls l JOIN attempts a ON a.logical_id=l.id
@@ -161,12 +188,14 @@ def balanced_cost_forecast(root,manifest):
             'limitation':'Point estimate is not an upper bound; retries and context/output growth can exhaust caps'}
 
 
-def baseline_inputs(receipt, asset_root, root, condition, conversation_id, provider_policy):
+def baseline_inputs(receipt, asset_root, root, condition, conversation_id, provider_policy, *, checkpoint=None):
     """Reconstruct an exact approved execution partition before any permit/client."""
     from .phases import _verified_receipt, _verified_phase
     root=Path(root)
     if (condition,conversation_id) not in STUDY_JOB_CAPS or provider_policy!=INDEX_STRING_POLICY:
         raise ValueError('Only the eleven fresh approved fallback cells and D3a are enabled')
+    if checkpoint is not None and (condition,conversation_id)!=('full','conv-49'):
+        raise ValueError('Only the pinned full conv-49 checkpoint is enabled')
     sources=_verified_receipt(receipt,asset_root,root)
     config=load_config(root/'config/study.json')
     manifest=expand_manifest(root/'data/locomo10.json',_read(root/'manifests/fallback.json'))
@@ -181,7 +210,8 @@ def baseline_inputs(receipt, asset_root, root, condition, conversation_id, provi
         completed=set()
         for path in (root/'artifacts/runs').glob('*/phase.json'):
             value=_read(path)
-            if value.get('phase')=='baseline' and value.get('binding',{}).get('condition')=='full':
+            if (value.get('phase')=='baseline' and value.get('binding',{}).get('condition')=='full'
+                    and value.get('status') in ('complete','degraded')):
                 value=_verified_phase(path,root)
                 b=value['binding']
                 if (b.get('manifest_sha256')==fingerprint(manifest) and b.get('config_sha256')==fingerprint(config)
@@ -215,6 +245,13 @@ def baseline_inputs(receipt, asset_root, root, condition, conversation_id, provi
         'study_budget':{'additional_ceiling_microusd':38974201,'cumulative_usable_microusd':42000000,'contingency_microusd':8000000},
         'cost_only_forecast':forecast,
     }
+    if checkpoint is not None:
+        from .checkpoint import verify_study_checkpoint
+        recovered=verify_study_checkpoint(checkpoint,root,manifest,config,sources,receipt)
+        if (recovered['phase']['returned_models']!=binding['expected_returned_models']
+                or recovered['phase']['system_fingerprints']!=binding['expected_system_fingerprints']):
+            raise ValueError('Checkpoint provider identity differs')
+        binding['checkpoint']=recovered['lineage']
     return config,manifest,sources,binding
 
 
@@ -226,6 +263,7 @@ def main():
         p=sub.add_parser(name)
         p.add_argument('--receipt',required=True)
         p.add_argument('--assets',required=True)
+        p.add_argument('--checkpoint',help='Exact immutable incomplete conv-49 parent phase.json')
         if name=='plan':
             p.add_argument('--condition',required=True,choices=('full','neither','linking_only','evolution_only'))
             p.add_argument('--conversation',required=True,choices=('conv-49','conv-50','conv-44'))
@@ -237,11 +275,11 @@ def main():
     receipt=_read(args.receipt)
     if args.command=='plan':
         value=plan_phase('baseline',receipt,args.assets,root=ROOT,condition=args.condition,
-                         conversation_id=args.conversation,run_id=args.run_id,provider_contract_policy=INDEX_STRING_POLICY)
+                         conversation_id=args.conversation,run_id=args.run_id,provider_contract_policy=INDEX_STRING_POLICY,checkpoint=args.checkpoint)
         _save(args.output,value)
         print(json.dumps({'plan':str(args.output),'approved':False,'limits':value['limits']}))
     else:
-        value=execute_phase(_read(args.approval),receipt,args.assets,root=ROOT)
+        value=execute_phase(_read(args.approval),receipt,args.assets,root=ROOT,checkpoint=args.checkpoint)
         print(json.dumps({'run_id':value['run_id'],'status':value['status'],'budget':value['budget']}))
 
 

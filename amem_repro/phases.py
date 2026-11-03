@@ -220,10 +220,10 @@ def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
                   condition='full', conversation_id=None):
     validate_provider_policy(provider_contract_policy)
     if phase == 'baseline':
-        if checkpoint is not None or compatibility is not None:
-            raise ValueError('Main execution cannot reuse a checkpoint or fixture approval')
+        if compatibility is not None:
+            raise ValueError('Main execution cannot reuse a fixture approval')
         from .study import baseline_inputs
-        return baseline_inputs(receipt,asset_root,root,condition,conversation_id,provider_contract_policy)
+        return baseline_inputs(receipt,asset_root,root,condition,conversation_id,provider_contract_policy,checkpoint=checkpoint)
     if condition != 'full' or conversation_id is not None:
         raise ValueError('Only baseline phases support complete-conversation partitions/action conditions')
     if phase not in PHASES:
@@ -280,8 +280,8 @@ def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibil
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run_id must be a safe, unique local artifact name")
     spec = PHASES[phase]
-    calls = binding.get('study_job',{}).get('expected_logical_calls',
-                binding.get('checkpoint', {}).get('remaining_logical_calls', spec['calls']))
+    calls = binding.get('checkpoint',{}).get('remaining_logical_calls',
+                binding.get('study_job',{}).get('expected_logical_calls',spec['calls']))
     cap = spec['cap']
     population = manifest['totals']
     if phase == 'baseline':
@@ -289,7 +289,7 @@ def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibil
         from decimal import Decimal
         cap = str(Decimal(STUDY_JOB_CAPS[(binding['condition'],binding['study_job']['conversation_id'])])/MICROS)
         selected = next(c for c in manifest['conversations'] if c['original_id']==binding['study_job']['conversation_id'])
-        population = {'conversations':1,'turns':len(selected['turn_ids']),'questions':len(selected['questions'])}
+        population = {'conversations':1,'turns':len(selected['turn_ids'])-binding.get('checkpoint',{}).get('completed_turns',0),'questions':len(selected['questions'])}
     return {
         "approval_id": str(uuid.uuid4()), "approved": False,
         "approved_by": None, "approved_at": None, "run_id": run_id, "phase": phase,
@@ -337,9 +337,11 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
     validate_approval(approval, binding)
     recovered = None
     if checkpoint is not None:
-        from .checkpoint import verify_checkpoint
-        recovered = verify_checkpoint(checkpoint, root, manifest, config, sources, receipt,
-                                      _verified_phase(compatibility, root))
+        from .checkpoint import verify_checkpoint,verify_study_checkpoint
+        recovered = (verify_study_checkpoint(checkpoint,root,manifest,config,sources,receipt)
+                     if approval['phase']=='baseline' else
+                     verify_checkpoint(checkpoint,root,manifest,config,sources,receipt,
+                                       _verified_phase(compatibility,root)))
         if (approval['limits']['max_logical_calls'] > binding['checkpoint']['remaining_logical_calls']
                 or approval['limits']['max_attempts'] > 3 * binding['checkpoint']['remaining_logical_calls']):
             raise ValueError('Recovery request limits exceed remaining workload')
@@ -515,8 +517,8 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             "usable_for_next_phase": bool(summary and not budget["halted"]
                 and budget["unknown_attempts"] == 0
                 and error_type is None and summary['status'] in ('complete', 'degraded')
-                and budget["logical_calls"] == binding.get('study_job',{}).get('expected_logical_calls',
-                    binding.get('checkpoint', {}).get('remaining_logical_calls', PHASES[approval["phase"]]["calls"]))
+                and budget["logical_calls"] == binding.get('checkpoint',{}).get('remaining_logical_calls',
+                    binding.get('study_job',{}).get('expected_logical_calls',PHASES[approval["phase"]]["calls"]))
                 and set(schema_outcomes) == {"metadata", "shared_decision", "query_keywords", "answer"}),
             "returned_models": sorted(versions), "system_fingerprints": sorted(fingerprints),
             "completed_at": datetime.now(timezone.utc).isoformat(),
