@@ -691,3 +691,37 @@ The root SDK admission-fault replay now halts with zero transmissions and retain
 genuine transport/provider retries remain unchanged. BLK-019/020 are Resolved; BLK-013 stays Open.
 PR#22, final merge and the new single-use approved copy/live continuation are pending at this checkpoint.
 The unapproved plan binds USD3/446 logical/1,338 physical limits; no new paid phase has executed.
+
+## Outcome — second conv-44 continuation stopped at the paid boundary
+
+On 3 November2026, PR#22 merged normally as `5ddc96ef8653bcf8997f2d7840435c4630826e09` after
+613 offline tests/92 subtests,189 focused tests/60 subtests and clear independent Standards/Spec
+reviews. Current-main runtime preflight and exact610-note/counter607/stale-index verification passed
+with both pinned ancestors and unchanged historical ledger/baselines. The fresh single-use approval
+`a35ef8a2-78f1-44c6-9f67-1c36d605b2c2` executed once under USD3/446-call/1,338-attempt limits.
+
+Grandchild `t8-full-conv44-checkpoint-grandchild` resumed `D26:19`, then stopped after26 new turns
+at `D26:44`: HTTP200/`length`,4,000 output/5,638 input tokens, request
+`633454cd-c049-4132-9754-f9ba24ea63bf`. BLK-013 recurred. Original fallback retains note636,
+counter632 and no new links/neighbour changes for that decision; next metadata is blocked before
+transmission. The entire lineage is **Incomplete**, not completed Degraded:636/675 notes,0/158 QA.
+Both scoring views and adversarial correctness are unavailable. Preserve all original failures,
+408 inherited records,417 total D3a deviations/1,654 transformations and exact stale index history.
+
+The new52 logical/physical calls cost conservative USD0.122276, zero retries/unknown charges.
+Conv-44 totals1,272 requests/USD2.240235; cumulative study4,292/USD8.530133, zero unknown charges.
+All prior artifacts/ledger rows and completed conv-49/conv-50 baselines verify unchanged. Exact
+offline MockTransport replay and independent original catch-boundary replay reproduce the failure;
+62 post-failure tests and separate root/independent state/audit/accounting checks pass. This verifies
+safe stopping, not provider-cap adequacy. BLK-019/020 remain Resolved; BLK-013 remains Open.
+
+The consumed grant cannot fund another phase.39 turns and158 QA remain, next `D26:45` (394 logical
+calls/1,182 maximum attempts hypothetically). Third recovery is unsupported and unauthorized; actual
+third-recovery and ablation planning reject without a transmission. No further recovery, restart,
+ablation, cap/compatibility/schema change or population revision is approved by this record.
+
+Cost-only whole-fresh-cell point scenario: USD48.218835 including incurred costs and USD8 reserve.
+Hypothetical preserved-suffix estimate: USD1.282387, conditional balanced total USD46.246007 with
+nine ablations and reserve. These are not upper bounds, executable plans or spending grants. No
+accuracy result influenced them. Stop at the material provider-failure boundary; no further paid
+execution occurred. See [verified outcome and inventory](t8-conv44-second-recovery-incomplete-20261103.md).

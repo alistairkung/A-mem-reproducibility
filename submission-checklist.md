@@ -20,16 +20,14 @@ This checklist records preparation, not submission or a completed recording.
 - [ ] Record presentation using the outline below; verify duration at most15 minutes.
 - [ ] Upload report/repository link/presentation according to the course submission instructions.
 
-Current status: conv-49/conv-50 completed Degraded and are unchanged. The full conv-44 parent and
-one authorized child are Incomplete after two4,000-token exhaustions.610 total notes/counter607,
-zero of158 QA; cumulative USD8.407857/4,240 settled requests, zero unknown charges. All paid grants
-from those two phases are consumed. One second continuation is now separately authorized after
-engineering/review/merge/preflight, under USD3/446 logical/1,338 physical limits; no third recovery,
-restart or ablation is authorized. See the
-[latest grant](docs/reproducibility/decisions.md#authorization--second-pinned-conv-44-continuation).
-First-ablation readiness remains
-blocked; no balanced-study or submission completion is claimed. See
-[the verified child failure](docs/reproducibility/t8-conv44-recovery-incomplete-20261103.md).
+Current status: conv-49/conv-50 completed Degraded and are unchanged. All three full conv-44 phases
+are Incomplete after4,000-token exhaustions. PR#22 merged as `5ddc96e`; the second continuation
+stopped at `D26:44`, preserving636 notes/counter632 and zero of158 QA. New52 requests/USD0.122276;
+cumulative USD8.530133/4,292 settled requests, zero unknown charges. All grants are consumed;
+39 turns/158 QA remain. No third recovery, restart or ablation is authorized. First-ablation readiness
+remains blocked; no balanced-study or submission completion is claimed. See the
+[verified second-continuation failure](docs/reproducibility/t8-conv44-second-recovery-incomplete-20261103.md)
+and [consumed authority](docs/reproducibility/decisions.md#authorization--second-pinned-conv-44-continuation).
 
 ## Presentation outline — target14 minutes30 seconds
 

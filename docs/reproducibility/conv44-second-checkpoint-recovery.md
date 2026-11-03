@@ -1,5 +1,12 @@
 # Pinned second conv-44 continuation
 
+**Consumed execution:** PR#22 merged as `5ddc96e`; the single authorized phase stopped Incomplete
+at `D26:44`, preserving636 notes/counter632 and zero QA.52 new requests/USD0.122276; cumulative
+USD8.530133/4,292, zero unknown charges.39 turns/158 QA remain; third recovery/ablations are blocked
+and unauthorized. See [verified outcome](t8-conv44-second-recovery-incomplete-20261103.md).
+The preparation commands and pending checkpoints below are retained as historical instructions,
+not permission to reuse this consumed approval or execution identity.
+
 The user authorizes engineering, focused/full offline tests, independent Standards/Spec reviews,
 merge after checks and exactly one additional paid continuation. See the
 [current grant](decisions.md#authorization--second-pinned-conv-44-continuation). No intermediate

@@ -1,17 +1,16 @@
 # T8 execution and comparative evidence
 
-Status: conv-49/conv-50 completed Degraded and remain unchanged. The original Full conv-44 phase and
-its one authorized checkpoint child both stopped Incomplete on BLK-013 output exhaustion.
-PR#20 merged as `3d0e04a`; the child restored424 notes/counter422, processed186 new turns, then stopped
-at `D26:18`:610 notes/counter607, zero QA. Parent+child USD2.117959/1,220 calls; cumulative
-USD8.407857/4,240 settled requests, zero unknown charges. The earlier grants are consumed. The user
-subsequently authorized one pinned second continuation after engineering/review/merge/preflight,
-under USD3/446 logical/1,338 physical limits. Its support passes613 tests/92 subtests and independent
-reviews/preflight; merge, fresh approved copy and live execution remain pending at this checkpoint.
-See the [latest authority](decisions.md#authorization--second-pinned-conv-44-continuation).
-No third recovery, restart, ablation or scientific-setting change is authorized.
-See the [verified child failure and forecast](t8-conv44-recovery-incomplete-20261103.md) and
-[consumed one-child grant](decisions.md#authorization--exact-conv-44-checkpoint-engineering-merge-and-one-child).
+Status: conv-49/conv-50 completed Degraded and remain unchanged. All three Full conv-44 phases are
+Incomplete after BLK-013 output exhaustion. PR#22 merged as `5ddc96e` after613 tests/92 subtests and
+clear independent reviews. The second continuation restored610 notes/counter607/exact stale index,
+resumed `D26:19`, then stopped after26 turns at `D26:44`:636 notes/counter632, zero of158 QA.
+New52 requests/USD0.122276; conv-44 lineage1,272/USD2.240235; cumulative USD8.530133/4,292 settled
+requests, zero unknown charges. Original fallback, inherited evidence and both earlier baselines
+verify unchanged;62 post-failure tests and independent failure audit pass. All grants are consumed;
+39 turns/158 QA remain, next `D26:45`. Third recovery and ablation planners reject. No third recovery,
+restart, ablation or scientific-setting change is authorized. See the
+[verified second-continuation failure, artifact inventory and forecast](t8-conv44-second-recovery-incomplete-20261103.md)
+and [consumed authority](decisions.md#authorization--second-pinned-conv-44-continuation).
 Authority: [latest decision](decisions.md#authorization--t8-implementation-and-paid-main-execution),
 [issue #8](https://github.com/alistairkung/A-mem-reproducibility/issues/8).
 Integration branch: `codex/t8-study-execution`, based on T7 merge `577a1e3`.
