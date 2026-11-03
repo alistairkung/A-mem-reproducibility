@@ -142,7 +142,8 @@ class ImportClient:
             assert kwargs['task'](item=item)=='saved prediction'
             for evaluate in kwargs['evaluators']:
                 assert evaluate(metadata=item['metadata']).value in (.5,.25)
-        return NS(experiment_id=f'exp-{len(self.calls)}',experiment_url='https://example.test/experiment',name=kwargs['name'])
+        return NS(experiment_id=f'exp-{len(self.calls)}',experiment_url='https://example.test/experiment',
+                  name=kwargs['name'],run_name=kwargs['run_name'])
     def flush(self):pass
 
 
@@ -151,7 +152,7 @@ def import_query(client):
         rows=[]
         for index,call in enumerate(client.calls,1):
             if resource=='experiments':
-                rows.append({'id':f'exp-{index}','name':call['name'],'itemCount':len(call['data']),
+                rows.append({'id':f'exp-{index}','name':call['run_name'],'itemCount':len(call['data']),
                              'metadata':call['metadata']})
             else:
                 for item in call['data']:
@@ -164,6 +165,19 @@ def import_query(client):
                                  'scores':[{'name':k,'value':v} for k,v in metrics.items()]})
         return {'status':200,'body':{'data':rows,'meta':{'truncated':False}}}
     return query
+
+
+def test_import_preserves_sdk_group_and_run_names_and_verifies_api_run_name(tmp_path):
+    from amem_repro.langfuse_verify import import_and_verify_results
+    _,context,*_=fixture(tmp_path);client=ImportClient()
+    proof=import_and_verify_results(saved_views(),context,client=client,query=import_query(client),
+                                  attempts=1,delay_seconds=0)
+    assert proof['verified']
+    imported=json.loads((Path(context['output_dir'])/'langfuse-imported.json').read_text())
+    for (policy,row),call in zip(imported['experiments'].items(),client.calls):
+        # SDK5.1.0 .name is the logical group, API experiments.name is .run_name.
+        assert row['name']==call['name'] and row['run_name']==call['run_name']
+        assert row['name']!=row['run_name'] and policy in row['name']
 
 
 def test_import_reads_saved_predictions_and_metrics_once_across_readback_retries(tmp_path,monkeypatch):
@@ -196,13 +210,36 @@ def test_experiment_api_json_container_encoding_keeps_prediction_strings_exact(t
                                      attempts=1,delay_seconds=0)['verified']
 
 
-@pytest.mark.parametrize('difference',['prediction','reference','score','question','policy','missing_experiment','extra_item'])
+def test_modern_experiment_metadata_flattening_and_string_scalars_are_lossless(tmp_path):
+    from amem_repro.langfuse_verify import import_and_verify_results
+    _,context,*_=fixture(tmp_path);client=ImportClient();good=import_query(client)
+    def encoded_leaves(value,prefix=''):
+        flattened={}
+        for key,child in value.items():
+            path=prefix+key
+            if isinstance(child,dict) and child:flattened.update(encoded_leaves(child,path+'.'))
+            else:flattened[path]=child if isinstance(child,str) else json.dumps(child)
+        return flattened
+    def query(resource,options):
+        response=good(resource,options)
+        for row in response['body']['data']:
+            for key in ('metadata','experimentItemMetadata','experimentMetadata'):
+                if key in row:row[key]=encoded_leaves(row[key])
+            if resource=='experiment-items':row['input']=json.dumps(row['input'])
+        return response
+    assert import_and_verify_results(saved_views(),context,client=client,query=query,
+                                     attempts=1,delay_seconds=0)['verified']
+
+
+@pytest.mark.parametrize('difference',['prediction','reference','score','question','policy',
+                                     'experiment_name','missing_experiment','extra_item'])
 def test_saved_result_import_requires_exact_remote_views(tmp_path,difference):
     from amem_repro.langfuse_verify import import_and_verify_results
     _,context,*_=fixture(tmp_path);client=ImportClient();good=import_query(client)
     def query(resource,options):
         response=good(resource,options);rows=response['body']['data']
         if resource=='experiments' and difference=='missing_experiment':rows.pop()
+        if resource=='experiments' and difference=='experiment_name':rows[0]['name']=client.calls[0]['name']
         if resource=='experiment-items':
             if difference=='prediction':rows[0]['output']='changed'
             elif difference=='reference':rows[0]['expectedOutput']='changed'
@@ -214,6 +251,19 @@ def test_saved_result_import_requires_exact_remote_views(tmp_path,difference):
     with pytest.raises(VerificationError):
         import_and_verify_results(saved_views(),context,client=client,query=query,attempts=2,delay_seconds=0)
     assert len(client.calls)==2
+
+
+def test_prior_import_without_captured_sdk_run_name_is_not_reimported_or_rewritten(tmp_path):
+    from amem_repro.langfuse_verify import import_and_verify_results
+    _,context,*_=fixture(tmp_path);client=ImportClient();query=import_query(client)
+    import_and_verify_results(saved_views(),context,client=client,query=query,attempts=1,delay_seconds=0)
+    path=Path(context['output_dir'])/'langfuse-imported.json';old=json.loads(path.read_text())
+    for row in old['experiments'].values():row.pop('run_name')
+    path.write_text(json.dumps(old));preserved=path.read_bytes()
+    with pytest.raises(VerificationError,match='lacks the exact run name'):
+        import_and_verify_results(saved_views(),context,client=client,
+                                  query=lambda *a:pytest.fail('Historical receipt cannot be guessed'),attempts=1)
+    assert len(client.calls)==2 and path.read_bytes()==preserved
 
 
 def test_partial_import_is_not_reexecuted_and_changed_views_cannot_reuse_import(tmp_path):

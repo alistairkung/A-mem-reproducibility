@@ -249,7 +249,8 @@ def _check_experiments(views,imported,identity,experiments,items):
         raise VerificationError('Saved-result experiment items are duplicated')
     for policy,view in views.items():
         saved=imported['experiments'][policy];actual=remote[saved['id']]
-        _equal(saved['name'],actual.get('name'),'experiment/name')
+        # SDK5.1 .name identifies the logical group; modern API .name is .run_name.
+        _equal(saved['run_name'],actual.get('name'),'experiment/name')
         _equal(len(view['individual_results']),actual.get('itemCount'),'experiment/itemCount')
         expected={**identity,'scoring_policy':policy,'scorer_sha256':view['scorer_sha256'],
                   'execution_mode':'imported_results'}
@@ -306,10 +307,13 @@ def import_and_verify_results(views,context,*,client=None,query=None,attempts=6,
         results=export_experiments(views,client=client,export_authorized=True,metadata=metadata)
         if fingerprint(views)!=before:raise VerificationError('Saved predictions changed during import')
         imported={**claim,'experiments':{policy:{'id':result.experiment_id,'name':result.name,
-                  'url':result.experiment_url} for policy,result in results.items()}}
-        if set(imported['experiments'])!=policies or any(not r['id'] or not r['name'] for r in imported['experiments'].values()):
+                  'run_name':result.run_name,'url':result.experiment_url} for policy,result in results.items()}}
+        if set(imported['experiments'])!=policies or any(not r['id'] or not r['name'] or not r['run_name']
+                                                       for r in imported['experiments'].values()):
             raise VerificationError('SDK import returned incomplete experiment identities')
         _save(import_path,imported)
+    if any(not row.get('run_name') for row in imported['experiments'].values()):
+        raise VerificationError('Saved SDK import lacks the exact run name; existing evidence is immutable')
     if len({r['id'] for r in imported['experiments'].values()})!=len(policies):
         raise VerificationError('Scoring policies share an experiment identity')
     query=query or _query_cli
