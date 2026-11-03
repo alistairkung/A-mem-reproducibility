@@ -599,3 +599,15 @@ both scoring views and separate adversarial correctness, once-only parent/child 
 affordability forecast. Stop after verified completion or a material blocker. No ablation or further
 paid phase is authorized by this grant. BLK-013 remains Open until the evidence supports a narrower
 mitigation claim; checkpoint completion would not prove output-cap adequacy generally.
+
+### Verified conv-44 recovery engineering before merge
+
+Implementation `563e8f4` and PR#20 pass570 offline tests/92 subtests,146 focused tests/60 subtests
+and clear independent Standards/Spec reviews. Source fingerprint:
+`eea7acf5953ecea73deb7fdd5b406c77171f76ef6a4544e5c149346b5e89e6c4`.
+Current-source preflight and exact real-parent restore/export pass; all43 protected files and the
+cumulative USD7.705436/3,868-request ledger remain unchanged, zero unknown charges. Unapproved
+execution rejects before client/claim creation. The prepared plan remains `approved:false`, exactly
+USD3/818 logical/2,454 physical,251 new turns/158 QA. The existing user grant permits merge and one
+fresh approved child after final gates, but no child has executed at this checkpoint. No scientific
+or provider policy changed; BLK-013 remains Open. No ablation or second recovery is authorized.

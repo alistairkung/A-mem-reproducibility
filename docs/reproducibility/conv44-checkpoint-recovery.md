@@ -104,3 +104,9 @@ client/claim creation. Current-source runtime preflight passes with sockets disa
 Evidence: `artifacts/t8/offline/conv44-checkpoint-verification.json` and
 `artifacts/t8/conv44-recovery-preflight-20261103.json`. Full-suite/final reviews and merge are pending
 at this engineering checkpoint; the plan remains unapproved and no child has run.
+
+Final integrated gates for PR#20: **570 tests/92 subtests pass** (16 intentional SDK metadata warnings),
+both independent reviews are clear and the source fingerprint above remains unchanged. Full/focused
+test and review receipts are preserved under `artifacts/t8/offline/conv44-recovery-*`. All runtime,
+actual-parent and finance-readiness checks pass. Merge and the single live child are still pending
+at this recorded checkpoint; no paid request is implied by the unapproved plan.
