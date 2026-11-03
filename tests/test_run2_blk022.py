@@ -312,7 +312,9 @@ def test_explicit_reviewed_commit_rejects_science_or_unreviewed_bytes(candidate,
     root, campaign, sources, preflight, financial, reference, assets = candidate
     sources = copy.deepcopy(sources)
     sources['files'][name] = 'e' * 64
-    with pytest.raises(ValueError, match='outside|explicit reviewed commit'):
+    # Adapter is now a named reviewed file; stale bytes also invalidate preflight
+    # before the exact Git-blob check. Every branch must still reject admission.
+    with pytest.raises(ValueError, match='outside|explicit reviewed commit|candidate preflight'):
         incident.verify_support_migration(root=root, campaign=campaign, sources=sources,
             receipt=preflight, financial_adjudication=financial, reviewed_commit=reference)
 
