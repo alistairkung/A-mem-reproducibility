@@ -54,6 +54,10 @@ Run1 is immutable exploratory evidence; keep its USD8.530133 ledger/results/cach
 Run2 uses separate artifacts/accounting and requires GateA, real-runner Langfuse GateB, reviewed
 offline checks and a frozen affordable approval before paid cells. Follow the Run2 protocol's
 bounded recovery/stop rules; historical Run1 approvals cannot authorize or seed Run2 cells.
+PR#26 is merged as `207eac0`. The first Run2 cell stopped at227 notes/zero QA with BLK-022:
+HTTP200 body-read failure, successful SDK retry and one retained unknown-charge reservation.
+Read `docs/reproducibility/run2-first-cell-incomplete-20261103.md`; no later paid cell/recovery may
+start until the financial/recovery decision is resolved. Preserve the consumed root and ledger.
 
 ## Reproducibility Blocker Tracking
 
