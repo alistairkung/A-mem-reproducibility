@@ -475,3 +475,45 @@ def test_observed_child_unknown_usage_stops_before_sdk_retransmission(evidence):
     assert permit.summary()['physical_attempts'] == 1
     assert permit.cell_summary()['unknown_attempts'] == 2
     assert permit.cell_summary()['charged_or_reserved_microusd'] == 1044837 + 315773
+
+
+def test_observed_admission_database_failure_cannot_enter_sdk_retry(evidence, monkeypatch):
+    import httpx
+    from amem_repro.adapter import create_deepseek_controller
+    from amem_repro.author import load_author_contracts
+    from amem_repro.config import RUN2_CONFIG
+    root, campaign = evidence
+    financial = incident.verify_financial_adjudication(
+        approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
+        root=root, campaign=campaign)
+    child = approved_child(root, campaign, financial)
+    child['binding']['support_migration'].update(policy=incident.OBSERVED_MIGRATION_POLICY,
+        changed_files=sorted(incident.OBSERVED_FILES), observability={
+            'policy':'run2-audit-essential-v1','gate_sha256':'a'*64,
+            'credential_receipt_sha256':'b'*64,'execution_script_sha256':'c'*64})
+    permit = run2.Run2Permit(child, root, campaign)
+    original = incident.unknown_counts
+    checks = []
+    def fault(db, receipt=None):
+        checks.append(1)
+        if len(checks) == 2:  # after logical admission, inside physical precheck
+            raise sqlite3.OperationalError('synthetic observed admission failure')
+        return original(db, receipt)
+    monkeypatch.setattr(incident, 'unknown_counts', fault)
+    monkeypatch.setenv('DEEPSEEK_API_KEY', 'offline-placeholder')
+    sent = []
+    def transport(request):
+        sent.append(request)
+        pytest.fail('Financial precheck fault must prevent transmission')
+    controller = create_deepseek_controller(paid_authorized=True, phase_permit=permit,
+        generation_config=RUN2_CONFIG, provider_contract_policy='canonical-index-strings-v1',
+        http_transport=httpx.MockTransport(transport))
+    try:
+        with pytest.raises(BudgetStop, match='Attempt admission failed'):
+            controller.get_completion('next original metadata', load_author_contracts()['metadata'])
+        assert not sent and len(checks) == 2
+        assert permit.summary()['halted'] == 'attempt_admission_failed'
+        assert permit.summary()['halt_persisted'] is True
+        assert permit.summary()['physical_attempts'] == 0
+    finally:
+        controller.client.close()

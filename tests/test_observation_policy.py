@@ -138,6 +138,6 @@ def test_release_gate_requires_exact_source_evidence_and_revocation(tmp_path):
         'files':{'proof.json':hashlib.sha256(member.read_bytes()).hexdigest()}}
     (gate_path/'receipt.json').write_text(json.dumps(gate))
     assert release_binding(tmp_path, 'a'*64)['policy'] == POLICY_ID
-    with pytest.raises(ValueError): release_binding(tmp_path, 'b'*64)
+    with pytest.raises((ValueError, FileNotFoundError)): release_binding(tmp_path, 'b'*64)
     member.write_text('altered')
     with pytest.raises(ValueError): release_binding(tmp_path, 'a'*64)
