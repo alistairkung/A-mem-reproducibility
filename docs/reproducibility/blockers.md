@@ -25,6 +25,7 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-017](#blk-017) | Passive observers swallow critical provenance failures | Resolved | T8 paid-readiness gate | Terminal recorder/identity guards; independent fault rechecks |
 | [BLK-018](#blk-018) | Completion releases the next paid phase before receipt publication | Resolved | T8 phase finalization | Coordinated SQL/publication; threaded and commit-fault rechecks |
 | [BLK-019](#blk-019) | Second recovery provenance admits an extra ancestor edge | Investigating | Second conv-44 continuation engineering | Deterministic pre-merge provenance regressions; no live phase affected |
+| [BLK-020](#blk-020) | Failed attempt admission enters SDK retry handling | Investigating | Paid-request admission; second continuation gate | Exact synthetic SQLite/SDK fault reproducer; no real charge |
 
 **Current status (3 November 2026):** PR#20 merged as `3d0e04a`; the single USD3-authorized conv-44
 child also stopped Incomplete, at `D26:18`:186 new turns,610 total notes/counter607, zero of158 QA.
@@ -38,8 +39,8 @@ after engineering/review/merge and preflight, under USD3/446 logical/1,338 physi
 checkpoint it is not implemented/executed; current chain and first-ablation planning still reject.
 No third recovery, restart, ablation or scientific change is authorized. See the
 [verified child failure and cost-only forecast](t8-conv44-recovery-incomplete-20261103.md).
-BLK-019 is an offline engineering gate: candidate two-hop ownership/provenance regressions must
-pass before the newly authorized continuation can claim a permit or transmit.
+BLK-019/020 are offline engineering gates: provenance and terminal financial-admission regressions
+must pass before the newly authorized continuation can claim a permit or transmit.
 
 **Historical bounded grant:** the user authorized recovery engineering/review/merge and one
 USD3/818-logical/2,454-attempt child. That grant funded only the failed child above and cannot be
@@ -535,3 +536,22 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Unresolved at this engineering checkpoint. Do not claim a permit or transmit until the regressions, full suite and independent reviews pass. BLK-013 output exhaustion remains separate and Open.
 - **Verification:** Pending corrected regressions and final integrated checks. A proposed correction is not a verified resolution.
 - **Research significance:** Multi-phase reproducibility requires both graph ownership and accurate isolated provenance records. Safe single-hop behaviour does not establish correct ancestry handling after an extra recovery hop.
+
+## BLK-020
+
+- **ID:** BLK-020
+- **Title:** Failed attempt admission enters SDK retry handling.
+- **Status:** Investigating
+- **First observed:** 2026-11-03, focused spending-control investigation before the second conv-44 continuation.
+- **Category:** Cost
+- **Expected behaviour:** A SQLite admission/reservation failure is terminal before HTTP transmission, preserving any uncertain reservation and durably halting the phase. Only genuine transport/provider failures use SDK retries.
+- **Observed behaviour:** Injecting one `sqlite3.OperationalError` at `INSERT INTO attempts` through the real SDK rolls back that admission, then SDK retry succeeds and transmits once to HTTPX MockTransport. The call returns an answer and the synthetic phase is not halted, contrary to stop-on-control-failure policy.
+- **Evidence:** `artifacts/t8/offline/conv44-second-admission-{reproduce.py,reproducer.json,red.txt}`. Reproducer runs with sockets denied, a fake key and temporary ledger: one mock transmission versus expected zero. Its synthetic12-microUSD charge is not study spending; actual USD8.407857/4,240 records are unchanged.
+- **Root cause:** **Confirmed:** `reserve_attempt` lets the database `Exception` escape the transport boundary; the SDK treats it as a retryable connection failure. BLK-012 already made post-response settlement failures terminal, but admission lacked the equivalent boundary.
+- **Impact:** Future paid calls could continue after a transient financial-control failure. No actual admission fault or incurred study charge is identified in preserved historical runs. Hold the newly authorized phase until fixed and reviewed.
+- **Options considered:** Disabling SDK retries would alter the agreed genuine transport/provider policy. Swallowing the database error or releasing an uncertain reservation is rejected. Prefer a narrow terminal budget-admission wrapper outside its rolled-back transaction, retaining evidence/charges and the original adapter.
+- **Resolution attempts:**
+  - 2026-11-03: exact SQLite/SDK fault injection reproduces the incorrect retry/transmission with zero network requests and no real-ledger writes. The implementer is adding admission insert/commit and terminal-halt regressions before the correction.
+- **Final resolution or limitation:** Unresolved at this checkpoint. No new permit or paid transmission may occur until deterministic fault tests, the full suite and independent reviews verify terminal admission and unchanged genuine retries.
+- **Verification:** Pending. The red reproducer rejects its observed transmission with an assertion; no proposed fix is treated as evidence of resolution.
+- **Research significance:** A durable spending ledger is insufficient if its own storage errors become model transport retries. Accounting/control failures and provider/network retries require distinct terminal semantics both before and after transmission.
