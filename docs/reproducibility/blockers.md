@@ -34,6 +34,7 @@ a mandatory unsatisfied gate. See [latest authorization](decisions.md#authorizat
 | [BLK-018](#blk-018) | Paid frontier ignores a prior failed/unconfirmed completion | Investigating | Run2 phase admission; Run1 guards retained | Preclaimed next-cell halt red proof; no Run2 paid calls |
 | [BLK-019](#blk-019) | Second recovery provenance admits an extra ancestor edge | Resolved | Second conv-44 continuation engineering | Bounded edge/migration/copy corrections;613-test suite and independent reviews |
 | [BLK-020](#blk-020) | Failed attempt admission enters SDK retry handling | Resolved | Paid-request admission | Terminal reservation boundary; real-SDK faults/genuine retries verified |
+| [BLK-021](#blk-021) | Run2 ledger path can alias immutable Run1 accounting | Investigating | Run2 storage isolation | Synthetic symlink/DDL red proof; real Run1 unchanged |
 
 **Run1 final status (3 November 2026):** PR#22 merged as `5ddc96e` after613 offline tests/92 subtests
 and clear independent Standards/Spec reviews. The single authorized second conv-44 continuation
@@ -588,3 +589,35 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Resolved at the financial-admission boundary: local reservation failures are terminal and non-retryable by the SDK; committed/uncertain reservations remain retained. Genuine provider/transport retries are unchanged. This does not repair provider JSON or grant an additional phase.
 - **Verification:** `artifacts/t8/offline/conv44-second-admission-{red.txt,green.txt,green-reproducer.json}` preserve before/after root proof; the red script is unchanged. Six real-SDK admission fault cases, genuine retry controls,613 tests/92 subtests and independent reviews pass. No real charge or historical artifact was altered.
 - **Research significance:** A durable spending ledger is insufficient if its own storage errors become model transport retries. Accounting/control failures and provider/network retries require distinct terminal semantics both before and after transmission.
+
+<a id="blk-021"></a>
+## BLK-021
+
+- **ID:** BLK-021
+- **Title:** Run2 ledger path can alias immutable Run1 accounting before scope validation.
+- **Status:** Investigating
+- **First observed:** 2026-11-03, Run2 candidate offline storage-isolation test, issue#24.
+- **Category:** Infrastructure
+- **Expected behaviour:** New campaign accounting writes only its fresh Run2 ledger; Run1 bytes
+  remain immutable, even when a proposed path aliases an older file.
+- **Observed behaviour:** A synthetic `artifacts/run2/budget.sqlite` symlink targets a synthetic
+  populated old ledger. The constructor rejects the foreign history, but only after SQLite DDL
+  changes the target's bytes. No real Run1 ledger, artifact or paid request was affected.
+- **Evidence:** `artifacts/run2/offline/ledger-scope-red.txt`;
+  `tests/test_run2.py::test_run2_rejects_symlink_to_original_ledger_before_any_write` in the
+  unmerged implementation candidate. Earlier557-file preservation remains unchanged.
+- **Root cause:** **Confirmed:** the fixed lexical destination is opened/initialized before alias
+  and foreign-ledger validation. Logical campaign separation does not establish filesystem isolation.
+- **Impact:** A misconfigured alias could mutate exploratory accounting despite a subsequent safe
+  execution rejection, violating Run1 preservation. Paid readiness is blocked until corrected.
+- **Options considered:** Replacing/resetting the old ledger or accepting a populated foreign file
+  is rejected. Validate path components and same-file aliases before mkdir/SQLite writes; retain
+  the existing accounting/transport implementation rather than adding a storage framework.
+- **Resolution attempts:** 2026-11-03: preserve the failing synthetic proof; implementer is adding
+  pre-open symlink/component and same-file/hardlink rejection with byte-preservation regressions.
+- **Final resolution or limitation:** Pending implementation, offline verification and independent
+  review. No solution or safe new campaign is inferred from the initial foreign-history exception.
+- **Verification:** Red evidence confirms the failure only. Green proof/review remain pending;
+  actual Run1 preservation is separately checked, not assumed from the synthetic test.
+- **Research significance:** Separate experiment names and database tables cannot protect a previous
+  campaign if both paths reach the same file. Isolation must hold before initialization side effects.
