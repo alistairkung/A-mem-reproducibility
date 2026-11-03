@@ -30,7 +30,7 @@ a mandatory unsatisfied gate. See [latest authorization](decisions.md#authorizat
 | [BLK-014](#blk-014) | Normally finished strict function contains malformed JSON | Mitigated | T5 conv-50; downstream integrity | [Verified degraded lineage](t5-conv50-baseline-20261101.md); raw failure retained |
 | [BLK-015](#blk-015) | Historical intermediate states/query vectors were not recorded | Mitigated | T6–T7 replay claims | [Replay gate and oracle provenance](t6-replay.md) |
 | [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Resolved | T8 conv-49 artifact persistence | Exact real-cache byte/state proof;519-test suite |
-| [BLK-017](#blk-017) | Passive observers swallow critical provenance failures | Resolved | T8 paid-readiness gate | Terminal recorder/identity guards; independent fault rechecks |
+| [BLK-017](#blk-017) | Critical faults can be hidden behind tolerated failure paths | Investigating | Run2 recovery eligibility; Run1 guards retained | Combined provider/halt fault red proof; no Run2 paid calls |
 | [BLK-018](#blk-018) | Completion releases the next paid phase before receipt publication | Resolved | T8 phase finalization | Coordinated SQL/publication; threaded and commit-fault rechecks |
 | [BLK-019](#blk-019) | Second recovery provenance admits an extra ancestor edge | Resolved | Second conv-44 continuation engineering | Bounded edge/migration/copy corrections;613-test suite and independent reviews |
 | [BLK-020](#blk-020) | Failed attempt admission enters SDK retry handling | Resolved | Paid-request admission | Terminal reservation boundary; real-SDK faults/genuine retries verified |
@@ -506,8 +506,8 @@ are unavailable unless an experiment receipt supplies them.
 ## BLK-017
 
 - **ID:** BLK-017
-- **Title:** Passive observer boundaries swallow critical paid-run provenance failures.
-- **Status:** Resolved
+- **Title:** Critical paid-run provenance faults can be hidden behind tolerated failure paths.
+- **Status:** Investigating
 - **First observed:** 2026-11-02, pre-paid T8 Spec review of integration `9fb0b86`.
 - **Category:** Infrastructure
 - **Expected behaviour:** A provider identity violation or failed durable generation record halts the phase before a subsequent transmission, retains costs/raw evidence where writable, and cannot yield a reusable completed run. Optional cloud reporting may remain best-effort.
@@ -520,7 +520,8 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-02: independent Spec review reproduces both failures with real SDK/MockTransport, zero paid calls, preserved synthetic ledger evidence. Standards review separately reproduces a related completion-mark classification gap and an omitted scoring-wrapper provenance hash; both are assigned to the same implementer for narrow correction.
   - 2026-11-02: implementer is adding first/final-call invalid-metadata regressions, critical recorder/write-failure regressions, terminal halts and truthful incomplete receipts. Final fixes/tests/reviews are pending; no paid call is permitted at this checkpoint.
   - 2026-11-02, correction `84d354a`, final source `ae23e291`: exact provider identity validation precedes set insertion; the baseline critical-local-recorder wrapper persists a halt, retains a safe raw-event companion where writable and always raises terminal `BudgetStop`, including when fallback writing fails. Final-call journal failure preserves195 completed QA rather than falsely reporting zero. Optional cloud reporting remains separate; adapter/prompts/argument strings are unchanged.
-- **Final resolution or limitation:** Resolved critical-observer control defect. This is not a guarantee that providers or storage never fail; such failures now stop paid continuation and retain their evidence/charges.
+  - 2026-11-03, Run2 candidate review (offline, uncommitted/undeployed): a genuine simulated8K shared-decision exhaustion followed by an injected halt-persistence exception still publishes `recoverable_length_failure:true`. Failing test `test_length_failure_cannot_hide_a_later_halt_persistence_fault`; preserved `artifacts/run2/offline/combined-halt-fault-red.txt`. The known provider fallback masks a secondary critical control failure in recovery eligibility. No live call, Run1 artifact or real ledger is affected. Reopen this critical-failure propagation class for a narrow eligibility/secondary-failure receipt correction; no automatic Run2 recovery or paid cell is permitted before verification.
+- **Final resolution or limitation:** Run1's original critical-observer guards remain verified and unchanged. Run2's combined-fault recovery path is Investigating: any secondary halt, provenance, settlement, observation or finalization failure must block continuation even when the last provider response genuinely exhausted its allowance. No success is inferred from the ordinary length-failure test. Correction, regression and independent recheck remain pending.
 - **Verification:** First/final identity types, first/late journal faults and failed fallback writes pass; independent reviews clear. Final519 tests/92 subtests pass in `artifacts/t8/offline/final-serial-frontier-suite.txt`; sixteen SDK warnings arise only from intentionally malformed test metadata. No paid request was used for verification.
 - **Research significance:** Best-effort observability is appropriate for optional reporting, but cannot silently cover critical experiment identity or durable evidence. Request/cost caps alone do not establish experimental integrity.
 
