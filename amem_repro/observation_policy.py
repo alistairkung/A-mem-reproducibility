@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 POLICY_ID = 'run2-audit-essential-v1'
-GATE_DIRECTORY = 'artifacts/run2-observed-recovery/gate-b'
+GATE_DIRECTORY = 'artifacts/run2/observed-recovery/gate-b'
 LAUNCHER = 'scripts/run2-checkpoint.py'
 
 
@@ -43,7 +43,7 @@ def should_export_span(span):
 def release_binding(root, source_sha256):
     """Bind the fixed one-cell launcher and secured, source-bound cloud gate."""
     root = Path(root).resolve()
-    path = root / GATE_DIRECTORY / 'receipt.json'
+    path = root / GATE_DIRECTORY / source_sha256 / 'receipt.json'
     gate = json.loads(path.read_text())
     required = ('real_runner', 'remote_observations_verified', 'experiments_verified',
                 'replay_equivalence', 'output_exhaustion_verified', 'tracing_failure_verified')

@@ -122,13 +122,14 @@ def test_filter_does_not_remove_failures_or_unscoped_author_scoring(level):
 
 def test_release_gate_requires_exact_source_evidence_and_revocation(tmp_path):
     from amem_repro.observation_policy import GATE_DIRECTORY, LAUNCHER
-    gate_path = tmp_path / GATE_DIRECTORY
+    gate_path = tmp_path / GATE_DIRECTORY / ('a'*64)
     gate_path.mkdir(parents=True)
     member = gate_path / 'proof.json'
     member.write_text('{"verified":true}')
     script = tmp_path / LAUNCHER
     script.parent.mkdir(); script.write_text('offline reviewed launcher')
-    credential = gate_path.parent / 'credential-rotation-verified.json'
+    credential = tmp_path / 'artifacts/run2-observed-recovery/credential-rotation-verified.json'
+    credential.parent.mkdir(parents=True)
     credential.write_text(json.dumps({k:True for k in ('new_authentication_verified',
         'read_existing_trace_verified','original_1_nov_key_absent')}))
     gate = {'observability_policy':POLICY_ID,'source_sha256':'a'*64,'network_llm_requests':0,
