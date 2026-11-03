@@ -25,6 +25,22 @@ index/context/prediction and both scoring views; only the implementation label d
 Standards and Spec reviews pass after the terminal request-admission correction. This is offline
 regression evidence, not new primary benchmark results.
 
+Post-run focused verification passes **48 tests** (139.56s). The historical BLK-022 tests must use
+the archived incident ledger, rather than the now-advanced primary ledger. An initial recheck used
+the live ledger and failed its fixed-prefix assumptions; a separate copied historical evidence root
+then needed the pinned assets pointer. Both preparation failures are recorded without source fixes.
+The corrected offline command is:
+
+```sh
+AMEM_BLK022_EVIDENCE_ROOT="$PWD/artifacts/run2-observed-recovery/historical-test-root" \
+  .venv/bin/pytest tests/test_observation_policy.py tests/test_run2_blk022.py \
+  tests/test_safe_service_audit.py -q
+```
+
+See `artifacts/run2-observed-recovery/post-run-test-note.json` and `post-run-focused-tests-final.log`.
+The separate test root copies only the immutable incident ledger and points to original read-only
+parent/campaign/asset evidence; it does not replace or reset the primary ledger.
+
 ## Observed failure and preserved state
 
 The child added339 original turns, reaching **566/675 notes, evolution counter564, zero of158 QA**.
