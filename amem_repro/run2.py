@@ -166,10 +166,12 @@ def _cell_history(db, index, campaign):
     if cell is None or not rows or cell[:2] != (rows[0][0], rows[-1][0]):
         raise BudgetStop('Run2 cell ownership/history is missing')
     for n, (ident, seq, parent, digest) in enumerate(rows):
-        stored = db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?', (ident,)).fetchone()
+        stored = db.execute('SELECT auth_json,halted,phase_cap FROM phases WHERE approval_id=?', (ident,)).fetchone()
         if stored is None:
             raise BudgetStop('Run2 phase accounting is missing')
-        auth = json.loads(stored[0]);_validate_phase(auth, campaign)
+        auth = json.loads(stored[0]);approved_cap=_validate_phase(auth, campaign)
+        if stored[2]!=approved_cap:
+            raise BudgetStop('Run2 stored allocation differs from immutable approval')
         cp = auth['binding'].get('checkpoint')
         if seq != n or auth['phase_index'] != seq:
             raise BudgetStop('Run2 recovery sequence differs')

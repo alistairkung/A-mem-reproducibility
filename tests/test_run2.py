@@ -575,3 +575,12 @@ def test_campaign_observer_wrapper_preserves_real_runner_lifecycle(short_runner)
     assert phase['usable_for_next_phase'] is True
     kinds={e['type'] for e in observer.events}
     assert {'run_start','build_start','memory_turn_start','question_start','question_result','run_complete'} <= kinds
+
+
+def test_changed_sql_phase_cap_cannot_expand_original_allocation(tmp_path):
+    import sqlite3
+    campaign=approved_campaign();permit=run2.Run2Permit(approved_phase(campaign),tmp_path,campaign)
+    with sqlite3.connect(permit.path) as db:db.execute('UPDATE phases SET phase_cap=6000000 WHERE approval_id=?',(permit.approval_id,))
+    with pytest.raises(BudgetStop,match='provenance|allocation'):
+        permit.start_logical('metadata')
+    assert permit.summary()['physical_attempts']==0
