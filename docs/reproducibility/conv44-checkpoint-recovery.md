@@ -92,3 +92,15 @@ call. Reforecast remaining balanced costs before quality comparisons. Optional L
 must not gate authoritative local results. This remains one dependent memory build, not an independent
 trial. BLK-013 remains Open: checkpoint completion cannot guarantee future outputs fit4,000 tokens.
 Stop after verified completion/reporting or another material blocker. No ablation is authorized.
+
+## Verified engineering checkpoint
+
+Implementation `563e8f4` passes146 focused tests/60 subtests across old/new checkpoints, budgets,
+SDK-budget handling and saved-result comparisons. The actual parent restores/exports identically,
+including embedding SHA256 `04c1848cfa7e9ffb2158e9ce48503dc218be882dcc2fd52ae085bcfbe1195630`.
+All43 protected files and the study ledger remain unchanged; unapproved execution rejects before
+client/claim creation. Current-source runtime preflight passes with sockets disabled, source
+`eea7acf5953ecea73deb7fdd5b406c77171f76ef6a4544e5c149346b5e89e6c4`.
+Evidence: `artifacts/t8/offline/conv44-checkpoint-verification.json` and
+`artifacts/t8/conv44-recovery-preflight-20261103.json`. Full-suite/final reviews and merge are pending
+at this engineering checkpoint; the plan remains unapproved and no child has run.
