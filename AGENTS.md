@@ -58,6 +58,11 @@ PR#26 is merged as `207eac0`. The first Run2 cell stopped at227 notes/zero QA wi
 HTTP200 body-read failure, successful SDK retry and one retained unknown-charge reservation.
 Read `docs/reproducibility/run2-first-cell-incomplete-20261103.md`; no later paid cell/recovery may
 start until the financial/recovery decision is resolved. Preserve the consumed root and ledger.
+Before BLK-022 adjudication, checkpoint preparation or service-cost/security work, read
+`docs/reproducibility/blk022-recovery-preparation.md`. The latest grant permits one financial-only
+upper-bound decision retaining attempt454 as unknown/full-reserved, and offline exact227-note
+recovery preparation. The child stays unapproved; PR merge, paid continuation, Langfuse overage
+and credential rotation require separate authority. Preserve original artifacts and every charge.
 
 ## Reproducibility Blocker Tracking
 

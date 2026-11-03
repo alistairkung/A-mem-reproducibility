@@ -853,3 +853,36 @@ Final post-incident verification: the test-only HTTP200 body-read regression and
 pass716 tests/92 subtests (17 expected warnings). Independent Standards/Spec audits confirm correct
 SDK retry/unknown-charge stopping, exact state/cloud proof and the SDK unit forecast. PR#27 records
 the outcome. Neither verification nor its merge settles the unknown usage or grants a new paid phase.
+
+### Authorization — BLK-022 one-off retained-upper-bound adjudication and offline recovery preparation
+
+On3 November2026 the user authorized an isolated-branch PR to investigate BLK-022 and prepare
+continuation, explicitly excluding new paid requests, automatic merge and additional Langfuse
+spending. The unknown first physical454 may be adjudicated only by retaining its fullUSD0.324404
+exposure and unknown status, with an explicit incident-specific financial record. Confirmed metered
+conservative charges remainUSD0.720433; total conservative exposureUSD1.044837. The originalUSD5
+cell cap, USD42 usable campaign allocation and protectedUSD8 remain unchanged. A valid retry is
+not proof of unbilled usage; no authoritative first-attempt reconciliation was found.
+
+Implement fixed `run2-blk022-attempt454-upper-bound-v1` admission, preserving all original rows,
+raw response/phase evidence and cost sums. A financial-only receipt distinguishes the one retained
+adjudicated unknown from every future blocking unknown; it must never become paid authority.
+Prepare `run2-blk022-exact227-state-v1`:227 ordered notes/counter226, exact stale float32 index,
+successful D10:10 decision retained, next turnD10:11,448 turns/158 QA remaining. The child plan
+stays unapproved and bounded by1,212 new logical/3,636 physical calls and residualUSD3.955163.
+The current support migration is restricted to the two reviewed Run2 incident/control modules;
+all scientific files/assets/settings and the historical source receipt remain pinned.
+
+Investigate lower-cost Langfuse observation/export options without dropping required auditability.
+The existingUSD9.72–10.84 normal overage forecast has a possible offline-verified reduction to
+approximatelyUSD1.53–2.65 after the current displayed-period usage adjustment. This is a proposed
+prospective export policy, not an adopted change, cloud GateB proof, budget allocation or guarantee.
+No additional cloud ingestion or service fee is authorized. A displayed unexpired original project
+key is potentially compromised; document safe user-only replacement/revocation steps and redacted
+operator tooling. No agent rotation or use of the exposed value is authorized or performed.
+
+Keep Run1/Run2 archives and ledgers immutable; no model, prompt, schema, parsing, retrieval, action,
+counter, scoring, generation or population change is permitted. Current scope ends at reviewed PR
+and offline readiness evidence. See [recovery preparation](blk022-recovery-preparation.md),
+[BLK-022](blockers.md#blk-022), [affordability](blockers.md#blk-009) and
+[credential security](blockers.md#blk-023) for implementation, costs and remaining gates.
