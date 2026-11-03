@@ -529,3 +529,19 @@ The next unapproved full-conv44 plan proposes USD5/1,666 logical/4,998 attempts.
 Neither-conv49 after the existing full-conv44 baseline prerequisite; running it first would require an
 explicit sequencing amendment and new reviewed plan. No such gate/population change or further paid
 approval is made by this outcome record. T5/T8 remain open for the uncollected scope.
+
+## Authorization — PR18 merge and one Full conv-44 phase
+
+On 3 November 2026 the user authorized review/merge of documentation PR#18 if checks pass and exactly
+one fresh Full A-MEM conv-44 phase under the existing frozen protocol. Scope: all675 turns/158 original
+questions, maximum USD5 additional,1,666 logical calls and4,998 physical attempts under the existing
+SDK retry policy. Use the cumulative ledger and preserve USD50 total/USD8 contingency, both completed
+conv-49/conv-50 baselines, original algorithm, DeepSeek/D3a/D9a settings, retrieval and scoring.
+
+Verify current-source preflight, immutable provenance, isolated fresh cache and spending controls
+before transmission; create a new scope-bound immutable approval. Routine non-scientific engineering,
+offline tests, blocker/documentation updates and scoped commits may proceed autonomously. On output,
+provider, provenance or financial failure, preserve partial evidence/charges, investigate offline and
+stop before any paid recovery. No ablation, repeat, restart, second recovery or other paid phase is
+authorized. Stop after all three full-mode baselines verify, or a material blocker prevents continuation;
+report conv-44 quality/status/cost, cumulative budget/forecast and readiness for the first ablation.
