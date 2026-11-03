@@ -28,7 +28,7 @@ def _read_archive(path, root, expected=None):
     phase = json.loads(path.read_text())
     if fingerprint(phase) != (PARENT_PHASE_SHA256 if expected is None else expected):
         raise ValueError('Only the frozen BLK-014 parent receipt is recoverable' if expected is None
-                         else 'Only the frozen BLK-013 conv-49 parent receipt is recoverable')
+                         else 'Only the frozen BLK-013 parent receipt is recoverable')
     required = {'approval.json', 'preflight.json', 'events.jsonl', 'run.json',
                 'summary.json', 'partial-memory.json'}
     if not required.issubset(phase['artifact_sha256']):
@@ -178,10 +178,34 @@ STUDY_MIGRATION_FILES = {
 }
 
 
+CONV44_PARENT_SHA256 = 'dad7f09f944e0de792787cf40f48f22a19af955353601d48f1c16c12fe62d45b'
+CONV44_CHECKPOINT_POLICY = 'blk013-conv44-checkpoint-v1'
+
+
+def study_checkpoint_profile(conversation_id):
+    """Exactly the two separately approved parent recoveries; no arbitrary resume."""
+    if conversation_id == 'conv-49':
+        return {'conversation_id':'conv-49','parent_phase_sha256':STUDY_PARENT_SHA256,
+            'policy':STUDY_CHECKPOINT_POLICY,'parent_run_id':'t8-full-conv49-r0-20261102',
+            'completed_turns':413,'evolution_counter':411,'failed_turn':'D22:2',
+            'remaining_logical_calls':584,'phase_cap_usd':'10'}
+    if conversation_id == 'conv-44':
+        return {'conversation_id':'conv-44','parent_phase_sha256':CONV44_PARENT_SHA256,
+            'policy':CONV44_CHECKPOINT_POLICY,'parent_run_id':'t8-full-conv44-r0-20261103',
+            'completed_turns':424,'evolution_counter':422,'failed_turn':'D18:21',
+            'remaining_logical_calls':818,'phase_cap_usd':'3'}
+    raise ValueError('Only the pinned conv-49/conv-44 checkpoints are enabled')
+
+
 def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
-    """Verify only the pinned 413-note conv-49 failure; never claim or spend."""
+    """Verify one of the two pinned failures; never claim, repair or spend."""
     root = Path(root).resolve()
-    path, phase = _read_archive(path, root, STUDY_PARENT_SHA256)
+    profiles=(study_checkpoint_profile('conv-49'),study_checkpoint_profile('conv-44'))
+    profile=next((p for p in profiles if p['parent_run_id']==Path(path).parent.name),None)
+    if profile is None:
+        raise ValueError('Only the pinned study checkpoint parents are recoverable')
+    count,counter=profile['completed_turns'],profile['evolution_counter']
+    path, phase = _read_archive(path, root, profile['parent_phase_sha256'])
     def read(name):
         return json.loads((path.parent / name).read_text())
     approval, preflight = read('approval.json'), read('preflight.json')
@@ -189,16 +213,16 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
     start, binding = events[0], phase['binding']
     partial = read('partial-memory.json')
     identity, state = partial['identity'], partial['state']
-    conversation = next(c for c in manifest['conversations'] if c['original_id']=='conv-49')
-    if (phase['run_id'] != 't8-full-conv49-r0-20261102' or path.parent.name != phase['run_id']
+    conversation = next(c for c in manifest['conversations'] if c['original_id']==profile['conversation_id'])
+    if (phase['run_id'] != profile['parent_run_id'] or path.parent.name != phase['run_id']
             or phase['phase'] != 'baseline' or phase['status'] != 'incomplete'
             or phase['usable_for_next_phase'] or phase['completed_questions'] != 0
-            or phase['conversation_ids'] != ['conv-49'] or 'checkpoint' in binding
+            or phase['conversation_ids'] != [profile['conversation_id']] or 'checkpoint' in binding
             or binding['condition'] != 'full' or binding['repetition'] != 0
             or approval.get('approved') is not True or approval['binding'] != binding
             or approval['run_id'] != phase['run_id'] or read('run.json')['run_id'] != phase['run_id']
             or partial['complete'] is not False):
-        raise ValueError('Only the frozen incomplete conv-49 baseline is recoverable')
+        raise ValueError('Only the frozen incomplete study baseline is recoverable')
     if (fingerprint(manifest) != binding['manifest_sha256']
             or fingerprint(config) != binding['config_sha256']
             or fingerprint(preflight) != binding['preflight_sha256']
@@ -211,42 +235,42 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
             or identity['condition'] != 'full' or identity['repetition'] != 0
             or identity['provider_contract_policy'] != binding['provider_contract_policy']
             or binding['provider_contract_policy'] != 'canonical-index-strings-v1'):
-        raise ValueError('Conv-49 checkpoint inputs or provenance differ')
+        raise ValueError('Pinned study checkpoint inputs or provenance differ')
     from .config import stage_output_limits
     if binding['max_output_tokens_by_stage'] != stage_output_limits():
-        raise ValueError('Conv-49 checkpoint generation policy differs')
+        raise ValueError('Pinned study checkpoint generation policy differs')
     old, new = start['source_hashes']['files'], sources['files']
     changed = {name for name in old.keys() | new.keys() if old.get(name) != new.get(name)}
     if (changed - STUDY_MIGRATION_FILES
             or sources['author_revision'] != start['source_hashes']['author_revision']):
-        raise ValueError('Conv-49 checkpoint migration changed scientific or provider code')
+        raise ValueError('Pinned study checkpoint migration changed scientific or provider code')
     _validate_state(state)
     import numpy as np
     index = state['retriever']
     embeddings = np.asarray(index['embeddings'],dtype=index['embedding_dtype'])
     outcomes = [e for e in events if e['type']=='evolution_outcome']
-    if (len(state['notes']) != 413 or len(state['outcomes']) != 413
-            or embeddings.shape != (413,384) or str(embeddings.dtype) != 'float32'
-            or not np.isfinite(embeddings).all() or state['evo_cnt'] != 411
+    if (len(state['notes']) != count or len(state['outcomes']) != count
+            or embeddings.shape != (count,384) or str(embeddings.dtype) != 'float32'
+            or not np.isfinite(embeddings).all() or state['evo_cnt'] != counter
             or state['evo_threshold'] != 100
             or index['document_ids'] != {doc:i for i,doc in enumerate(index['corpus'])}
-            or [e['turn_id'] for e in outcomes] != conversation['turn_ids'][:413]
+            or [e['turn_id'] for e in outcomes] != conversation['turn_ids'][:count]
             or [{k:v for k,v in e.items() if k in state['outcomes'][0]} for e in outcomes] != state['outcomes']
-            or state['outcomes'][-1]['turn_id'] != 'D22:2'
+            or state['outcomes'][-1]['turn_id'] != profile['failed_turn']
             or state['outcomes'][-1]['proposed_decision'] is not None
-            or state['outcomes'][-1]['counter_before'] != 411
-            or state['outcomes'][-1]['counter_after'] != 411
+            or state['outcomes'][-1]['counter_before'] != counter
+            or state['outcomes'][-1]['counter_after'] != counter
             or state['outcomes'][-1]['changed_existing_note_ids']
             or any(e['type'] in ('question_result','build_complete') for e in events)):
-        raise ValueError('Invalid conv-49 checkpoint state or prefix')
+        raise ValueError('Invalid study checkpoint state or prefix')
     generations = [e for e in events if e['type']=='generation' and e.get('attempts')]
     rejected = [e for e in generations if e.get('error_type')]
-    if ([e['stage'] for e in generations] != ['metadata','shared_decision']*413
+    if ([e['stage'] for e in generations] != ['metadata','shared_decision']*count
             or len(rejected) != 1 or rejected[0] is not generations[-1]
             or rejected[0]['error_type'] != 'AdapterError'
             or rejected[0]['provider_response']['choices'][0]['finish_reason'] != 'length'
             or rejected[0]['provider_response']['usage']['completion_tokens'] != 4000):
-        raise ValueError('Conv-49 checkpoint generation/failure differs')
+        raise ValueError('Pinned study checkpoint generation/failure differs')
     from .budget import ledger_summary,study_job_claim
     from decimal import Decimal,ROUND_CEILING
     ledger = root/'artifacts/study-budget.sqlite'
@@ -257,41 +281,41 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
         parent = db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',
                             (approval['approval_id'],)).fetchone()
         if parent is None or json.loads(parent[0]) != approval or not parent[1]:
-            raise ValueError('Conv-49 parent approval/halt missing from shared ledger')
+            raise ValueError('Pinned study parent approval/halt missing from shared ledger')
         claim=study_job_claim(db,approval['approval_id'])
-        if claim != ('d10a-fallback-once-v1','full','conv-49',0):
-            raise ValueError('Conv-49 historical cell claim differs')
+        if claim != ('d10a-fallback-once-v1','full',profile['conversation_id'],0):
+            raise ValueError('Pinned study historical cell claim differs')
         attempts = db.execute('SELECT id,status,usage_json,charge,logical_id FROM attempts WHERE approval_id=? ORDER BY id',
                               (approval['approval_id'],)).fetchall()
         logical = db.execute('SELECT id,stage FROM logical_calls WHERE approval_id=? ORDER BY id',
                              (approval['approval_id'],)).fetchall()
         recorded = [a for e in generations for a in e['attempts']]
-        if (len(attempts) != 826 or len(logical) != 826 or len(recorded) != 826
-                or [row[1] for row in logical] != ['metadata','shared_decision']*413
+        if (len(attempts) != 2*count or len(logical) != 2*count or len(recorded) != 2*count
+                or [row[1] for row in logical] != ['metadata','shared_decision']*count
                 or any(row[0] != a['budget_attempt_id'] or row[1] != 'settled'
                        or json.loads(row[2]) != a['usage'] for row,a in zip(attempts,recorded))
                 or sum(row[3] for row in attempts) != phase['budget']['charged_or_reserved_microusd']):
-            raise ValueError('Conv-49 parent accounting differs')
+            raise ValueError('Pinned study parent accounting differs')
         rates=approval['pricing']
         for row,call,record in zip(attempts,logical,recorded):
             usage=record['usage']
             expected=int((usage['prompt_tokens']*Decimal(str(rates['input_per_million']))+
                 usage['completion_tokens']*Decimal(str(rates['output_per_million']))).to_integral_value(rounding=ROUND_CEILING))
             if row[3]!=expected or row[4]!=call[0]:
-                raise ValueError('Conv-49 per-attempt accounting differs')
+                raise ValueError('Pinned study per-attempt accounting differs')
         for key,query,last in (
             ('charged_or_reserved_microusd','SELECT COALESCE(SUM(charge),0) FROM attempts WHERE id<=?',attempts[-1][0]),
             ('physical_attempts','SELECT COUNT(*) FROM attempts WHERE id<=?',attempts[-1][0]),
             ('logical_calls','SELECT COUNT(*) FROM logical_calls WHERE id<=?',logical[-1][0])):
             if db.execute(query,(last,)).fetchone()[0] != phase['study_budget'][key]:
-                raise ValueError('Conv-49 historical ledger prefix differs')
+                raise ValueError('Pinned study historical ledger prefix differs')
     failures = [e for e in events if e['type']=='failure']
     if not any(e.get('kind')=='evolve' for e in failures):
-        raise ValueError('Conv-49 failed evolution missing')
-    lineage = {'policy':STUDY_CHECKPOINT_POLICY,'parent_run_id':phase['run_id'],
+        raise ValueError('Pinned study failed evolution missing')
+    lineage = {'policy':profile['policy'],'parent_run_id':phase['run_id'],
         'parent_approval_id':approval['approval_id'],'parent_phase_sha256':fingerprint(phase),
         'parent_snapshot_sha256':phase['artifact_sha256']['partial-memory.json'],
         'parent_events_sha256':phase['artifact_sha256']['events.jsonl'],
         'parent_source_sha256':binding['source_sha256'],'migrated_files':sorted(changed),
-        'completed_turns':413,'remaining_logical_calls':584}
+        'completed_turns':count,'remaining_logical_calls':profile['remaining_logical_calls']}
     return {'lineage':lineage,'state':state,'failures':failures,'generations':generations,'phase':phase}

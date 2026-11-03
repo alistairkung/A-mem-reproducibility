@@ -131,17 +131,18 @@ def _validate(auth, binding):
         if 'checkpoint' in binding:
             checkpoint = binding['checkpoint']
             if phase == 'baseline':
-                from .checkpoint import STUDY_CHECKPOINT_POLICY, STUDY_PARENT_SHA256
+                from .checkpoint import study_checkpoint_profile
+                profile=study_checkpoint_profile(study_job['conversation_id'])
                 valid = (isinstance(checkpoint,dict) and binding['condition']=='full'
-                    and study_job['conversation_id']=='conv-49'
-                    and checkpoint.get('policy')==STUDY_CHECKPOINT_POLICY
-                    and checkpoint.get('parent_phase_sha256')==STUDY_PARENT_SHA256
-                    and checkpoint.get('parent_run_id')=='t8-full-conv49-r0-20261102'
+                    and checkpoint.get('policy')==profile['policy']
+                    and checkpoint.get('parent_phase_sha256')==profile['parent_phase_sha256']
+                    and checkpoint.get('parent_run_id')==profile['parent_run_id']
                     and isinstance(checkpoint.get('parent_approval_id'),str)
                     and bool(checkpoint['parent_approval_id'])
-                    and type(checkpoint.get('completed_turns')) is int and checkpoint['completed_turns']==413
+                    and type(checkpoint.get('completed_turns')) is int and checkpoint['completed_turns']==profile['completed_turns']
                     and type(checkpoint.get('remaining_logical_calls')) is int
-                    and checkpoint['remaining_logical_calls']==584 and logical==584)
+                    and checkpoint['remaining_logical_calls']==profile['remaining_logical_calls']
+                    and logical==profile['remaining_logical_calls'])
             else:
                 valid = (phase=='pilot' and isinstance(checkpoint,dict)
                     and checkpoint.get('policy')=='blk014-checkpoint-v1'
@@ -155,6 +156,8 @@ def _validate(auth, binding):
                 if not isinstance(digest, str) or len(digest) != 64 or any(c not in '0123456789abcdef' for c in digest):
                     raise BudgetStop('Checkpoint requires complete parent fingerprints')
         cap = _number(limits['phase_usd'], 'phase_usd')
+        if phase=='baseline' and 'checkpoint' in binding and cap>Decimal(profile['phase_cap_usd']):
+            raise BudgetStop('Checkpoint phase ceiling exceeds its authorized allocation')
         if cap > phase_max[phase]:
             raise BudgetStop('Phase ceiling exceeds the frozen allocation')
         cap_micros = int((cap*MICROS).to_integral_value(rounding=ROUND_FLOOR))
@@ -229,13 +232,17 @@ def study_job_claim(db, approval_id):
     checkpoint=child_binding.get('checkpoint',{})
     parent=db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',(parent_id,)).fetchone()
     parent_auth=json.loads(parent[0]) if parent else {}
-    from .checkpoint import STUDY_PARENT_SHA256,STUDY_CHECKPOINT_POLICY
+    from .checkpoint import study_checkpoint_profile
+    try:
+        profile=study_checkpoint_profile(conversation)
+    except ValueError:
+        return None
     claim=db.execute('SELECT study_id,condition,conversation_id,complete FROM study_jobs WHERE approval_id=?',(child_id,)).fetchone()
     exclusive=db.execute('SELECT approval_id FROM checkpoint_claims WHERE parent_phase_sha256=?',(checkpoint.get('parent_phase_sha256'),)).fetchone()
     if (parent is None or not parent[1] or parent_auth.get('run_id')!=checkpoint.get('parent_run_id')
             or parent_auth.get('binding',{}).get('source_sha256')!=checkpoint.get('parent_source_sha256')
-            or checkpoint.get('parent_approval_id')!=parent_id or checkpoint.get('parent_phase_sha256')!=STUDY_PARENT_SHA256
-            or checkpoint.get('policy')!=STUDY_CHECKPOINT_POLICY or exclusive!=(child_id,)
+            or checkpoint.get('parent_approval_id')!=parent_id or checkpoint.get('parent_phase_sha256')!=profile['parent_phase_sha256']
+            or checkpoint.get('policy')!=profile['policy'] or exclusive!=(child_id,)
             or claim is None or claim[:3]!=(study,condition,conversation)
             or child_binding.get('condition')!=condition
             or child_binding.get('study_job',{}).get('study_id')!=study
@@ -266,6 +273,10 @@ class PhasePermit:
         self._terminal_reason = None
         self._halt_persistence_error = None
         with self._transaction(initialize=True) as db:
+            if 'checkpoint' in binding:
+                parent=binding['checkpoint']['parent_phase_sha256']
+                if db.execute('SELECT 1 FROM checkpoint_claims WHERE parent_phase_sha256=?',(parent,)).fetchone():
+                    raise BudgetStop('Checkpoint already claimed; another recovery requires review')
             if 'study_job' in binding:
                 job = binding['study_job']
                 for prior_id,raw in db.execute('SELECT approval_id,auth_json FROM phases'):
@@ -282,14 +293,15 @@ class PhasePermit:
                 recovery=binding.get('checkpoint')
                 parent_id=recovery['parent_approval_id'] if recovery else ''
                 if recovery:
-                    from .checkpoint import _read_archive,STUDY_PARENT_SHA256
+                    from .checkpoint import _read_archive,study_checkpoint_profile
+                    profile=study_checkpoint_profile(job['conversation_id'])
                     parent_path=self.path.parent/'runs'/recovery['parent_run_id']/'phase.json'
-                    _,parent_phase=_read_archive(parent_path,self.path.parent.parent,STUDY_PARENT_SHA256)
+                    _,parent_phase=_read_archive(parent_path,self.path.parent.parent,profile['parent_phase_sha256'])
                     parent_auth=db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',(parent_id,)).fetchone()
                     if (parent_auth is None or not parent_auth[1]
                             or json.loads(parent_auth[0])['run_id']!=recovery['parent_run_id']
                             or parent_phase['binding']!=json.loads(parent_auth[0])['binding']
-                            or study_job_claim(db,parent_id)!=(job['study_id'],'full','conv-49',0)
+                            or study_job_claim(db,parent_id)!=(job['study_id'],'full',profile['conversation_id'],0)
                             or recovery['parent_snapshot_sha256']!=parent_phase['artifact_sha256']['partial-memory.json']
                             or recovery['parent_events_sha256']!=parent_phase['artifact_sha256']['events.jsonl']
                             or recovery['parent_source_sha256']!=parent_phase['binding']['source_sha256']):
@@ -322,8 +334,6 @@ class PhasePermit:
                                (job['study_id'],binding['condition'],job['conversation_id'],self.approval_id))
             if 'checkpoint' in binding:
                 parent = binding['checkpoint']['parent_phase_sha256']
-                if db.execute('SELECT 1 FROM checkpoint_claims WHERE parent_phase_sha256=?', (parent,)).fetchone():
-                    raise BudgetStop('Checkpoint already claimed; another recovery requires review')
                 db.execute('INSERT INTO checkpoint_claims VALUES (?,?)', (parent, self.approval_id))
 
     def complete_study_job(self, receipt, publish=None):
