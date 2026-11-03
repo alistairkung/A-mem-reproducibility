@@ -69,6 +69,7 @@ def run_manifest(
     checkpoint=None,
     conversation_ids=None,
     boundary_check=None,
+    evolution_guard=None,
 ):
     """Run an approved manifest. Injected interfaces support deterministic offline contracts.
 
@@ -239,6 +240,9 @@ def run_manifest(
             identity['memory_actions'] = actions
             identity['action_policy'] = ACTION_POLICY
             identity['action_implementation'] = action_implementation
+            if evolution_guard is not None:
+                from .evolution_fallback import POLICY_ID
+                identity['evolution_failure_policy'] = POLICY_ID
             if execution_type == 'deterministic_replay':
                 identity['execution_type'] = execution_type
             if checkpoint is not None:
@@ -322,6 +326,7 @@ def run_manifest(
                         }
                         counter_before = agent.memory_system.evo_cnt
                         generation_start = len(generations)
+                        fallback_before = evolution_guard.before(agent) if evolution_guard else None
                         agent.add_memory(
                             "Speaker " + turn.speaker + "says : " + turn.text,
                             time=session.date_time,
@@ -363,6 +368,9 @@ def run_manifest(
                         }
                         outcomes.append(outcome)
                         record({"type": "evolution_outcome", **outcome})
+                        if evolution_guard is not None:
+                            evolution_guard.after(agent, fallback_before, outcome,
+                                                  generations[generation_start:], record)
                 if processed_turns != conversation["turn_ids"]:
                     raise ValueError(
                         "Turn selection/order differs from the frozen manifest"

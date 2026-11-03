@@ -1,4 +1,4 @@
-"""Execute one explicitly approved BLK-022 child; no approval creation or recovery loop."""
+"""Execute only the approved566-note continuation; no approval creation or recovery loop."""
 from pathlib import Path
 import argparse
 import base64
@@ -26,10 +26,15 @@ def main(approval_path, preflight_path):
     run2._validate_phase(approval, campaign)
     binding = approval['binding']
     migration = binding['support_migration']
-    if (approval['run_id'] != 'run2-full-conv-44-r0-p1'
-            or binding['checkpoint']['completed_turns'] != 227
-            or approval['limits'] != {'phase_usd': '3.955163', 'max_logical_calls': 1212,
-                                      'max_attempts': 3636}
+    from amem_repro.evolution_fallback import POLICY_ID as FALLBACK_POLICY, NORMAL_FAILURE_RECEIPT
+    if (approval['run_id'] != 'run2-full-conv-44-r0-p2'
+            or binding['checkpoint']['completed_turns'] != 566
+            or binding['checkpoint']['parent_run_id'] != 'run2-full-conv-44-r0-p1'
+            or binding['checkpoint']['parent_receipt_sha256'] != NORMAL_FAILURE_RECEIPT
+            or binding['checkpoint']['next_turn_id'] != 'D24:13'
+            or binding.get('evolution_failure_policy') != FALLBACK_POLICY
+            or approval['limits'] != {'phase_usd': '2.62999', 'max_logical_calls': 534,
+                                      'max_attempts': 1602}
             or migration['observability']['policy'] != POLICY_ID
             or hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
                != migration['observability']['execution_script_sha256']):
@@ -65,6 +70,7 @@ def main(approval_path, preflight_path):
     metadata.update(run_id=approval['run_id'], conversation_id='conv-44',
         observability_policy=POLICY_ID, execution_mode='paid_primary_run2',
         parent_run_id=binding['checkpoint']['parent_run_id'],
+        evolution_failure_policy=FALLBACK_POLICY,
         financial_receipt_sha256=fingerprint(binding['financial_adjudication']),
         support_migration=migration)
     observer = LangfuseObserver(client, metadata)
