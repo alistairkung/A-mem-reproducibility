@@ -1,6 +1,7 @@
 # T8 execution and comparative evidence
 
-Status: first T8 cell Incomplete; paid collection halted2 November2026 after BLK-013 recurrence.
+Status: conv-49 checkpoint lineage completed Degraded on3 November2026; its single approval is
+consumed. No further paid cell is authorized. [Verified baseline and next proposal](t8-conv49-baseline-20261103.md).
 Authority: [latest decision](decisions.md#authorization--t8-implementation-and-paid-main-execution),
 [issue #8](https://github.com/alistairkung/A-mem-reproducibility/issues/8).
 Integration branch: `codex/t8-study-execution`, based on T7 merge `577a1e3`.
@@ -306,3 +307,29 @@ would be (the future approval path below is deliberately not created):
 Do not run a paid recovery or another main cell on the strength of these engineering checks.
 The parent remains Incomplete, no conv-49 questions have been answered, and no balanced study result
 or live recovery success is claimed. PR#17 remains draft for engineering review and the paid hold.
+
+## Verified conv-49 recovery outcome — 3 November 2026
+
+The user separately authorized PR#17 merge and one USD3 child. Fresh545 tests/92 subtests,
+64 focused tests, both final reviews and required-check verification passed. PR#17 merged as
+`78ac46b57fd3b89bbf75a315565c945fbb9713be`; local main synchronized, current-source preflight passed.
+Approval `a550491a-d027-4752-a959-3b6bcdc1e0f6` was materialized immutably at
+`artifacts/t8/approvals/t8-full-conv49-checkpoint-child-20261103.json` and is now consumed.
+
+Child `t8-full-conv49-checkpoint-child` completed96 suffix turns and196 ordered QA, with584 logical/
+physical calls, USD1.850853, zero retries/unknowns. The completed lineage is **Degraded**,509 notes,
+509×384 index, counter507; parent failed `D22:2` and raw evidence remain immutable. Natural
+counter500 consolidation at `D25:13` preserves the original algorithm. All historical ledger rows and
+original conv-50 artifacts/cache remain unchanged. Parent+child costs total USD3.264099 once;
+cumulative study USD6.289898/3,020 settled requests. No additional paid phase was launched.
+
+Primary corrected overall F1/BLEU-1 are49.63%/46.31%; c5 correctness27/40. Per-category values,
+historical diagnostics, full provenance, local exports and independent acceptance evidence are in
+[the baseline report](t8-conv49-baseline-20261103.md). BLK-013 stays Open: max new decision3,982/4,000.
+
+Cost-only remaining forecast is USD45.978600 including all incurred spending and USD8 reserve.
+The next runnable **unapproved** proposal is full conv-44:675 turns/158 QA,1,666 logical calls,
+4,998 maximum attempts, proposed USD5 ceiling, estimated USD3.255215. Neither conv-49 would supply
+the requested paired comparison, but the existing full-baseline dependency blocks it until conv-44
+completes; no gate or population was changed. See the report for exact commands and the separate
+authorization required. The current task stops here; further paid cells/recoveries are not authorized.
