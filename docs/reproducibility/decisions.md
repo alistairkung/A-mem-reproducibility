@@ -677,3 +677,17 @@ material blocker or verified675-turn/158-QA completion. A completed lineage must
 all inherited failures/audits, dual author scoring and separate adversarial correctness. Reconcile
 costs without duplication and reforecast by cost evidence alone. No ablation or other paid phase is
 authorized. BLK-013 stays Open unless evidence supports a narrower mitigation claim.
+
+### Verified second-continuation engineering
+
+Feature `f49da9a`, provenance fix `acefbfa` (BLK-019) and terminal admission fix `59ab9ae` (BLK-020),
+integrated at `7211a4a`, pass613 offline tests/92 subtests (16 intentional SDK metadata warnings),
+189 focused tests/60 subtests and two clear independent62-test reviews. Source fingerprint:
+`0341a2a579842725c9ac6a18a110e2816a2896c32e07cf883fd36e2ef1ab681f`.
+Actual610-note/counter607/stale-index restore/export matches exactly, with both ancestor pins and
+408 failure records verified; all51 protected files and the real ledger stay unchanged. Fresh runtime
+preflight passes with sockets disabled; unapproved execution rejects before client/claim creation.
+The root SDK admission-fault replay now halts with zero transmissions and retained reservations;
+genuine transport/provider retries remain unchanged. BLK-019/020 are Resolved; BLK-013 stays Open.
+PR#22, final merge and the new single-use approved copy/live continuation are pending at this checkpoint.
+The unapproved plan binds USD3/446 logical/1,338 physical limits; no new paid phase has executed.
