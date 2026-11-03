@@ -45,6 +45,16 @@ Preserve the frozen author files; add support code separately. A consumed phase 
 Before any paid phase, read `docs/reproducibility/baseline-readiness.md` for the verified fixture,
 historical plans and consumed approvals. Additional paid execution requires a new decision.
 
+## Run 2 campaign
+
+Before Run2 engineering, observability verification, paid execution or recovery, read
+`docs/reproducibility/run2-protocol.md` and the latest authorization in
+`docs/reproducibility/decisions.md`.
+Run1 is immutable exploratory evidence; keep its USD8.530133 ledger/results/caches unchanged.
+Run2 uses separate artifacts/accounting and requires GateA, real-runner Langfuse GateB, reviewed
+offline checks and a frozen affordable approval before paid cells. Follow the Run2 protocol's
+bounded recovery/stop rules; historical Run1 approvals cannot authorize or seed Run2 cells.
+
 ## Reproducibility Blocker Tracking
 
 Before coding or research work affecting reproduction, experimental integrity, model compatibility,
