@@ -67,6 +67,11 @@ The latest user grant now authorizes the reviewed essential-observation policy, 
 one exact227-note BLK-022 child and an outcome-documentation PR/merge. Before this release or
 continuation, read `docs/reproducibility/run2-observation-policy.md` and the latest decision.
 The child retains the original cell remainder; no subsequent cell or extra recovery is authorized.
+That child is now consumed and Incomplete at566 notes/counter564, zero QA, after a normally
+finished malformed shared decision (BLK-014). Before further Run2 work, read
+`docs/reproducibility/run2-conv44-recovery-incomplete-20261103.md`. Preserve both phases and
+USD2.370010 exposure, including unknown454's full USD0.324404 reservation. No paid continuation
+or later cell is authorized; the reviewed financial recovery supports only the consumed227-note prefix.
 
 ## Reproducibility Blocker Tracking
 

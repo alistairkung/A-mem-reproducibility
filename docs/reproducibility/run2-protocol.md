@@ -3,13 +3,15 @@
 Status: frozen3 November2026 after GateA/GateB,715 offline tests/92 subtests, both complete archive
 replays, independent Standards/Spec reviews and current-source runtime preflight. PR#25 is merged
 as `c7cd12b`, PR#26 as `207eac0`, and the independently checked immutable approval was activated.
-**Execution is stopped pending the sole BLK-022 child's release checks**, after227 Full conv-44 notes and zero QA. An unknown charge
-remains reserved; no further cell or non-BLK-013 recovery may start under the current state.
-Read the [verified stopping record](run2-first-cell-incomplete-20261103.md). The scientific profile
-below remains frozen; this operational stop does not authorize a protocol or spending change.
-The latest grant separately authorizes the [essential-observation policy and one bounded child](run2-observation-policy.md)
-after final tests/reviews/normal merge. It retains unknown454 in full, exact state and all scientific
-settings. No later cell, additional recovery, service-budget increase or contingency use is authorized.
+**Execution is stopped after the sole BLK-022 child failed**, at566 Full conv-44 notes/counter564
+and zero QA. The shared decision atD24:12 contains malformed JSON despite normal completion
+(BLK-014), not output exhaustion. Both phases are Incomplete. Conservative Run2 exposure is
+USD2.370010, including unknown454's unchanged USD0.324404 reservation.
+Read the [verified recovery outcome](run2-conv44-recovery-incomplete-20261103.md) and historical
+[first stop](run2-first-cell-incomplete-20261103.md). PR#29 merged the verified
+[essential-observation policy](run2-observation-policy.md); all2,048 child observations are visible.
+The one-child approval is consumed. No later cell, additional recovery, service-budget increase or
+contingency use is authorized. The scientific profile below remains frozen.
 Authority: [user grant](decisions.md#authorization--run-2-fully-observed-campaign),
 [issue#24](https://github.com/alistairkung/A-mem-reproducibility/issues/24).
 

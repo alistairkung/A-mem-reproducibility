@@ -923,3 +923,33 @@ pointUSD48.731314–49.798114 remains conditional and tight; reforecast from thi
 requesting another scope. Stop after verified completion or a material failure, preserve incurred
 charges and failures, update blockers/report/forecast and merge the outcome documentation.
 See [release specification and evidence](run2-observation-policy.md).
+
+### Outcome — sole BLK-022 observed child consumed, Run2 stopped on BLK-014
+
+PR#29 merged as `afcecdbbfddbc6bc06bdbd4f2524dd58692dedac` after764 tests/92 subtests, exact
+original/full-candidate archive replays, source-bound real-runner GateB and independent Standards/Spec
+reviews. Rotated credential authentication/readback and original-pair absence are verified without
+exposing or retesting the old key. The essential policy is frozen and the financial exception remains
+limited to original unknown attempt454/fullUSD0.324404 reservation.
+
+The fresh approval `8854d11c-3202-4c38-948b-409c4be350f4` authorized exactly child
+`run2-full-conv-44-r0-p1`. It restored227 notes/counter226/stale index and resumedD10:11. AtD24:12,
+a normally finished shared decision (`tool_calls`,3,016 output tokens below8,192) returned malformed
+JSON. Strict rejection/original fallback are preserved; no semantic retry or repair occurred.
+The child stops Incomplete at566 notes/counter564, zero of158 QA. BLK-014 is reopened Open; this is
+not BLK-013 output exhaustion. All2,048 child observations/483 traces verify in Langfuse, including
+the failure. No primary quality scores or Experiments exist.
+
+New678 logical/physical calls costUSD1.325173. Combined1,132 logical/1,133 physical attempts have
+knownUSD2.045606 +retained unknownUSD0.324404 =USD2.370010 exposure. Cell remainderUSD2.629990;
+Run1's USD8.530133 and all previous evidence remain unchanged. Cost-only provider pointUSD39.257657
+for the full campaign still uses documented proxies (no completed Run2 cell); carrying the old
+normal-service range andUSD8 reserve givesUSD48.932297–49.999097 before any new recovery or other
+growth. This does not establish safe affordability. No contingency or extra Langfuse fee is committed.
+
+The sole paid grant is consumed. Next turnD24:13;109 turns and158 questions remain (534 logical
+calls). Existing financial recovery supports only the consumed227-note prefix. A new exact566-note
+checkpoint extension and another bounded paid phase require a separate decision; neither is
+authorized or implemented here. No later cell may start. The separately authorized outcome-
+documentation PR/merge records this material stop without changing the scientific protocol.
+Read [the complete verified outcome](run2-conv44-recovery-incomplete-20261103.md).

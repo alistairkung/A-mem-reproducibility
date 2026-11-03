@@ -4,6 +4,13 @@
 then an outcome-documentation PR. No later cell, additional recovery child, extra budget or
 contingency use is authorized. The scientific [Run2 protocol](run2-protocol.md) is unchanged.
 
+**Execution outcome:** PR#29 merged as `afcecdbbfddbc6bc06bdbd4f2524dd58692dedac`.
+The single child is consumed and Incomplete:566 notes/counter564, zero QA, after normally finished
+malformed JSON atD24:12 (BLK-014). Its2,048 observations/483 traces are verified remotely; no primary
+Experiment results exist because no question completed. See the
+[outcome, spending and remaining boundary](run2-conv44-recovery-incomplete-20261103.md).
+The activation command below is historical evidence and must not be rerun.
+
 ## What changes in Langfuse
 
 Freeze export policy `run2-audit-essential-v1` using the existing Langfuse5.1.0 SDK and evaluator.
