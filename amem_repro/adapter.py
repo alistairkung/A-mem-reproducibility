@@ -196,6 +196,12 @@ class DeepSeekController:
                 logical_id = self.phase_permit.start_logical(stage)
                 event["budget_logical_id"] = logical_id
                 logical_token = _LOGICAL.set(logical_id)
+            begin = getattr(self.observer, 'begin_generation', None)
+            if begin is not None:
+                try:
+                    begin(_observed_payload(event, getattr(self.client, 'api_key', None)))
+                except Exception as error:
+                    self.observer_errors.append({'stage': stage, 'error_type': type(error).__name__})
             response = _mapping(
                 self.client.chat.completions.create(
                     model=MODEL,

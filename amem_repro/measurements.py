@@ -17,7 +17,7 @@ class TokenCounter:
         return len(self.encode(text))
 
 
-def observe_retrieval(system, query, k, counter):
+def observe_retrieval(system, query, k, counter, *, observer=None):
     """Capture the author's actual search once; retain raw return bytes and duplicates.
 
     Execution is serial under the protocol. The temporary instance observer is
@@ -25,6 +25,14 @@ def observe_retrieval(system, query, k, counter):
     """
     if not counter.method or not counter.revision:
         raise ValueError("Document token counting method and revision")
+    import time
+    started = time.perf_counter()
+    begin = getattr(observer, 'begin_retrieval', None)
+    if begin is not None:
+        try:
+            begin({'type': 'retrieval_start', 'input': {'query': query, 'k': k}})
+        except Exception:
+            pass  # A passive hook cannot change original retrieval or context.
     retriever = system.retriever
     previous = retriever.search
     had_override = "search" in getattr(retriever, "__dict__", {})
@@ -70,6 +78,11 @@ def observe_retrieval(system, query, k, counter):
         "tokenizer_revision": counter.revision,
         "token_count_exact": counter.exact,
     }
+    if begin is not None:
+        event.update(input={'query': query, 'k': k},
+                     output={'context': context, 'initial_count': len(indices),
+                             'expanded_count': expanded, 'context_tokens': context_tokens},
+                     duration_seconds=time.perf_counter() - started)
     return context, event
 
 
@@ -137,6 +150,7 @@ def observe_actions(root, observer):
     Timings include observational overhead and are not separate API charges.
     """
     import ast
+    import copy
     import sys
     import time
     from contextlib import contextmanager
@@ -177,18 +191,32 @@ def observe_actions(root, observer):
         active = {}
         errors = []
 
+        begin = getattr(observer, 'begin_action', None)
+
+        def view(frame):
+            values = frame.f_locals
+            notes = list(values['self'].memories.values())
+            def note_view(note):
+                return {name: copy.deepcopy(getattr(note, name, None))
+                        for name in ('id', 'content', 'context', 'keywords', 'tags', 'links')}
+            return {'new_note': note_view(values['note']),
+                    'neighbors': [{'index': int(i), 'note': note_view(notes[int(i)])}
+                                  for i in values.get('indices', [])],
+                    'decision': copy.deepcopy(values.get('response_json'))}
+
         def close(frame_id):
-            action, started = active.pop(frame_id)
+            action, started, frame, before = active.pop(frame_id)
             try:
-                observer(
-                    {
+                event = {
                         "type": "local_action",
                         "action": action,
                         "api_calls": 0,
                         "duration_seconds": time.perf_counter() - started,
                         "timing_method": "python-line-trace; includes observer overhead",
                     }
-                )
+                if begin is not None:
+                    event.update(input=before, output=view(frame))
+                observer(event)
             except Exception as error:
                 errors.append(type(error).__name__)
 
@@ -217,7 +245,14 @@ def observe_actions(root, observer):
             ):
                 close(key)
             if event == "line" and selected and key not in active:
-                active[key] = (selected, time.perf_counter())
+                before = None
+                if begin is not None:
+                    try:
+                        before = view(frame)
+                        begin({'type': 'local_action_start', 'action': selected, 'input': before})
+                    except Exception as error:
+                        errors.append(type(error).__name__)
+                active[key] = (selected, time.perf_counter(), frame, before)
             return trace
 
         sys.settrace(trace)
