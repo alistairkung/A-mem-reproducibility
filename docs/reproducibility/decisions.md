@@ -804,3 +804,52 @@ Linking49/50/44, Evolution49/50/44), reconcile each cell and reforecast from mea
 before the next. No quality-based selection, extra provider policy, semantic retry, JSON repair,
 contingency use or automatic top-up is authorized. All557 Run1 artifacts and USD8.530133 ledger bytes
 verify unchanged. No paid Run2 request existed at this freeze checkpoint.
+
+### Run2 outcome — first cell stopped on unknown transport usage
+
+PR#26 merged normally as `207eac03fb92e32fb4d0571cd67359da6875463d`; the final independent freeze
+audit passed and only approval metadata changed in the approved copy. Cell0
+`run2-full-conv-44-r0-p0` then executed once under itsUSD5/1,666-logical/4,998-attempt limits.
+
+At `D10:10`, shared logical454's first physical attempt454 returned HTTP200 but raised a body-read
+`RemoteProtocolError` after60.529s, with no captured body/usage. The permitted SDK transport retry455
+returned valid arguments after34.465s (3,611 input/2,822 output tokens); those unchanged arguments
+completed note227/counter226. The first charge remains unknown and retains its fullUSD0.324404
+reservation. Next-turn `D10:11` metadata was rejected before transmission by the durable financial
+guard. This is not BLK-013, a confirmed timeout, malformed JSON or a settlement-retry defect.
+
+The phase is **Incomplete**:227/675 notes, exact227×384 float32 stale index, zero/158 QA,
+454 logical/455 physical calls. Known settled conservative costUSD0.720433 plus retained reservation
+=USD1.044837 exposure. All1,278 real paid observations/230 traces verify in Langfuse, with partial
+usage/cost explicitly labelled.140 D3a deviations/521 transformations and all original arguments
+are retained. No `length` occurred; maximum successful shared output3,512 does not establish that
+the larger cap fits later growth. Run1's557 files and USD8.530133 ledger remain byte-identical.
+
+No continuation or later cell ran. BLK-022 is Investigating; a valid retry cannot establish that the
+first attempt was unbilled. Exact state serialization restores offline without model/embedding calls,
+but the current approval only permits automatic BLK-013 recovery and unknown-charge guards forbid
+paid admission.448 turns/158 QA (1,212 logical/at most3,636 physical calls) remain hypothetically.
+Seek request-level billing/usage first; if unavailable, a narrowly scoped upper-bound financial
+adjudication and exact-state continuation require an explicit decision. Never edit the historical
+attempt to fabricate usage, release its reservation or silently reuse the consumed phase.
+
+The provider-only point forecast remainsUSD39.056674 including exposure, plusUSD8 protected reserve
+=USD47.056674; incomplete Run2 stages still use Run1 cost proxies. It is not recovery authority.
+Separately, the user upgraded Langfuse to Core, verified in the billing UI for a new3 November–
+3 December period. Actual SDK offline capacity analysis projects221,508–235,524 normal campaign
+units and approximatelyUSD9.72–10.84 incremental overage beyond100K included units; two continuations
+per cell give a structural scenario nearUSD11.98. Scores are not the whole bill: SDK imports create
+per-metric evaluator observations even when returning no value. Fees, discounts/tax, future failure
+volume and allocation of service charges need a separate financial decision; no agent upgrade or
+incremental overage grant is inferred. If these fees shareUSD42, the current whole campaign forecast
+does not fit. Preserve the population, model, settings and reserve while resolving the budget.
+
+See [the stopping report](run2-first-cell-incomplete-20261103.md),
+[BLK-022](blockers.md#blk-022), the immutable first phase and
+`artifacts/run2/transport-incident.json`. Corrected/historical quality metrics and published-ablation
+comparisons are unavailable; no partial or Run1 result substitutes for a complete Run2 condition.
+
+Final post-incident verification: the test-only HTTP200 body-read regression and full offline suite
+pass716 tests/92 subtests (17 expected warnings). Independent Standards/Spec audits confirm correct
+SDK retry/unknown-charge stopping, exact state/cloud proof and the SDK unit forecast. PR#27 records
+the outcome. Neither verification nor its merge settles the unknown usage or grants a new paid phase.

@@ -1,9 +1,12 @@
 # Run 2 — fully observed controlled campaign
 
 Status: frozen3 November2026 after GateA/GateB,715 offline tests/92 subtests, both complete archive
-replays, independent Standards/Spec reviews and current-source runtime preflight. GateA is merged
-in PR#25 (`c7cd12b`); PR#26 contains the reviewed execution/observability implementation. Merge and
-the final independently checked immutable approved copy precede any paid benchmark transmission.
+replays, independent Standards/Spec reviews and current-source runtime preflight. PR#25 is merged
+as `c7cd12b`, PR#26 as `207eac0`, and the independently checked immutable approval was activated.
+**Execution is now stopped at BLK-022**, after227 Full conv-44 notes and zero QA. An unknown charge
+remains reserved; no further cell or non-BLK-013 recovery may start under the current state.
+Read the [verified stopping record](run2-first-cell-incomplete-20261103.md). The scientific profile
+below remains frozen; this operational stop does not authorize a protocol or spending change.
 Authority: [user grant](decisions.md#authorization--run-2-fully-observed-campaign),
 [issue#24](https://github.com/alistairkung/A-mem-reproducibility/issues/24).
 

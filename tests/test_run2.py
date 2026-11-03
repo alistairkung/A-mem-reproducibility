@@ -396,6 +396,61 @@ def test_run2_genuine_sdk_retry_policy_is_preserved(tmp_path,monkeypatch):
     with pytest.raises(BudgetStop,match='Unknown charge'):permit.start_logical('metadata')
 
 
+def test_http200_body_read_failure_keeps_unknown_charge_after_valid_sdk_retry(tmp_path,monkeypatch):
+    """Synthetic transport fault; no historical missing response body is invented."""
+    import sqlite3,httpx
+    from amem_repro.adapter import create_deepseek_controller
+    from amem_repro.budget import ledger_summary
+    from test_adapter_budget import response
+    campaign=approved_campaign();phase=approved_phase(campaign)
+    permit=run2.Run2Permit(phase,tmp_path,campaign)
+    monkeypatch.setenv('DEEPSEEK_API_KEY','offline-placeholder')
+    requests=[];events=[]
+    raw=' \n{"should_evolve":true,"actions":[],"suggested_connections":[],"tags_to_update":[],"new_context_neighborhood":[],"new_tags_neighborhood":[]}\t'
+
+    class InterruptedBody(httpx.SyncByteStream):
+        def __iter__(self):
+            yield b'{"synthetic_transport_fault": '
+            raise httpx.RemoteProtocolError('synthetic response-body interruption')
+
+    def handler(request):
+        requests.append(request.content)
+        if len(requests)==1:return httpx.Response(200,stream=InterruptedBody())
+        return httpx.Response(200,json=response(raw))
+
+    c=create_deepseek_controller(paid_authorized=True,http_transport=httpx.MockTransport(handler),
+            observer=events.append,phase_permit=permit,generation_config=RUN2_CONFIG,
+            provider_contract_policy='canonical-index-strings-v1')
+    try:
+        assert c.get_completion('same prompt',load_author_contracts()['shared_decision'])==raw
+        assert len(requests)==2 and requests[0]==requests[1]
+        first,second=events[0]['attempts']
+        assert first['status_code']==200 and first['error_type']=='RemoteProtocolError'
+        assert first['usage'] is None
+        assert 'response_body' not in first and 'response_body_base64' not in first
+        assert second['status_code']==200 and second['error_type'] is None
+        assert second['response_body']['choices'][0]['message']['tool_calls'][0]['function']['arguments']==raw
+        assert events[0]['output']==raw and events[0]['error_type'] is None
+        summary=permit.summary()
+        assert summary['logical_calls']==summary['unknown_attempts']==1
+        assert summary['physical_attempts']==2
+        assert summary['charged_or_reserved_microusd']==324404+12
+        assert summary['halted'] is None
+        with sqlite3.connect(tmp_path/'artifacts/run2/budget.sqlite') as db:
+            assert db.execute('SELECT status,charge,reservation,usage_json FROM attempts WHERE id=1').fetchone()==('unknown',324404,324404,'null')
+        with pytest.raises(BudgetStop,match='Unknown charge'):
+            c.get_completion('next original turn',load_author_contracts()['metadata'])
+        assert len(requests)==2 and events[1]['attempts']==[]
+        stopped=permit.summary()
+        assert stopped['halted']=='Unknown charge prevents another Run2 logical request'
+        assert stopped['halt_persisted'] is True
+        assert stopped['logical_calls']==stopped['unknown_attempts']==1
+        assert stopped['physical_attempts']==2
+        assert stopped['charged_or_reserved_microusd']==324404+12
+    finally:c.client.close()
+    assert ledger_summary(tmp_path/'artifacts/run2/budget.sqlite',phase['approval_id'])['halted']==stopped['halted']
+
+
 def test_missing_cloud_delivery_blocks_otherwise_valid_length_recovery(short_runner):
     def missing(*a):return {'verified':False}
     phase=execute_fixture(approved_phase(short_runner['campaign']),short_runner,verify_observations=missing)
