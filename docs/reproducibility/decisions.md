@@ -485,3 +485,26 @@ Prepared `artifacts/t8/conv49-checkpoint-plan.json` stays `approved:false`: prop
 Its historical-cost estimate is USD1.566190, not an upper bound or spending grant. No approved child
 artifact exists and no paid recovery was executed. BLK-013 remains Open because truncation can recur;
 PR#17 remains draft and unmerged. Separate paid approval after review is still required.
+
+## Authorization — PR17 merge and one conv-49 recovery child
+
+On 3 November 2026 the user explicitly authorized merging PR#17 into main after fresh complete and
+focused offline tests, required checks and Standards/Spec reviews pass, then executing exactly one
+fresh checkpoint child for `t8-full-conv49-r0-20261102` under `blk013-conv49-checkpoint-v1`.
+Restore413 notes/outcomes, counter411, failed `D22:2` and the exact stale413×384 float32 index;
+resume `D22:3`, process96 remaining turns and all196 original QA in frozen order. Preserve D3a,
+D9a4,000, original algorithm/prompts/schemas/parsers/retrieval/scoring/model/settings and all evidence.
+
+The hard additional ceiling is USD3,584 logical calls and at most1,752 physical attempts under the
+existing SDK retry rules. Use the existing cumulative ledger, USD50 total/USD8 contingency and a new
+immutable parent/source/preflight-bound approval; do not reuse consumed approvals or reset history.
+No other experimental cell, child restart, second recovery chain or repetition is authorized.
+On any new provider/contract, provenance or financial failure, halt further paid transmission, retain
+all partial results/charges and investigate offline. Non-scientific engineering corrections may be
+made/reviewed autonomously, but no paid restart is implied.
+
+After successful completion, verify509 unique turns/196 ordered QA, complete cache/index, both
+scoring views, inherited Degraded classification and once-only parent/child accounting. Verify original
+conv-50 unchanged, reforecast the remaining balanced fallback using cost evidence and prepare the next
+phase for separate approval, prioritizing a paired Full/Neither comparison subject to the existing
+baseline dependencies. Stop after that preparation or a material blocker; do not execute another cell.
