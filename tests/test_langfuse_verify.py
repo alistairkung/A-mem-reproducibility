@@ -182,6 +182,20 @@ def test_import_reads_saved_predictions_and_metrics_once_across_readback_retries
     assert again['experiment_ids']==result['experiment_ids'] and len(client.calls)==2
 
 
+def test_experiment_api_json_container_encoding_keeps_prediction_strings_exact(tmp_path):
+    from amem_repro.langfuse_verify import import_and_verify_results
+    _,context,*_=fixture(tmp_path);client=ImportClient();good=import_query(client)
+    def query(resource,options):
+        response=good(resource,options)
+        if resource=='experiment-items':
+            for row in response['body']['data']:
+                for key in ('input','experimentItemMetadata','experimentMetadata'):
+                    row[key]=json.dumps(row[key])
+        return response
+    assert import_and_verify_results(saved_views(),context,client=client,query=query,
+                                     attempts=1,delay_seconds=0)['verified']
+
+
 @pytest.mark.parametrize('difference',['prediction','reference','score','question','policy','missing_experiment','extra_item'])
 def test_saved_result_import_requires_exact_remote_views(tmp_path,difference):
     from amem_repro.langfuse_verify import import_and_verify_results

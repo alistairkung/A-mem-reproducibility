@@ -256,7 +256,12 @@ def _check_experiments(views,imported,identity,experiments,items):
         _metadata(expected,actual.get('metadata'),'experiment/metadata')
         selected=[r for r in items if r.get('experimentId')==saved['id']]
         questions={r['question_id']:r for r in view['individual_results']}
-        by_question={r.get('input',{}).get('question_id'):r for r in selected}
+        by_question={}
+        for item in selected:
+            value=item.get('input')
+            if isinstance(value,str):value=json.loads(value)
+            if not isinstance(value,dict):raise VerificationError('Experiment input is not a question object')
+            by_question[value.get('question_id')]=item
         if len(by_question)!=len(selected) or set(by_question)!=set(questions):
             raise VerificationError('Experiment question identities differ from saved predictions')
         for key,row in questions.items():
