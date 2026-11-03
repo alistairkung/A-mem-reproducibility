@@ -508,3 +508,40 @@ scoring views, inherited Degraded classification and once-only parent/child acco
 conv-50 unchanged, reforecast the remaining balanced fallback using cost evidence and prepare the next
 phase for separate approval, prioritizing a paired Full/Neither comparison subject to the existing
 baseline dependencies. Stop after that preparation or a material blocker; do not execute another cell.
+
+### Verified PR17 merge and conv-49 child outcome
+
+PR#17 merged as `78ac46b57fd3b89bbf75a315565c945fbb9713be` after fresh545 tests/92 subtests,
+64 focused tests, clear final Standards/Spec reviews and no failed required checks or rule bypass.
+The new immutable child approval `a550491a-d027-4752-a959-3b6bcdc1e0f6` executed once on synchronized
+main. `t8-full-conv49-checkpoint-child` completed96 turns/196 QA with584 logical/physical requests,
+USD1.850853, zero retries/unknown charges. Original failed `D22:2`, parent state/evidence, old ledger
+rows and original conv-50 remain unchanged. Completed lineage509 notes/counter507 is Degraded.
+
+Combined conv-49 cost is USD3.264099; cumulative study USD6.289898/3,020 settled requests. The child
+approval is consumed. No other cell or paid recovery was executed. BLK-013 remains Open: the unchanged
+4,000-token cap is not guaranteed adequate elsewhere. Corrected/historical scoring views and all
+predictions/observations are saved; [verified outcome](t8-conv49-baseline-20261103.md).
+
+The remaining balanced fixed-population point forecast is USD45.978600 including incurred spending
+and USD8 contingency, with USD35.710102 usable actual budget remaining. This is not an upper bound.
+The next unapproved full-conv44 plan proposes USD5/1,666 logical/4,998 attempts. Prioritize paired
+Neither-conv49 after the existing full-conv44 baseline prerequisite; running it first would require an
+explicit sequencing amendment and new reviewed plan. No such gate/population change or further paid
+approval is made by this outcome record. T5/T8 remain open for the uncollected scope.
+
+## Authorization — PR18 merge and one Full conv-44 phase
+
+On 3 November 2026 the user authorized review/merge of documentation PR#18 if checks pass and exactly
+one fresh Full A-MEM conv-44 phase under the existing frozen protocol. Scope: all675 turns/158 original
+questions, maximum USD5 additional,1,666 logical calls and4,998 physical attempts under the existing
+SDK retry policy. Use the cumulative ledger and preserve USD50 total/USD8 contingency, both completed
+conv-49/conv-50 baselines, original algorithm, DeepSeek/D3a/D9a settings, retrieval and scoring.
+
+Verify current-source preflight, immutable provenance, isolated fresh cache and spending controls
+before transmission; create a new scope-bound immutable approval. Routine non-scientific engineering,
+offline tests, blocker/documentation updates and scoped commits may proceed autonomously. On output,
+provider, provenance or financial failure, preserve partial evidence/charges, investigate offline and
+stop before any paid recovery. No ablation, repeat, restart, second recovery or other paid phase is
+authorized. Stop after all three full-mode baselines verify, or a material blocker prevents continuation;
+report conv-44 quality/status/cost, cumulative budget/forecast and readiness for the first ablation.

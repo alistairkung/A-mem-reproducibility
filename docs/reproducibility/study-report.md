@@ -96,6 +96,12 @@ Strict rejection and the spending halt worked. The partial state, raw response a
 deviations remain archived; no recovery or later cell ran. This is a reproduction challenge, not an
 accuracy result. [Exact investigation and choices](t8-execution.md#paid-hold--blk-013-recurrence).
 
+The subsequently authorized checkpoint child completed conv-49 without changing settings:509 notes,
+196 QA, counter507, Degraded with the original failure retained. Corrected overall F1/BLEU-1 are
+49.63%/46.31%, with category5 correctness27/40. These are conv-49-only descriptive results; the
+selected-population baseline still needs conv-44, and no paired ablation result exists yet.
+[Verified per-category results and evidence](t8-conv49-baseline-20261103.md).
+
 ## Practical challenges and debug diary
 
 | Blocker | Investigation and response | Evidence or remaining limitation |
@@ -122,6 +128,9 @@ The incomplete T8 cell adds USD1.413246/826 attempts (metadata USD0.140616, shar
 USD1.272630); cumulative USD4.439045/2,436 attempts, zero retries in that cell and zero unknown charges.
 The whole-fresh-cell point forecast now totals USD44.183331 including incurred costs and USD8 reserve;
 this grants no recovery authority and does not credit the incomplete build as a completed cell.
+After the separately approved child, cumulative cost is USD6.289898/3,020 settled attempts, zero
+unknown charges. Combined conv-49 cost is USD3.264099 once. The remaining balanced point forecast
+is now USD45.978600 including incurred spending and USD8 reserve; further paid cells are unapproved.
 The original token-based forecast puts all ten conversations/four conditions at USD127.391486 and
 the frozen fallback at USD42.762234 including incurred spending and contingency. Its2× cost sensitivity
 exceeds USD50: the estimate is not a spending guarantee. T8 will reconcile actual stage costs and

@@ -9,7 +9,7 @@ This checklist records preparation, not submission or a completed recording.
 - [x] Full-mode candidate equivalence and action-matrix regression evidence retained.
 - [x] Fixed, performance-independent fallback and one-build-per-cell protocol recorded.
 - [x] Research challenges, failed attempts and resolutions retained in [blockers](docs/reproducibility/blockers.md).
-- [ ] Complete selected-scope full-mode baseline (T5: conv-49/conv-44 still pending).
+- [ ] Complete selected-scope full-mode baseline (T5: conv-49/conv-50 verified; conv-44 pending).
 - [ ] Execute/verify T8 ablation cells, or obtain an explicit revised protocol after a blocker.
 - [ ] Verify paired558-question coverage per condition, both author scoring views and separate c5 correctness.
 - [ ] Reconcile cumulative ledger, retries, partial failures, stage usage and retained decision overhead.
@@ -20,10 +20,11 @@ This checklist records preparation, not submission or a completed recording.
 - [ ] Record presentation using the outline below; verify duration at most15 minutes.
 - [ ] Upload report/repository link/presentation according to the course submission instructions.
 
-Current hold: full conv-49 is Incomplete after413 notes/zero QA (BLK-013,4,000-token exhaustion).
-All paid collection is stopped pending a separate recovery/protocol decision. The verified conv-50
-baseline/replay and T7 modification remain valid; no balanced ablation result or submission completion
-is claimed. See [the T8 record](docs/reproducibility/t8-execution.md#paid-hold--blk-013-recurrence).
+Current status: full conv-49 completed a verified Degraded checkpoint lineage,509 notes/196 QA.
+Its paid approval is consumed. One Full conv-44 phase is now separately authorized after gates;
+no ablation/recovery is authorized. BLK-013 stays Open because
+the4,000-token output bound can recur. Full conv-44 and ablations remain pending; no balanced-study
+or submission completion is claimed. See [the verified outcome](docs/reproducibility/t8-conv49-baseline-20261103.md).
 
 ## Presentation outline — target14 minutes30 seconds
 
