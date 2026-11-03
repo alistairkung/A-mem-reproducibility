@@ -137,6 +137,13 @@ Current cumulative cost is USD7.705436/3,868 settled requests, zero unknown char
 conv-49/conv-50 evidence is unchanged; conv-44 F1/BLEU-1 are unavailable. The whole-fresh-cell
 scenario now totals USD47.394138 including reserve, but grants no restart/recovery authority.
 First-ablation readiness remains blocked; [verified failure](t8-conv44-incomplete-20261103.md).
+The separately approved exact-state conv-44 child restored424 notes/counter422 and processed186
+more turns before another4,000-token exhaustion at `D26:18`. It retains610 notes/counter607, both
+failed decisions and zero QA; no full conv-44 quality metric is available. Child USD0.702421/372
+calls; combined lineage USD2.117959/1,220; cumulative USD8.407857/4,240, zero unknown charges.
+All inherited failures/deviations and original completed baselines remain unchanged. Current
+whole-fresh-cell scenario: USD48.096559 including incurred charges and USD8 reserve. No further
+recovery chain or ablation is authorized; [verified child outcome](t8-conv44-recovery-incomplete-20261103.md).
 The original token-based forecast puts all ten conversations/four conditions at USD127.391486 and
 the frozen fallback at USD42.762234 including incurred spending and contingency. Its2× cost sensitivity
 exceeds USD50: the estimate is not a spending guarantee. T8 will reconcile actual stage costs and

@@ -1,5 +1,10 @@
 # Exact conv-44 checkpoint recovery
 
+**Current status:** PR#20 merged as `3d0e04a`; the one authorized child stopped Incomplete after186
+new turns on another4,000-token exhaustion. Preserve610 total notes/counter607 and zero QA.
+The approval and parent claim are consumed; do not reuse the historical commands below. No second
+recovery chain or ablation is authorized. See [verified outcome](t8-conv44-recovery-incomplete-20261103.md).
+
 The user authorized implementation, offline tests, independent Standards/Spec reviews, merge after
 all required checks and **one** bounded paid child. See the
 [current decision](decisions.md#authorization--exact-conv-44-checkpoint-engineering-merge-and-one-child).
