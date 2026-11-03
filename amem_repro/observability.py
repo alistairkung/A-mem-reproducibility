@@ -235,6 +235,10 @@ class LangfuseObserver:
             'endpoint', 'documented_model_version', 'request_id', 'returned_model',
             'system_fingerprint', 'provider_contract_policy', 'raw_schema_valid',
             'validation_copy_schema_valid', 'compatibility_deviation', 'error_type')}
+        attempts = event.get('attempts', [])
+        if attempts and isinstance(attempts[0].get('request_body'), dict):
+            # Already sanitized by the recording transport; no headers or credentials.
+            metadata['wire_request'] = copy.deepcopy(attempts[0]['request_body'])
         for field, source in (('request_id', 'id'), ('returned_model', 'model'),
                               ('system_fingerprint', 'system_fingerprint')):
             if metadata[field] is None:
