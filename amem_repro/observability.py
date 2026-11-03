@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from decimal import Decimal, ROUND_CEILING
 
 from .config import reject_credentials
+from .observation_policy import POLICY_ID
 
 
 class ObservabilityError(RuntimeError):
@@ -30,6 +31,10 @@ class LangfuseObserver:
             raise ValueError('Tracing requires the complete campaign/cell/run identity')
         self.client = client
         self.metadata = copy.deepcopy(metadata)
+        policy = metadata.get('observability_policy')
+        if policy is not None and policy != POLICY_ID:
+            raise ValueError('Unknown observability export policy')
+        self.essential_export = policy == POLICY_ID
         self.session_id = '/'.join(str(metadata[k]) for k in
                                    ('campaign_id', 'condition', 'conversation_id', 'repetition', 'run_id'))
         self.errors = []
@@ -170,7 +175,7 @@ class LangfuseObserver:
             self._complete(scored, output=result['metrics'], metadata={
                 'scoring_policy': result['scoring_policy'],
                 'metric_failures': result.get('metric_failures', [])})
-            if self._unit:
+            if self._unit and not self.essential_export:
                 for name, value in result['metrics'].items():
                     score = {'name': name, 'value': value, 'trace_id': self._unit[0].trace_id,
                              'score_id': uuid.uuid4().hex,
@@ -238,7 +243,13 @@ class LangfuseObserver:
         attempts = event.get('attempts', [])
         if attempts and isinstance(attempts[0].get('request_body'), dict):
             # Already sanitized by the recording transport; no headers or credentials.
-            metadata['wire_request'] = copy.deepcopy(attempts[0]['request_body'])
+            if self.essential_export:
+                from .config import fingerprint
+                metadata['wire_request_sha256'] = fingerprint(attempts[0]['request_body'])
+                metadata['local_evidence'] = {'journal': 'events.jsonl',
+                    'budget_logical_id': event.get('budget_logical_id'), 'stage': event.get('stage')}
+            else:
+                metadata['wire_request'] = copy.deepcopy(attempts[0]['request_body'])
         for field, source in (('request_id', 'id'), ('returned_model', 'model'),
                               ('system_fingerprint', 'system_fingerprint')):
             if metadata[field] is None:

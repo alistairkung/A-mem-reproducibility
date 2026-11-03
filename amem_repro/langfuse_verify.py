@@ -304,6 +304,9 @@ def import_and_verify_results(views,context,*,client=None,query=None,attempts=6,
         from .reporting import export_experiments
         metadata={**identity,**{k:context['binding'][k] for k in
                   ('config_sha256','source_sha256','max_output_tokens_by_stage') if k in context['binding']}}
+        policy=context['binding'].get('support_migration',{}).get('observability',{}).get('policy')
+        if policy is not None:
+            metadata['observability_policy']=policy
         results=export_experiments(views,client=client,export_authorized=True,metadata=metadata)
         if fingerprint(views)!=before:raise VerificationError('Saved predictions changed during import')
         imported={**claim,'experiments':{policy:{'id':result.experiment_id,'name':result.name,

@@ -374,6 +374,17 @@ class Run2Permit(PhasePermit):
                 self._halt(db, 'Unknown charge prevents another Run2 logical request')
         return super().start_logical(stage)
 
+    def reserve_attempt(self, logical_id, request):
+        # The new observed child must stop even before an SDK retransmission if
+        # another attempt loses its usage. The fixed historical454 is excluded.
+        if self.binding.get('support_migration', {}).get('observability'):
+            from .run2_blk022 import unknown_counts
+            with self._transaction() as db:
+                self._phase(db)
+                if unknown_counts(db, self.financial_adjudication)['unadjudicated_unknown_attempts']:
+                    self._halt(db, 'Unknown charge prevents another observed Run2 transmission')
+        return super().reserve_attempt(logical_id, request)
+
     def campaign_summary(self):
         result = ledger_summary(self.path)
         if self.financial_adjudication is not None:
