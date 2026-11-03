@@ -24,6 +24,7 @@ This tracker records evidence and investigation history; it grants no execution 
 | [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Resolved | T8 conv-49 artifact persistence | Exact real-cache byte/state proof;519-test suite |
 | [BLK-017](#blk-017) | Passive observers swallow critical provenance failures | Resolved | T8 paid-readiness gate | Terminal recorder/identity guards; independent fault rechecks |
 | [BLK-018](#blk-018) | Completion releases the next paid phase before receipt publication | Resolved | T8 phase finalization | Coordinated SQL/publication; threaded and commit-fault rechecks |
+| [BLK-019](#blk-019) | Second recovery provenance admits an extra ancestor edge | Investigating | Second conv-44 continuation engineering | Deterministic pre-merge provenance regressions; no live phase affected |
 
 **Current status (3 November 2026):** PR#20 merged as `3d0e04a`; the single USD3-authorized conv-44
 child also stopped Incomplete, at `D26:18`:186 new turns,610 total notes/counter607, zero of158 QA.
@@ -37,6 +38,8 @@ after engineering/review/merge and preflight, under USD3/446 logical/1,338 physi
 checkpoint it is not implemented/executed; current chain and first-ablation planning still reject.
 No third recovery, restart, ablation or scientific change is authorized. See the
 [verified child failure and cost-only forecast](t8-conv44-recovery-incomplete-20261103.md).
+BLK-019 is an offline engineering gate: candidate two-hop ownership/provenance regressions must
+pass before the newly authorized continuation can claim a permit or transmit.
 
 **Historical bounded grant:** the user authorized recovery engineering/review/merge and one
 USD3/818-logical/2,454-attempt child. That grant funded only the failed child above and cannot be
@@ -513,3 +516,22 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Resolved at the study-control boundary. Ordinary partial/model/storage failures still require their approved handling; no paid recovery or generation retry is introduced.
 - **Verification:** Threaded interleaving, previously claimed next permit, commit-after-publication failure, missing/invalid receipts and stale-marker rejection pass. Both reviewers independently pass six safeguards (`artifacts/t8/offline/review/{spec,standards}-final-race-green.txt`). Final suite519 tests/92 subtests and current-source runtime preflight pass, with no paid calls or original artifact changes.
 - **Research significance:** Durable accounting and durable research artifacts span different resources. A completion flag alone is not evidence that the preceding experiment is safe to reuse or that a subsequent paid phase may start.
+
+## BLK-019
+
+- **ID:** BLK-019
+- **Title:** Second recovery provenance admits an extra ancestor edge.
+- **Status:** Investigating
+- **First observed:** 2026-11-03, pre-merge second conv-44 continuation engineering.
+- **Category:** Infrastructure
+- **Expected behaviour:** A claimed leaf must reject transmission after any invalid edge touches its pinned ancestry. Migration records must list the actual support-file changes, and returned lineage data must not alias a verified parent's binding.
+- **Observed behaviour:** A deterministic test inserts a foreign-study incoming edge into the original root after the synthetic grandchild permit is claimed; `start_logical('metadata')` still succeeds. Two further tests show a note-field loop shadowing the changed-file set (reporting an empty migration list despite enforced source checks), and mutable aliasing of `parent_checkpoint` into the loaded parent.
+- **Evidence:** `/tmp/conv44-second-provenance-red.txt`; candidate `tests/test_conv44_second_checkpoint.py` tests for cross-cell ancestor edges, migration-field accuracy and lineage-copy isolation. The three tests fail deterministically. Actual archived phases and the USD8.407857 ledger are unchanged; no new live phase exists.
+- **Root cause:** **Confirmed in the candidate:** ownership traversal selects only same-cell edges and misses another edge touching an ancestor; the source-change variable is reused for note attributes; lineage embeds the parent's dictionary without copying it. These are support/provenance defects, not provider-output or memory-algorithm changes.
+- **Impact:** Blocks review/paid readiness of the new second continuation. It could admit a request under corrupted ancestry or misreport migration metadata; no real study result or charge was affected.
+- **Options considered:** Trusting callers not to alter the ledger and silently accepting incomplete migration metadata are rejected. Add bounded edge validation at admission, separate the source/note-field variables and copy the parent record. No generic graph/recovery framework or scientific change is needed.
+- **Resolution attempts:**
+  - 2026-11-03: reproduce all three failures with deterministic synthetic ledgers and zero network/model calls. Preserve the red log and actual-parent audit; the implementer is applying narrow corrections before integration.
+- **Final resolution or limitation:** Unresolved at this engineering checkpoint. Do not claim a permit or transmit until the regressions, full suite and independent reviews pass. BLK-013 output exhaustion remains separate and Open.
+- **Verification:** Pending corrected regressions and final integrated checks. A proposed correction is not a verified resolution.
+- **Research significance:** Multi-phase reproducibility requires both graph ownership and accurate isolated provenance records. Safe single-hop behaviour does not establish correct ancestry handling after an extra recovery hop.
