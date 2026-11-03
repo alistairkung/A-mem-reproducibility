@@ -278,9 +278,9 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
                 or [n['key'] for n in state['notes'][:424]]!=[n['key'] for n in prior['notes']]):
             raise ValueError('Second checkpoint altered the original memory prefix')
         for old,note in zip(prior['notes'],state['notes']):
-            changed={k for k in old['attributes'].keys()|note['attributes'].keys()
-                     if old['attributes'].get(k)!=note['attributes'].get(k)}
-            if changed-{'context','tags'}:
+            note_fields={k for k in old['attributes'].keys()|note['attributes'].keys()
+                         if old['attributes'].get(k)!=note['attributes'].get(k)}
+            if note_fields-{'context','tags'}:
                 raise ValueError('Second checkpoint altered immutable original note attributes')
     if (len(state['notes']) != count or len(state['outcomes']) != count
             or embeddings.shape != (count,384) or str(embeddings.dtype) != 'float32'
@@ -361,5 +361,5 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
         'parent_source_sha256':binding['source_sha256'],'migrated_files':sorted(changed),
         'completed_turns':count,'remaining_logical_calls':profile['remaining_logical_calls']}
     if second:
-        lineage['parent_checkpoint']=binding['checkpoint']
+        lineage['parent_checkpoint']=json.loads(json.dumps(binding['checkpoint']))
     return {'lineage':lineage,'state':state,'failures':failures,'generations':generations,'phase':phase}

@@ -327,3 +327,24 @@ def test_broken_two_hop_ownership_halts_before_another_logical_call(second_paren
     with pytest.raises(BudgetStop):permit.start_logical('metadata')
     assert ledger_summary(second_parent.ledger)['logical_calls']==calls
     assert permit.summary()['halted']
+
+
+def test_second_migration_records_support_changes_without_note_field_shadowing(second_parent):
+    sources=copy.deepcopy(second_parent.sources);sources['files']['amem_repro/runner.py']='reviewed-new-support'
+    checked=checkpoint.verify_study_checkpoint(second_parent.path,second_parent.root,second_parent.manifest,
+        second_parent.config,sources,second_parent.receipt)
+    assert checked['lineage']['migrated_files']==['amem_repro/runner.py']
+
+
+def test_second_lineage_copy_does_not_mutate_its_verified_parent(second_parent):
+    checked=verified(second_parent);before=copy.deepcopy(checked['phase'])
+    checked['lineage']['parent_checkpoint']['completed_turns']=0
+    assert checked['phase']==before
+
+
+def test_cross_cell_incoming_edge_into_root_blocks_leaf_transmission(second_parent):
+    auth=grandchild_approval(second_parent);permit=PhasePermit(auth,second_parent.ledger,auth['binding'])
+    with sqlite3.connect(second_parent.ledger) as db:
+        db.execute('INSERT INTO study_recovery_edges VALUES (?,?,?,?,?)',('foreign-owner',
+            second_parent.original.auth['approval_id'],'other-study','full','conv-49'))
+    with pytest.raises(BudgetStop):permit.start_logical('metadata')

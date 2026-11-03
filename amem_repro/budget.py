@@ -241,7 +241,20 @@ def study_job_claim(db, approval_id):
         for ident in edge[:2]:
             raw=db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',(ident,)).fetchone()
             if raw is None:return None
-            records[ident]=(json.loads(raw[0]),raw[1])
+            try:
+                value=json.loads(raw[0])
+            except (ValueError,TypeError):
+                return None
+            if (not isinstance(value,dict) or not isinstance(value.get('binding'),dict)
+                    or not isinstance(value['binding'].get('checkpoint',{}),dict)):
+                return None
+            records[ident]=(value,raw[1])
+    # Every edge touching these at-most-three nodes must belong to this cell's
+    # pinned chain; a foreign incoming root/outgoing leaf edge is not ancestry.
+    for ident in records:
+        adjacent=db.execute('SELECT parent_approval_id,child_approval_id,study_id,condition,conversation_id FROM study_recovery_edges WHERE parent_approval_id=? OR child_approval_id=?',
+                            (ident,ident)).fetchall()
+        if any(edge not in edges for edge in adjacent):return None
     from .checkpoint import study_checkpoint_profile,CONV44_SECOND_CHECKPOINT_POLICY
     if len(edges)==2:
         if conversation!='conv-44':return None
