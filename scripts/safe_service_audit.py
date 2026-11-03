@@ -23,7 +23,7 @@ def redact_operator_text(text, *, secrets=()):
     value = str(text)
     for secret in sorted((str(s) for s in secrets if s), key=len, reverse=True):
         value = value.replace(secret, '[redacted]')
-    value = re.sub(r'(?i)\b(?:Bearer|Basic)\s+[A-Za-z0-9+/=_.*•…-]+', '[redacted]', value)
+    value = re.sub(r'''(?i)\b(?:Bearer|Basic)\s+[^\s"'<>]+''', '[redacted]', value)
     return re.sub(r'''(?i)\b(?:sk|pk)-[^\s"'<>),;\]}]+''', '[redacted]', value)
 
 

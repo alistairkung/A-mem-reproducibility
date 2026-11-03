@@ -10,6 +10,8 @@ def test_operator_redaction_covers_credentials_previews_auth_and_explicit_litera
     redacted = audit.redact_operator_text(raw, secrets=['explicit-private-value'])
     assert redacted == '[redacted] [redacted] [redacted] [redacted] [redacted] [redacted] [redacted]'
     assert raw.endswith('explicit-private-value')  # Input remains authoritative and untouched.
+    assert audit.redact_operator_text('Authorization: Bearer abc~privateSuffix') == 'Authorization: [redacted]'
+    assert audit.redact_operator_text('{"Authorization":"Basic abc~privateSuffix"}') == '{"Authorization":"[redacted]"}'
 
 
 def test_explicit_auth_check_uses_only_pinned_read_only_command_and_safe_output(tmp_path, monkeypatch, capsys):
