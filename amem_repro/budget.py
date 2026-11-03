@@ -132,7 +132,7 @@ def _validate(auth, binding):
             checkpoint = binding['checkpoint']
             if phase == 'baseline':
                 from .checkpoint import study_checkpoint_profile
-                profile=study_checkpoint_profile(study_job['conversation_id'])
+                profile=study_checkpoint_profile(study_job['conversation_id'],checkpoint.get('policy') if isinstance(checkpoint,dict) else None)
                 valid = (isinstance(checkpoint,dict) and binding['condition']=='full'
                     and checkpoint.get('policy')==profile['policy']
                     and checkpoint.get('parent_phase_sha256')==profile['parent_phase_sha256']
@@ -143,6 +143,11 @@ def _validate(auth, binding):
                     and type(checkpoint.get('remaining_logical_calls')) is int
                     and checkpoint['remaining_logical_calls']==profile['remaining_logical_calls']
                     and logical==profile['remaining_logical_calls'])
+                if valid and profile['policy']=='blk013-conv44-second-checkpoint-v1':
+                    ancestor=checkpoint.get('parent_checkpoint')
+                    prior=study_checkpoint_profile('conv-44')
+                    valid=(isinstance(ancestor,dict) and all(ancestor.get(k)==prior[k] for k in
+                        ('policy','parent_phase_sha256','parent_run_id','completed_turns','remaining_logical_calls')))
             else:
                 valid = (phase=='pilot' and isinstance(checkpoint,dict)
                     and checkpoint.get('policy')=='blk014-checkpoint-v1'
@@ -212,46 +217,64 @@ CREATE TABLE IF NOT EXISTS study_recovery_edges (
 
 
 def study_job_claim(db, approval_id):
-    # Retain the failed parent's historical claim while its one child owns the cell.
+    """Recognise the reviewed one-hop recoveries and exact two-hop conv44 chain."""
     direct=db.execute('SELECT study_id,condition,conversation_id,complete FROM study_jobs WHERE approval_id=?',
                       (approval_id,)).fetchone()
-    try:
-        edge=db.execute('SELECT parent_approval_id,child_approval_id,study_id,condition,conversation_id FROM study_recovery_edges WHERE parent_approval_id=? OR child_approval_id=?',
-                        (approval_id,approval_id)).fetchone()
-    except sqlite3.OperationalError:
-        edge=None  # Historical pre-recovery databases have no edge table.
     row=db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(approval_id,)).fetchone()
     auth=json.loads(row[0]) if row else {}
-    if edge is None:
-        if auth.get('binding',{}).get('checkpoint') and auth.get('phase')=='baseline':
-            return None
-        return direct
-    parent_id,child_id,study,condition,conversation=edge
-    child=db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(child_id,)).fetchone()
-    child_binding=json.loads(child[0])['binding'] if child else {}
-    checkpoint=child_binding.get('checkpoint',{})
-    parent=db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',(parent_id,)).fetchone()
-    parent_auth=json.loads(parent[0]) if parent else {}
-    from .checkpoint import study_checkpoint_profile
     try:
-        profile=study_checkpoint_profile(conversation)
-    except ValueError:
+        touching=db.execute('SELECT parent_approval_id,child_approval_id,study_id,condition,conversation_id FROM study_recovery_edges WHERE parent_approval_id=? OR child_approval_id=?',
+                            (approval_id,approval_id)).fetchall()
+    except sqlite3.OperationalError:
+        touching=[]  # Historical databases before reviewed recovery edges.
+    if not touching:
+        return None if auth.get('binding',{}).get('checkpoint') and auth.get('phase')=='baseline' else direct
+    study,condition,conversation=touching[0][2:]
+    if any(edge[2:]!=(study,condition,conversation) for edge in touching):
         return None
-    claim=db.execute('SELECT study_id,condition,conversation_id,complete FROM study_jobs WHERE approval_id=?',(child_id,)).fetchone()
-    exclusive=db.execute('SELECT approval_id FROM checkpoint_claims WHERE parent_phase_sha256=?',(checkpoint.get('parent_phase_sha256'),)).fetchone()
-    if (parent is None or not parent[1] or parent_auth.get('run_id')!=checkpoint.get('parent_run_id')
-            or parent_auth.get('binding',{}).get('source_sha256')!=checkpoint.get('parent_source_sha256')
-            or checkpoint.get('parent_approval_id')!=parent_id or checkpoint.get('parent_phase_sha256')!=profile['parent_phase_sha256']
-            or checkpoint.get('policy')!=profile['policy'] or exclusive!=(child_id,)
-            or claim is None or claim[:3]!=(study,condition,conversation)
-            or child_binding.get('condition')!=condition
-            or child_binding.get('study_job',{}).get('study_id')!=study
-            or child_binding.get('study_job',{}).get('conversation_id')!=conversation
-            or parent_id==child_id):
+    edges=db.execute('SELECT parent_approval_id,child_approval_id,study_id,condition,conversation_id FROM study_recovery_edges WHERE study_id=? AND condition=? AND conversation_id=?',
+                     (study,condition,conversation)).fetchall()
+    if len(edges) not in (1,2) or condition!='full' or study!='d10a-fallback-once-v1':
         return None
-    if approval_id==parent_id:
-        return (study,condition,conversation,0) if direct is None else None
-    return claim
+    records={}
+    for edge in edges:
+        for ident in edge[:2]:
+            raw=db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',(ident,)).fetchone()
+            if raw is None:return None
+            records[ident]=(json.loads(raw[0]),raw[1])
+    from .checkpoint import study_checkpoint_profile,CONV44_SECOND_CHECKPOINT_POLICY
+    if len(edges)==2:
+        if conversation!='conv-44':return None
+        first=next((e for e in edges if records[e[1]][0]['binding'].get('checkpoint',{}).get('policy')=='blk013-conv44-checkpoint-v1'),None)
+        second=next((e for e in edges if records[e[1]][0]['binding'].get('checkpoint',{}).get('policy')==CONV44_SECOND_CHECKPOINT_POLICY),None)
+        if first is None or second is None or first[1]!=second[0] or len({*first[:2],*second[:2]})!=3:
+            return None
+        edges=[first,second]
+        if records[second[1]][0]['binding']['checkpoint'].get('parent_checkpoint')!=records[first[1]][0]['binding']['checkpoint']:
+            return None
+    elif records[edges[0][1]][0]['binding'].get('checkpoint',{}).get('policy')==CONV44_SECOND_CHECKPOINT_POLICY:
+        return None  # A second continuation cannot conceal its original edge.
+    leaf=edges[-1][1]
+    claim=db.execute('SELECT study_id,condition,conversation_id,complete FROM study_jobs WHERE approval_id=?',(leaf,)).fetchone()
+    if claim is None or claim[:3]!=(study,condition,conversation):return None
+    for parent_id,child_id,*_ in edges:
+        parent,halted=records[parent_id];child=records[child_id][0]
+        binding=child['binding'];cp=binding.get('checkpoint',{})
+        try:profile=study_checkpoint_profile(conversation,cp.get('policy'))
+        except ValueError:return None
+        exclusive=db.execute('SELECT approval_id FROM checkpoint_claims WHERE parent_phase_sha256=?',(cp.get('parent_phase_sha256'),)).fetchone()
+        if (not halted or parent_id==child_id or parent.get('run_id')!=cp.get('parent_run_id')
+                or cp.get('parent_run_id')!=profile['parent_run_id']
+                or parent.get('binding',{}).get('source_sha256')!=cp.get('parent_source_sha256')
+                or cp.get('parent_approval_id')!=parent_id
+                or cp.get('parent_phase_sha256')!=profile['parent_phase_sha256']
+                or cp.get('policy')!=profile['policy'] or exclusive!=(child_id,)
+                or binding.get('condition')!=condition
+                or binding.get('study_job',{}).get('study_id')!=study
+                or binding.get('study_job',{}).get('conversation_id')!=conversation
+                or db.execute('SELECT 1 FROM study_jobs WHERE approval_id=?',(parent_id,)).fetchone()):
+            return None
+    return claim if approval_id==leaf else (study,condition,conversation,0)
 
 
 def validate_approval(auth, binding):
@@ -294,13 +317,14 @@ class PhasePermit:
                 parent_id=recovery['parent_approval_id'] if recovery else ''
                 if recovery:
                     from .checkpoint import _read_archive,study_checkpoint_profile
-                    profile=study_checkpoint_profile(job['conversation_id'])
+                    profile=study_checkpoint_profile(job['conversation_id'],recovery['policy'])
                     parent_path=self.path.parent/'runs'/recovery['parent_run_id']/'phase.json'
                     _,parent_phase=_read_archive(parent_path,self.path.parent.parent,profile['parent_phase_sha256'])
                     parent_auth=db.execute('SELECT auth_json,halted FROM phases WHERE approval_id=?',(parent_id,)).fetchone()
                     if (parent_auth is None or not parent_auth[1]
                             or json.loads(parent_auth[0])['run_id']!=recovery['parent_run_id']
                             or parent_phase['binding']!=json.loads(parent_auth[0])['binding']
+                            or recovery.get('parent_checkpoint')!=parent_phase['binding'].get('checkpoint')
                             or study_job_claim(db,parent_id)!=(job['study_id'],'full',profile['conversation_id'],0)
                             or recovery['parent_snapshot_sha256']!=parent_phase['artifact_sha256']['partial-memory.json']
                             or recovery['parent_events_sha256']!=parent_phase['artifact_sha256']['events.jsonl']

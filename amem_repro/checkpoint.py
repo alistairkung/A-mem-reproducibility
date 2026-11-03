@@ -174,16 +174,25 @@ STUDY_PARENT_SHA256 = '19e863ea00b066f358e3518a9d22ee3c9767a9311057a5a5457125613
 STUDY_CHECKPOINT_POLICY = 'blk013-conv49-checkpoint-v1'
 STUDY_MIGRATION_FILES = {
     'amem_repro/checkpoint.py','amem_repro/budget.py','amem_repro/phases.py',
-    'amem_repro/study.py','amem_repro/comparison.py',
+    'amem_repro/study.py','amem_repro/comparison.py','amem_repro/runner.py',
 }
 
 
 CONV44_PARENT_SHA256 = 'dad7f09f944e0de792787cf40f48f22a19af955353601d48f1c16c12fe62d45b'
 CONV44_CHECKPOINT_POLICY = 'blk013-conv44-checkpoint-v1'
+CONV44_FIRST_CHILD_SHA256 = 'fb730968fc1eec7cd4df4bcae5dc89baa7ff507dc111c5c1868319f5106d7fd9'
+CONV44_SECOND_CHECKPOINT_POLICY = 'blk013-conv44-second-checkpoint-v1'
 
 
-def study_checkpoint_profile(conversation_id):
-    """Exactly the two separately approved parent recoveries; no arbitrary resume."""
+def study_checkpoint_profile(conversation_id, policy=None):
+    """Only three approved recovery boundaries; at most two hops for conv-44."""
+    if conversation_id=='conv-44' and policy==CONV44_SECOND_CHECKPOINT_POLICY:
+        return {'conversation_id':'conv-44','parent_phase_sha256':CONV44_FIRST_CHILD_SHA256,
+            'policy':CONV44_SECOND_CHECKPOINT_POLICY,'parent_run_id':'t8-full-conv44-checkpoint-child',
+            'completed_turns':610,'evolution_counter':607,'failed_turn':'D26:18',
+            'remaining_logical_calls':446,'phase_cap_usd':'3'}
+    if policy is not None and policy not in (STUDY_CHECKPOINT_POLICY,CONV44_CHECKPOINT_POLICY):
+        raise ValueError('Only the pinned study checkpoint policies are enabled')
     if conversation_id == 'conv-49':
         return {'conversation_id':'conv-49','parent_phase_sha256':STUDY_PARENT_SHA256,
             'policy':STUDY_CHECKPOINT_POLICY,'parent_run_id':'t8-full-conv49-r0-20261102',
@@ -198,9 +207,10 @@ def study_checkpoint_profile(conversation_id):
 
 
 def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
-    """Verify one of the two pinned failures; never claim, repair or spend."""
+    """Verify a fixed recovery boundary, including only the approved second hop."""
     root = Path(root).resolve()
-    profiles=(study_checkpoint_profile('conv-49'),study_checkpoint_profile('conv-44'))
+    profiles=(study_checkpoint_profile('conv-49'),study_checkpoint_profile('conv-44'),
+              study_checkpoint_profile('conv-44',CONV44_SECOND_CHECKPOINT_POLICY))
     profile=next((p for p in profiles if p['parent_run_id']==Path(path).parent.name),None)
     if profile is None:
         raise ValueError('Only the pinned study checkpoint parents are recoverable')
@@ -214,10 +224,23 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
     partial = read('partial-memory.json')
     identity, state = partial['identity'], partial['state']
     conversation = next(c for c in manifest['conversations'] if c['original_id']==profile['conversation_id'])
+    second=profile['policy']==CONV44_SECOND_CHECKPOINT_POLICY
+    ancestor=None
+    if second:
+        ancestor=verify_study_checkpoint(root/'artifacts/runs/t8-full-conv44-r0-20261103/phase.json',
+            root,manifest,config,start['source_hashes'],preflight)
+        if (binding.get('checkpoint')!=ancestor['lineage']
+                or read('checkpoint.json')!=binding['checkpoint']
+                or identity.get('checkpoint')!=binding['checkpoint']):
+            raise ValueError('Second checkpoint ancestry differs from the original root')
+    elif 'checkpoint' in binding:
+        raise ValueError('Only the pinned first-child continuation may have an ancestor')
+    prefix=424 if second else 0
+    new_count=count-prefix
     if (phase['run_id'] != profile['parent_run_id'] or path.parent.name != phase['run_id']
             or phase['phase'] != 'baseline' or phase['status'] != 'incomplete'
             or phase['usable_for_next_phase'] or phase['completed_questions'] != 0
-            or phase['conversation_ids'] != [profile['conversation_id']] or 'checkpoint' in binding
+            or phase['conversation_ids'] != [profile['conversation_id']]
             or binding['condition'] != 'full' or binding['repetition'] != 0
             or approval.get('approved') is not True or approval['binding'] != binding
             or approval['run_id'] != phase['run_id'] or read('run.json')['run_id'] != phase['run_id']
@@ -249,13 +272,23 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
     index = state['retriever']
     embeddings = np.asarray(index['embeddings'],dtype=index['embedding_dtype'])
     outcomes = [e for e in events if e['type']=='evolution_outcome']
+    if second:
+        prior=ancestor['state']
+        if (state['outcomes'][:424]!=prior['outcomes']
+                or [n['key'] for n in state['notes'][:424]]!=[n['key'] for n in prior['notes']]):
+            raise ValueError('Second checkpoint altered the original memory prefix')
+        for old,note in zip(prior['notes'],state['notes']):
+            changed={k for k in old['attributes'].keys()|note['attributes'].keys()
+                     if old['attributes'].get(k)!=note['attributes'].get(k)}
+            if changed-{'context','tags'}:
+                raise ValueError('Second checkpoint altered immutable original note attributes')
     if (len(state['notes']) != count or len(state['outcomes']) != count
             or embeddings.shape != (count,384) or str(embeddings.dtype) != 'float32'
             or not np.isfinite(embeddings).all() or state['evo_cnt'] != counter
             or state['evo_threshold'] != 100
             or index['document_ids'] != {doc:i for i,doc in enumerate(index['corpus'])}
-            or [e['turn_id'] for e in outcomes] != conversation['turn_ids'][:count]
-            or [{k:v for k,v in e.items() if k in state['outcomes'][0]} for e in outcomes] != state['outcomes']
+            or [e['turn_id'] for e in outcomes] != conversation['turn_ids'][prefix:count]
+            or [{k:v for k,v in e.items() if k in state['outcomes'][0]} for e in outcomes] != state['outcomes'][prefix:]
             or state['outcomes'][-1]['turn_id'] != profile['failed_turn']
             or state['outcomes'][-1]['proposed_decision'] is not None
             or state['outcomes'][-1]['counter_before'] != counter
@@ -265,7 +298,7 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
         raise ValueError('Invalid study checkpoint state or prefix')
     generations = [e for e in events if e['type']=='generation' and e.get('attempts')]
     rejected = [e for e in generations if e.get('error_type')]
-    if ([e['stage'] for e in generations] != ['metadata','shared_decision']*count
+    if ([e['stage'] for e in generations] != ['metadata','shared_decision']*new_count
             or len(rejected) != 1 or rejected[0] is not generations[-1]
             or rejected[0]['error_type'] != 'AdapterError'
             or rejected[0]['provider_response']['choices'][0]['finish_reason'] != 'length'
@@ -290,8 +323,8 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
         logical = db.execute('SELECT id,stage FROM logical_calls WHERE approval_id=? ORDER BY id',
                              (approval['approval_id'],)).fetchall()
         recorded = [a for e in generations for a in e['attempts']]
-        if (len(attempts) != 2*count or len(logical) != 2*count or len(recorded) != 2*count
-                or [row[1] for row in logical] != ['metadata','shared_decision']*count
+        if (len(attempts) != 2*new_count or len(logical) != 2*new_count or len(recorded) != 2*new_count
+                or [row[1] for row in logical] != ['metadata','shared_decision']*new_count
                 or any(row[0] != a['budget_attempt_id'] or row[1] != 'settled'
                        or json.loads(row[2]) != a['usage'] for row,a in zip(attempts,recorded))
                 or sum(row[3] for row in attempts) != phase['budget']['charged_or_reserved_microusd']):
@@ -310,6 +343,15 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
             if db.execute(query,(last,)).fetchone()[0] != phase['study_budget'][key]:
                 raise ValueError('Pinned study historical ledger prefix differs')
     failures = [e for e in events if e['type']=='failure']
+    if second:
+        inherited=[e for e in failures if e.get('inherited_from')=='checkpoint']
+        if (read('summary.json')['failures']!=failures or len(inherited)!=len(ancestor['failures'])):
+            raise ValueError('Second checkpoint inherited failure inventory differs')
+        for index,(original,notice) in enumerate(zip(ancestor['failures'],inherited)):
+            if (any(notice.get(k)!=v for k,v in original.items() if k not in ('run_id','build_id'))
+                    or notice.get('origin_run_id')!=original.get('origin_run_id',original['run_id'])
+                    or notice.get('origin_failure_index')!=original.get('origin_failure_index',index)):
+                raise ValueError('Second checkpoint lost original failure provenance')
     if not any(e.get('kind')=='evolve' for e in failures):
         raise ValueError('Pinned study failed evolution missing')
     lineage = {'policy':profile['policy'],'parent_run_id':phase['run_id'],
@@ -318,4 +360,6 @@ def verify_study_checkpoint(path, root, manifest, config, sources, receipt):
         'parent_events_sha256':phase['artifact_sha256']['events.jsonl'],
         'parent_source_sha256':binding['source_sha256'],'migrated_files':sorted(changed),
         'completed_turns':count,'remaining_logical_calls':profile['remaining_logical_calls']}
+    if second:
+        lineage['parent_checkpoint']=binding['checkpoint']
     return {'lineage':lineage,'state':state,'failures':failures,'generations':generations,'phase':phase}

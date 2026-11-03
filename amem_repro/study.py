@@ -141,15 +141,21 @@ def balanced_cost_forecast(root,manifest):
             values=set(ids)
             from .budget import study_job_claim
             for ident in set(ids):
-                row=db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(ident,)).fetchone()
-                prior=json.loads(row[0]) if row else {}
-                if prior.get('phase')=='baseline' and 'checkpoint' in prior.get('binding',{}):
+                # One legacy hop, or exactly the two reviewed conv44 hops.
+                for depth in range(3):
+                    row=db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(ident,)).fetchone()
+                    prior=json.loads(row[0]) if row else {}
+                    if prior.get('phase')!='baseline' or 'checkpoint' not in prior.get('binding',{}):
+                        break
+                    if depth==2:
+                        raise ValueError('Recovered cost lineage exceeds the reviewed two-hop limit')
                     if study_job_claim(db,ident) is None:
                         raise ValueError('Recovered cost lineage lost its durable ownership edge')
                     parent=db.execute('SELECT parent_approval_id FROM study_recovery_edges WHERE child_approval_id=?',(ident,)).fetchone()
-                    if parent is None:
+                    if parent is None or parent[0] in {ident}:
                         raise ValueError('Recovered cost lineage is missing its parent')
-                    values.add(parent[0])
+                    ident=parent[0]
+                    values.add(ident)
             return sorted(values)
         def means(ids):
             ids=cost_lineage(ids)
