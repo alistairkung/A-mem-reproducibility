@@ -142,3 +142,17 @@ def test_release_gate_requires_exact_source_evidence_and_revocation(tmp_path):
     with pytest.raises((ValueError, FileNotFoundError)): release_binding(tmp_path, 'b'*64)
     member.write_text('altered')
     with pytest.raises(ValueError): release_binding(tmp_path, 'a'*64)
+
+
+def test_export_ceiling_latches_a_failure_instead_of_sampling_or_silent_loss(monkeypatch):
+    from amem_repro import observation_policy
+    from amem_repro.observability import ObservabilityError
+    monkeypatch.setattr(observation_policy, 'MAX_PHASE_OBSERVATIONS', 1)
+    client = Client()
+    observer = LangfuseObserver(client, {**identity(), 'observability_policy':POLICY_ID})
+    observer({'type':'run_start','configuration':{},'conversation_ids':['conv-26']})
+    event = {'type':'memory_turn_start','turn_id':'D1:1','input':{'content':'unchanged'}}
+    saved = copy.deepcopy(event)
+    observer(event)
+    assert len(client.spans) == 1 and event == saved
+    with pytest.raises(ObservabilityError): observer.assert_healthy()

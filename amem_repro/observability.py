@@ -75,6 +75,10 @@ class LangfuseObserver:
             yield
 
     def _open(self, name, kind, event, *, input=None, parent=True, **extra):
+        if self.essential_export:
+            from .observation_policy import MAX_PHASE_OBSERVATIONS
+            if len(self.observations) >= MAX_PHASE_OBSERVATIONS:
+                raise ObservabilityError('Phase observation ceiling reached; no further export')
         context = ({'trace_id': self._unit[0].trace_id,
                     'parent_span_id': self._unit[0].id} if parent and self._unit
                    else {'trace_id': uuid.uuid4().hex})

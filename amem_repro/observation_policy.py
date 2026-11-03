@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 POLICY_ID = 'run2-audit-essential-v1'
+MAX_PHASE_OBSERVATIONS = 30000
 GATE_DIRECTORY = 'artifacts/run2/observed-recovery/gate-b'
 LAUNCHER = 'scripts/run2-checkpoint.py'
 
