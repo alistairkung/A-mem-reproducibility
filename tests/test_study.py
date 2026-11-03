@@ -5,6 +5,7 @@ import shutil
 import sqlite3
 import subprocess
 import copy
+import hashlib
 
 import pytest
 
@@ -19,6 +20,7 @@ from amem_repro.budget import BudgetStop, PhasePermit, ledger_summary
 from amem_repro.actions import action_configuration
 
 ROOT = Path(__file__).resolve().parents[1]
+RUN1_REVIEWED_COMMIT = '5ddc96ef8653bcf8997f2d7840435c4630826e09'
 
 
 def test_runner_partitions_only_whole_frozen_conversations(tmp_path):
@@ -360,8 +362,23 @@ def saved_history(tmp_path):
     shutil.copy2(original,tmp_path/'artifacts/study-budget.sqlite')
     for name in ('data','config','manifests'):
         (tmp_path/name).symlink_to(ROOT/name,target_is_directory=True)
-    from amem_repro.config import source_fingerprint
-    return tmp_path,source_fingerprint(ROOT)
+    # The legacy migration gate deliberately rejects Run2's provider/configuration
+    # changes. Pair this historical ledger with the actual reviewed Run1 source,
+    # not whichever implementation happens to be checked out for the test suite.
+    with (main/'artifacts/replays/t7-reviewed-candidate/run/events.jsonl').open() as stream:
+        sources=json.loads(next(stream))['source_hashes']
+    paths=subprocess.check_output(
+        ['git','ls-tree','-r','--name-only',RUN1_REVIEWED_COMMIT],cwd=ROOT,text=True).splitlines()
+    support={name for name in paths if
+             (name.startswith('amem_repro/') and name.endswith('.py')) or
+             (name.startswith('config/') and name.endswith('.json')) or
+             name in ('pyproject.toml','uv.lock')}
+    sources['files']={name:hashlib.sha256(subprocess.check_output(
+        ['git','show',f'{RUN1_REVIEWED_COMMIT}:{name}'],cwd=ROOT)).hexdigest()
+        for name in sources['files'].keys()|support}
+    from amem_repro.config import fingerprint
+    assert fingerprint(sources)=='0341a2a579842725c9ac6a18a110e2816a2896c32e07cf883fd36e2ef1ab681f'
+    return tmp_path,sources
 
 
 def test_original_history_and_scientific_migration_are_verified(saved_history):
@@ -371,6 +388,14 @@ def test_original_history_and_scientific_migration_are_verified(saved_history):
     bad=copy.deepcopy(sources);bad['files']['amem_repro/actions.py']='0'*64
     with pytest.raises(ValueError,match='scientific'):
         verify_study_history(root,bad)
+
+
+def test_run2_sources_cannot_satisfy_the_legacy_run1_migration_guard(saved_history):
+    from amem_repro.config import source_fingerprint
+    from amem_repro.study import verify_study_history
+    root,_=saved_history
+    with pytest.raises(ValueError,match='scientific, provider or action'):
+        verify_study_history(root,source_fingerprint(ROOT))
 
 
 @pytest.mark.parametrize('corruption',['usage','missing_prefix_masked_by_later_spend'])
