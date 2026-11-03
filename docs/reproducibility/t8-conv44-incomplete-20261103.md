@@ -1,5 +1,9 @@
 # T8 conv-44 — incomplete full-mode baseline
 
+This immutable-outcome narrative predates the subsequent
+[one-child recovery grant](decisions.md#authorization--exact-conv-44-checkpoint-engineering-merge-and-one-child).
+That grant does not alter the failed parent or authorize an ablation.
+
 On 3 November 2026, documentation PR #18 merged normally as
 `f78215e3a6e127d19001df73011b27c273b1f65d`. Standards/Spec reviews were clear,
 GitHub reported a clean merge with no failed required check, and local main was synchronized.

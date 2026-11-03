@@ -30,9 +30,16 @@ with424 notes/counter422 and zero of158 QA. BLK-013 recurred: HTTP200/`length`,4
 The USD5 grant is consumed;848 requests settled USD1.415538, cumulative USD7.705436/3,868 attempts,
 zero unknown charges. The durable halt, partial stale index, original failed response and271 D3a
 deviations survive; completed conv-49/conv-50 evidence and historical ledger rows remain unchanged.
-No paid recovery, restart, ablation or other phase is authorized. First-ablation readiness is blocked.
+The fresh-run grant is consumed; first-ablation readiness remains blocked. The only subsequent
+recovery authority is the bounded grant below; no restart, ablation or other phase is authorized.
 See the [verified failure and cost-only forecast](t8-conv44-incomplete-20261103.md) and
 [consumed authority](decisions.md#authorization--pr18-merge-and-one-full-conv-44-phase).
+
+**Subsequent bounded grant:** the user now authorizes exact conv-44 recovery engineering/review/merge
+and one USD3/818-logical/2,454-attempt child after all safeguards. See the
+[latest authority](decisions.md#authorization--exact-conv-44-checkpoint-engineering-merge-and-one-child).
+No child has been executed at this engineering checkpoint. No ablation, second recovery or settings
+change is authorized; retain the Incomplete parent and all prior evidence.
 
 **Historical paid hold (2 November2026):** T8 full conv-49 exhausted D9a's4,000-token shared-decision
 allowance at `D22:2`. BLK-013 is reopened. The incomplete run preserves413 notes/counter411,

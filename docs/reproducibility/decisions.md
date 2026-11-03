@@ -570,3 +570,32 @@ separate decisions/review. No output repair, cap/prompt/schema change, recovery 
 implemented or executed. BLK-013 remains Open; T5/T8 and first-ablation readiness remain blocked.
 See [verified outcome and evidence](t8-conv44-incomplete-20261103.md). Stop at the authorized failure
 boundary; unused budget is not permission for another phase.
+
+## Authorization — exact conv-44 checkpoint engineering, merge and one child
+
+On 3 November 2026 the user explicitly authorized autonomous conv-44 checkpoint implementation,
+offline tests, Standards/Spec review, scoped commits/pushes and merge after all required checks pass.
+Documentation PR#19 may also merge after review; it merged as `11685b228f75e508d763be5417af5a5cef2a6d26`.
+This supersedes the previous paid hold only for the single child described here; it grants no ablation.
+
+Recover only parent `t8-full-conv44-r0-20261103`, canonical receipt SHA256
+`dad7f09f944e0de792787cf40f48f22a19af955353601d48f1c16c12fe62d45b`.
+Preserve424 notes, links/metadata, counter422, failed `D18:21` and its original fallback, and exact
+stale424×384 float32 index. Resume `D18:22`, process251 remaining turns and all158 original QA.
+Do not regenerate the prefix/rejected decision, refresh embeddings, repair JSON or change scientific
+settings. Use the existing DeepSeek Flash, D3a and D9a policies, prompts/schemas/parser/retrieval/scoring.
+
+Exactly one new immutable child approval may authorize **USD3 additional,818 logical calls and2,454
+physical attempts**, including the existing permitted SDK retries. Bind the exact parent, current
+reviewed source, dataset, assets/preflight, model and provider policy. Retain the existing cumulative
+USD50 study ledger, USD8 reserve, pre-request reservations, durable halt and one-shot checkpoint
+ownership. Do not reopen the parent, reuse an approval or reset historical accounting.
+
+After verified merge/preflight/safeguards, execute this single phase without further confirmation.
+If provider truncation/contract violation or provenance/spending failure recurs, halt, preserve partial
+state/raw responses/charges and investigate offline. No second paid recovery or automatic restart is
+authorized. On success verify675 ordered turns/158 unique QA, final memory/index, inherited degradation,
+both scoring views and separate adversarial correctness, once-only parent/child costs and a cost-only
+affordability forecast. Stop after verified completion or a material blocker. No ablation or further
+paid phase is authorized by this grant. BLK-013 remains Open until the evidence supports a narrower
+mitigation claim; checkpoint completion would not prove output-cap adequacy generally.
