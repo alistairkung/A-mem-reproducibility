@@ -11,6 +11,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 from urllib.parse import urlsplit
 
 COMMAND = ('npx', '--yes', 'langfuse-cli@1.2.4', 'api', 'projects', 'list', '--json')
@@ -48,7 +49,9 @@ def check_langfuse_project_auth(env_file, expected_project_id):
         # Allowlist child variables: never inherit provider keys, auth/debug flags,
         # npm options, NODE_OPTIONS or arbitrary environment-driven command changes.
         child = {k: os.environ[k] for k in ('PATH', 'HOME', 'TMPDIR', 'SYSTEMROOT', 'WINDIR') if k in os.environ}
-        child.update(values, LANGFUSE_BASE_URL=host, LANGFUSE_HOST=host, npm_config_loglevel='silent')
+        child.update(values, LANGFUSE_BASE_URL=host, LANGFUSE_HOST=host,
+                     npm_config_loglevel='silent',
+                     npm_config_cache=str(Path(tempfile.gettempdir()) / 'amem-run2-langfuse-cli-cache'))
     except Exception:
         return result
     try:

@@ -26,6 +26,7 @@ def test_explicit_auth_check_uses_only_pinned_read_only_command_and_safe_output(
         assert child['LANGFUSE_PUBLIC_KEY'] == 'pk-lf-test'
         assert child['LANGFUSE_SECRET_KEY'] == 'sk-lf-test'
         assert 'OPENAI_API_KEY' not in child and 'DEEPSEEK_API_KEY' not in child and 'LANGFUSE_DEBUG' not in child
+        assert child['npm_config_cache'].endswith('/amem-run2-langfuse-cli-cache')
         assert kwargs['capture_output'] is True and kwargs['timeout'] == 30
         return SimpleNamespace(returncode=0, stdout=json.dumps({'status': 200, 'headers': {'authorization': 'Basic synthetic-private-header', 'x-secret': 'sk-lf-private-header'}, 'body': {'data': [{'id': 'expected-project', 'name': 'PRIVATE PROJECT sk-leak'}]}}), stderr='Basic dXNlcjpwYXNz sk-secret-stderr')
 

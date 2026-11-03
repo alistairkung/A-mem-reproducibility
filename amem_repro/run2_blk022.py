@@ -246,31 +246,45 @@ def verify_exact_checkpoint(path, *, root, campaign, manifest, sources, receipt,
 
 MIGRATION_POLICY = 'run2-blk022-explicit-reviewed-support-v1'
 MIGRATION_FILES = {'amem_repro/run2.py', 'amem_repro/run2_blk022.py'}
+OBSERVED_MIGRATION_POLICY = 'run2-blk022-observed-support-v2'
+OBSERVED_FILES = MIGRATION_FILES | {'amem_repro/observability.py',
+    'amem_repro/langfuse_verify.py', 'amem_repro/observation_policy.py'}
 
 
 def validate_support_migration(value, financial_adjudication, campaign):
     """Check phase-bound pins; the runtime additionally verifies every Git blob."""
     validate_financial_receipt(financial_adjudication)
-    if not isinstance(value, dict) or set(value) != {
+    observed = isinstance(value, dict) and value.get('policy') == OBSERVED_MIGRATION_POLICY
+    fields = {
             'policy', 'reviewed_commit', 'original_source_sha256', 'candidate_source_sha256',
             'original_preflight_sha256', 'candidate_preflight_sha256',
-            'financial_receipt_sha256', 'changed_files'}:
+            'financial_receipt_sha256', 'changed_files'} | ({'observability'} if observed else set())
+    if not isinstance(value, dict) or set(value) != fields:
         raise BudgetStop('BLK-022 support migration is malformed')
-    if (value['policy'] != MIGRATION_POLICY
+    if (value['policy'] != (OBSERVED_MIGRATION_POLICY if observed else MIGRATION_POLICY)
             or not isinstance(value['reviewed_commit'], str)
             or not re.fullmatch('[0-9a-f]{40}', value['reviewed_commit'])
             or value['original_source_sha256'] != campaign['binding']['source_sha256']
             or value['original_preflight_sha256'] != campaign['binding']['preflight_sha256']
             or value['financial_receipt_sha256'] != fingerprint(financial_adjudication)
-            or value['changed_files'] != sorted(MIGRATION_FILES)
+            or value['changed_files'] != sorted(OBSERVED_FILES if observed else MIGRATION_FILES)
             or any(not isinstance(value[key], str) or not re.fullmatch('[0-9a-f]{64}', value[key])
                    for key in ('candidate_source_sha256', 'candidate_preflight_sha256'))):
         raise BudgetStop('BLK-022 support migration differs from the narrow reviewed policy')
+    if observed:
+        from .observation_policy import POLICY_ID
+        policy = value['observability']
+        if (not isinstance(policy, dict) or set(policy) != {
+                'policy', 'gate_sha256', 'credential_receipt_sha256', 'execution_script_sha256'}
+                or policy['policy'] != POLICY_ID
+                or any(not isinstance(policy[k], str) or not re.fullmatch('[0-9a-f]{64}', policy[k])
+                       for k in policy if k != 'policy')):
+            raise BudgetStop('BLK-022 observability release binding is invalid')
 
 
 def verify_support_migration(*, root, campaign, sources, receipt,
                              financial_adjudication, reviewed_commit):
-    """An explicit reviewed commit may change only the two named support files."""
+    """An explicit reviewed commit may change only the named support files."""
     from .run2 import _read, _read_lines
     if not isinstance(reviewed_commit, str) or not re.fullmatch('[0-9a-f]{40}', reviewed_commit):
         raise ValueError('BLK-022 support migration requires a full immutable reviewed commit SHA')
@@ -283,12 +297,14 @@ def verify_support_migration(*, root, campaign, sources, receipt,
     if (fingerprint(archived) != campaign['binding']['source_sha256']
             or fingerprint(original_receipt) != campaign['binding']['preflight_sha256']
             or sources.get('author_revision') != archived['author_revision']
-            or set(sources.get('files', {})) != set(archived['files']) | {'amem_repro/run2_blk022.py'}):
+            or set(sources.get('files', {})) not in (
+                set(archived['files']) | {'amem_repro/run2_blk022.py'},
+                set(archived['files']) | {'amem_repro/run2_blk022.py', 'amem_repro/observation_policy.py'})):
         raise ValueError('BLK-022 original scientific/source inventory changed')
     changed = {name for name, digest in sources['files'].items()
                if digest != archived['files'].get(name)}
-    if changed != MIGRATION_FILES:
-        raise ValueError('BLK-022 migration changed files outside the two reviewed support files')
+    if changed not in (MIGRATION_FILES, OBSERVED_FILES):
+        raise ValueError('BLK-022 migration changed files outside the named reviewed support files')
     if (receipt.get('source_sha256') != fingerprint(sources)
             or receipt.get('assets') != original_receipt['assets']
             or receipt.get('runtime', {}).get('ok') is not True
@@ -311,6 +327,17 @@ def verify_support_migration(*, root, campaign, sources, receipt,
         'original_source_sha256': fingerprint(archived), 'candidate_source_sha256': fingerprint(sources),
         'original_preflight_sha256': fingerprint(original_receipt), 'candidate_preflight_sha256': fingerprint(receipt),
         'financial_receipt_sha256': fingerprint(financial_adjudication), 'changed_files': sorted(changed)}
+    if changed == OBSERVED_FILES:
+        from .observation_policy import release_binding, LAUNCHER
+        result['policy'] = OBSERVED_MIGRATION_POLICY
+        result['observability'] = release_binding(root, fingerprint(sources))
+        try:
+            script = subprocess.check_output(['git', 'show', f'{reviewed_commit}:{LAUNCHER}'],
+                                             cwd=root, stderr=subprocess.DEVNULL)
+        except (OSError, subprocess.CalledProcessError) as error:
+            raise ValueError('Reviewed one-cell launcher is unavailable') from error
+        if hashlib.sha256(script).hexdigest() != result['observability']['execution_script_sha256']:
+            raise ValueError('One-cell launcher differs from the reviewed commit')
     validate_support_migration(result, financial_adjudication, campaign)
     return result
 
