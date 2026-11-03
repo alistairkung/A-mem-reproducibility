@@ -456,3 +456,17 @@ Checkpoint continuation would need a new conv-49 lineage policy/approval, preser
 and starting `D22:3` (96 turns/196 QA;584 logical calls, at most1,752 attempts). Raising the cap instead
 would require an explicit protocol amendment and treatment of existing4,000-token baseline evidence.
 Neither is authorized or implemented by this hold record. T5/T8 remain open and PR#17 remains draft.
+
+## Authorization — BLK-013 conv-49 checkpoint engineering only
+
+On3 November2026 the user approved implementing and offline-testing exact-state checkpoint recovery
+for `t8-full-conv49-r0-20261102`, keeping the frozen D9a4,000-token shared-decision cap. Preserve all
+413 notes, counter411, failed `D22:2` evolution, stale index, parent provenance, raw output and charges;
+resume at `D22:3` only under a future separately approved paid phase. Remaining scope is96 turns plus
+all196 original questions,584 logical calls and at most1,752 physical attempts.
+
+This authorizes narrow support code, deterministic offline tests, documentation and review on existing
+T8 PR#17. It grants no paid continuation/recovery, new main cell, cap/prompt/schema/parser/scoring/
+retrieval/model change or merge. Reuse existing checkpoint/phase/permit/runner/result-import seams;
+retain one-shot parent claims, cumulative ledger history, immutable evidence and inherited degradation.
+Keep BLK-013 Open: engineering verification cannot resolve the observed output-cap limitation.
