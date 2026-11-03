@@ -33,7 +33,7 @@ finished note227/counter226. This was not a malformed-JSON, `length`, settlement
 
 The first attempt keeps its full324,404-microUSD reservation. The next `D10:11` metadata generation
 is blocked before transmission by the durable unknown-charge guard. A successful retry does not
-prove that the earlier request was unbilled. No accounting value was released, corrected or reset.
+prove that the earlier request was unbilled. No part of the unknown reservation was released, nor was its historical row corrected or reset.
 The first body/request ID/detailed exception message were not captured and cannot be fabricated
 from the valid retry. The [provider's keep-alive documentation](https://api-docs.deepseek.com/quick_start/rate_limit/)
 does not identify this60-second error or establish its cost. The provider console requires sign-in;
@@ -107,9 +107,11 @@ Authoritative local evidence:
   condition aggregates or fabricated quality values. `forecasts/transport-stop-cost-only.json` is
   financial planning only, not an executable recovery approval.
 
-The focused transport group passes28 tests. The post-incident complete suite and final outcome
-reviews are pending at this documentation checkpoint. Production code/settings and all phase/ledger
-evidence remain unchanged. No paid probe, retry phase or later experimental cell was launched.
+The focused transport group passes28 tests. The post-incident complete suite passes716 tests/92
+subtests in661.43s with17 expected warnings; independent Standards and Spec reviews verify the actual
+state, financial/cloud proofs and corrected unit forecast. [PR#27](https://github.com/alistairkung/A-mem-reproducibility/pull/27)
+records the outcome/regression. Production code/settings and all phase/ledger evidence remain
+unchanged. No paid probe, retry phase or later experimental cell was launched.
 
 Recommended next step: seek request-level billing/usage for attempt454. If it cannot be resolved,
 obtain an explicit decision on a narrowly scoped fully charged upper-bound adjudication and exact-state

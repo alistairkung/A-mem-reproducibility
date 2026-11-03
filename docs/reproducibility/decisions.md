@@ -848,3 +848,8 @@ See [the stopping report](run2-first-cell-incomplete-20261103.md),
 [BLK-022](blockers.md#blk-022), the immutable first phase and
 `artifacts/run2/transport-incident.json`. Corrected/historical quality metrics and published-ablation
 comparisons are unavailable; no partial or Run1 result substitutes for a complete Run2 condition.
+
+Final post-incident verification: the test-only HTTP200 body-read regression and full offline suite
+pass716 tests/92 subtests (17 expected warnings). Independent Standards/Spec audits confirm correct
+SDK retry/unknown-charge stopping, exact state/cloud proof and the SDK unit forecast. PR#27 records
+the outcome. Neither verification nor its merge settles the unknown usage or grants a new paid phase.
