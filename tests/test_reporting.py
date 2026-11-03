@@ -94,6 +94,23 @@ class ExportSafetyTests(unittest.TestCase):
 
 
 class ExperimentIdentityTests(unittest.TestCase):
+    def test_run2_campaign_and_conversation_are_explicit_export_identity_dimensions(self):
+        names = []
+        for campaign, conversation in [('run1', 'conv-49'), ('run2', 'conv-49'), ('run2', 'conv-50')]:
+            client = FakeClient()
+            export_experiments(
+                ReportingTests().views(), client=client, export_authorized=True,
+                evaluation_factory=lambda **k: k,
+                metadata={'campaign_id': campaign, 'conversation_id': conversation,
+                          'run_id': 'same-import-label', 'condition': 'full', 'population': 'fallback',
+                          'manifest_sha256': 'a' * 64, 'repetition': 0})
+            run = client.runs[0]
+            names.append((run['name'], run['run_name']))
+            self.assertEqual(run['metadata']['experiment_identity']['campaign_id'], campaign)
+            self.assertEqual(run['metadata']['experiment_identity']['conversation_id'], conversation)
+            self.assertIn(campaign, run['name'])
+        self.assertEqual(len(set(names)), 3)
+
     def test_each_study_dimension_changes_export_identity(self):
         identity = {
             "run_id": "r1",

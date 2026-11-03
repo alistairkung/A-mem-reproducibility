@@ -76,6 +76,11 @@ def _study_identity(metadata):
             "Reporting requires condition, population, manifest_sha256, repetition and run_id"
         )
     identity = {key: metadata[key] for key in required}
+    for key in ('campaign_id', 'conversation_id'):
+        if key in metadata:
+            if not isinstance(metadata[key], str) or not metadata[key].strip():
+                raise ValueError(f'{key} must be a nonempty identity')
+            identity[key] = metadata[key]
     identity["provider_contract_policy"] = metadata.get("provider_contract_policy", STRICT_PROVIDER_POLICY)
     validate_provider_policy(identity["provider_contract_policy"])
     if identity["condition"] not in (
@@ -189,8 +194,9 @@ def export_experiments(
                 }
                 for r in by_id.values()
             ]
+            prefix = 'A-MEM/' + (identity['campaign_id'] + '/' if 'campaign_id' in identity else '')
             results[policy] = client.run_experiment(
-                name=f"A-MEM/{identity['condition']}/{identity['population']}/{policy}",
+                name=f"{prefix}{identity['condition']}/{identity['population']}/{policy}",
                 run_name=f"repetition-{identity['repetition']}/{fingerprint(export_identity)}",
                 data=data,
                 task=task,
