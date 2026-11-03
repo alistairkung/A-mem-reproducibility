@@ -1,0 +1,305 @@
+"""Financial-only BLK-022 adjudication and exact-state admission boundaries."""
+import copy
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import sqlite3
+
+import pytest
+
+from amem_repro import run2
+from amem_repro import run2_blk022 as incident
+from amem_repro.budget import BudgetStop, ledger_summary
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture
+def evidence(tmp_path):
+    source = Path(os.environ.get('AMEM_BLK022_EVIDENCE_ROOT', ROOT))
+    base = source / 'artifacts/run2'
+    if not (base / 'budget.sqlite').exists():
+        pytest.skip('Optional immutable BLK-022 evidence is not present')
+    target = tmp_path / 'artifacts/run2'
+    target.mkdir(parents=True)
+    shutil.copy2(base / 'budget.sqlite', target / 'budget.sqlite')
+    shutil.copytree(base / 'runs' / incident.PARENT_RUN,
+                    target / 'runs' / incident.PARENT_RUN)
+    campaign = json.loads((base / 'frozen/campaign-approval.json').read_text())
+    return tmp_path, campaign
+
+
+def approve(plan):
+    plan = copy.deepcopy(plan)
+    plan.update(approved=True, approved_by='offline financial review',
+                approved_at='2026-11-03T12:00:00Z')
+    return plan
+
+
+def test_financial_receipt_retains_original_unknown_and_cannot_authorize_paid_phase(evidence):
+    root, campaign = evidence
+    ledger = root / 'artifacts/run2/budget.sqlite'
+    before = ledger.read_bytes()
+    plan = incident.plan_financial_adjudication(root=root, campaign=campaign)
+    assert plan['paid_execution_authorized'] is False
+    with pytest.raises(BudgetStop, match='approval'):
+        incident.verify_financial_adjudication(plan, root=root, campaign=campaign)
+    receipt = incident.verify_financial_adjudication(approve(plan), root=root, campaign=campaign)
+    assert receipt['accounting'] == {
+        'unknown_attempts': 1, 'unadjudicated_unknown_attempts': 0,
+        'retained_unknown_microusd': 324404, 'known_settled_microusd': 720433,
+        'charged_or_reserved_microusd': 1044837,
+        'original_cell_cap_microusd': 5000000, 'remaining_cell_cap_microusd': 3955163}
+    assert ledger_summary(ledger)['unknown_attempts'] == 1
+    assert ledger.read_bytes() == before
+    with pytest.raises(BudgetStop):
+        run2.Run2Permit(receipt, root, campaign)
+
+
+@pytest.mark.parametrize('change', [
+    lambda a: a['binding'].update(attempt_id=455),
+    lambda a: a['binding'].update(reservation_microusd=1),
+    lambda a: a['binding'].update(request_sha256='0' * 64),
+    lambda a: a.update(paid_execution_authorized=True),
+    lambda a: a.update(scope='paid'),
+    lambda a: a['accounting'].update(unknown_attempts=0),
+])
+def test_financial_receipt_cannot_waive_another_attempt_or_reduce_exposure(evidence, change):
+    root, campaign = evidence
+    approval = approve(incident.plan_financial_adjudication(root=root, campaign=campaign))
+    change(approval)
+    with pytest.raises(BudgetStop):
+        incident.verify_financial_adjudication(approval, root=root, campaign=campaign)
+
+
+@pytest.mark.parametrize('sql', [
+    'UPDATE attempts SET reservation=1 WHERE id=454',
+    'UPDATE attempts SET charge=0 WHERE id=454',
+    "UPDATE attempts SET status='settled',usage_json='{}' WHERE id=454",
+    "UPDATE attempts SET request_sha256='forged' WHERE id=454",
+    "UPDATE attempts SET status='unknown',usage_json='null',charge=reservation WHERE id=453",
+    'DELETE FROM logical_calls WHERE id=453',
+    "UPDATE run2_phases SET receipt_sha256='forged' WHERE phase_index=0",
+])
+def test_tampered_original_ledger_rejects_financial_admission(evidence, sql):
+    root, campaign = evidence
+    approval = approve(incident.plan_financial_adjudication(root=root, campaign=campaign))
+    with sqlite3.connect(root / 'artifacts/run2/budget.sqlite') as db:
+        db.execute(sql)
+    with pytest.raises(BudgetStop):
+        incident.verify_financial_adjudication(approval, root=root, campaign=campaign)
+
+
+def test_checkpoint_restores_exact_227_notes_without_repeating_valid_retry(evidence):
+    root, campaign = evidence
+    receipt = incident.verify_financial_adjudication(
+        approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
+        root=root, campaign=campaign)
+    directory = root / 'artifacts/run2/runs' / incident.PARENT_RUN
+    events = [json.loads(line) for line in (directory / 'events.jsonl').read_text().splitlines()]
+    preflight = json.loads((directory / 'preflight.json').read_text())
+    state = run2.verify_checkpoint(directory / 'phase.json', root=root, campaign=campaign,
+        manifest=events[0]['manifest'], sources=events[0]['source_hashes'], receipt=preflight,
+        financial_adjudication=receipt)
+    original = json.loads((directory / 'partial-memory.json').read_text())['state']
+    assert state['state'] == original
+    assert state['state']['evo_cnt'] == 226
+    assert state['lineage']['completed_turns'] == 227
+    assert state['lineage']['next_turn_id'] == 'D10:11'
+    assert state['lineage']['remaining_logical_calls'] == 1212
+    assert state['lineage']['parent_receipt_sha256'] == incident.PARENT_RECEIPT
+    with pytest.raises(ValueError, match='BLK013'):
+        run2.verify_checkpoint(directory / 'phase.json', root=root, campaign=campaign,
+            manifest=events[0]['manifest'], sources=events[0]['source_hashes'], receipt=preflight)
+
+
+def test_financial_permission_admits_only_known454_and_still_stops_any_new_unknown(evidence):
+    root, campaign = evidence
+    financial = incident.verify_financial_adjudication(
+        approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
+        root=root, campaign=campaign)
+    with sqlite3.connect(root / 'artifacts/run2/budget.sqlite') as db:
+        assert incident.unknown_counts(db)['unadjudicated_unknown_attempts'] == 1
+        assert incident.unknown_counts(db, financial) == {
+            'unknown_attempts': 1, 'unadjudicated_unknown_attempts': 0}
+        db.execute("INSERT INTO attempts VALUES (456,454,?,'new-request','unknown',324404,324404,'null')",
+                   (incident.PARENT_APPROVAL,))
+        with pytest.raises(BudgetStop, match='prefix'):
+            incident.unknown_counts(db, financial)
+
+
+def test_source_migration_rejects_dynamic_reference_before_any_source_trust(evidence):
+    root, campaign = evidence
+    financial = incident.verify_financial_adjudication(
+        approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
+        root=root, campaign=campaign)
+    with pytest.raises(ValueError, match='full immutable'):
+        incident.verify_support_migration(root=root, campaign=campaign, sources={}, receipt={},
+            financial_adjudication=financial, reviewed_commit='HEAD')
+
+
+def approved_child(root, campaign, financial):
+    directory = root / 'artifacts/run2/runs' / incident.PARENT_RUN
+    start = json.loads((directory / 'events.jsonl').read_text().splitlines()[0])
+    checked = run2.verify_checkpoint(directory / 'phase.json', root=root, campaign=campaign,
+        manifest=start['manifest'], sources=start['source_hashes'],
+        receipt=json.loads((directory / 'preflight.json').read_text()), financial_adjudication=financial)
+    binding = run2._binding(campaign, 0)
+    # The permit seam checks the immutable approved allocation; production runtime
+    # independently verifies these pins against every explicit reviewed Git blob.
+    migration = {'policy': incident.MIGRATION_POLICY, 'reviewed_commit': 'b' * 40,
+        'original_source_sha256': binding['source_sha256'],
+        'original_preflight_sha256': binding['preflight_sha256'],
+        'candidate_source_sha256': 'c' * 64, 'candidate_preflight_sha256': 'd' * 64,
+        'financial_receipt_sha256': run2.fingerprint(financial),
+        'changed_files': sorted(incident.MIGRATION_FILES)}
+    binding.update(checkpoint=checked['lineage'], financial_adjudication=financial,
+        support_migration=migration, source_sha256='c' * 64, preflight_sha256='d' * 64)
+    return {'phase': 'run2', 'phase_index': 1, 'run_id': 'run2-full-conv-44-r0-p1',
+        'approval_id': 'offline-child-only', 'approved': True, 'approved_by': 'offline test',
+        'approved_at': '2026-11-03T12:00:00Z', 'binding': binding, 'pricing': run2.PRICING,
+        'limits': {'phase_usd': '3.955163', 'max_logical_calls': 1212, 'max_attempts': 3636}}
+
+
+def test_separately_approved_child_keeps_cell_cap_and_parent_one_shot(evidence):
+    root, campaign = evidence
+    financial = incident.verify_financial_adjudication(
+        approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
+        root=root, campaign=campaign)
+    child = approved_child(root, campaign, financial)
+    permit = run2.Run2Permit(child, root, campaign)
+    assert permit.cell_summary() == {'logical_calls': 454, 'physical_attempts': 455,
+        'charged_or_reserved_microusd': 1044837, 'unknown_attempts': 1,
+        'unadjudicated_unknown_attempts': 0}
+    assert permit.start_logical('metadata') == 455
+    assert permit.summary()['phase_cap_microusd'] == 3955163
+    with pytest.raises(BudgetStop, match='consumed'):
+        run2.Run2Permit(child, root, campaign)
+    assert ledger_summary(root / 'artifacts/run2/budget.sqlite')['unknown_attempts'] == 1
+
+
+def test_second_unknown_from_genuine_sdk_retry_is_never_covered_by_original_receipt(evidence, monkeypatch):
+    import httpx
+    from amem_repro.adapter import create_deepseek_controller
+    from amem_repro.config import RUN2_CONFIG
+    from amem_repro.contracts import load_author_contracts
+    from test_adapter_budget import response
+    root, campaign = evidence
+    financial = incident.verify_financial_adjudication(
+        approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
+        root=root, campaign=campaign)
+    child = approved_child(root, campaign, financial)
+    permit = run2.Run2Permit(child, root, campaign)
+    sent = []
+    def sdk(request):
+        sent.append(request)
+        if len(sent) == 1:
+            raise httpx.RemoteProtocolError('synthetic body-read failure')
+        return httpx.Response(200, json=response('{"keywords":["a","b","c"],"context":"saved suffix","tags":["a","b","c"]}'))
+    monkeypatch.setenv('DEEPSEEK_API_KEY', 'offline-placeholder')
+    controller = create_deepseek_controller(paid_authorized=True, phase_permit=permit,
+        generation_config=RUN2_CONFIG, provider_contract_policy='canonical-index-strings-v1',
+        http_transport=httpx.MockTransport(sdk))
+    try:
+        raw = controller.get_completion('original next metadata', load_author_contracts()['metadata'])
+        assert json.loads(raw)['context'] == 'saved suffix'
+        assert len(sent) == 2
+        assert permit.cell_summary()['unknown_attempts'] == 2
+        assert permit.cell_summary()['unadjudicated_unknown_attempts'] == 1
+        assert permit.cell_summary()['charged_or_reserved_microusd'] >= 1360610
+        with pytest.raises(BudgetStop, match='Unknown charge'):
+            controller.get_completion('must not transmit', load_author_contracts()['metadata'])
+        assert len(sent) == 2
+    finally:
+        controller.client.close()
+
+
+@pytest.mark.parametrize('target', ['prompt', 'foreign_condition', 'extra_field', 'approval'])
+def test_child_binding_cannot_change_frozen_science_or_reuse_financial_approval(evidence, target):
+    root, campaign = evidence
+    financial = incident.verify_financial_adjudication(
+        approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
+        root=root, campaign=campaign)
+    child = approved_child(root, campaign, financial)
+    if target == 'prompt':
+        child['binding']['max_output_tokens_by_stage']['shared_decision'] = 9000
+    elif target == 'foreign_condition':
+        child['binding']['condition'] = 'neither'
+    elif target == 'extra_field':
+        child['binding']['checkpoint']['completed_turns'] = 228
+    else:
+        child['approved'] = False
+    with pytest.raises(BudgetStop):
+        run2.Run2Permit(child, root, campaign)
+
+
+def test_child_cannot_restore_original_five_dollar_cap(evidence):
+    root, campaign = evidence
+    financial = incident.verify_financial_adjudication(
+        approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
+        root=root, campaign=campaign)
+    child = approved_child(root, campaign, financial)
+    child['limits']['phase_usd'] = '5'
+    with pytest.raises(BudgetStop, match='remainder'):
+        run2.Run2Permit(child, root, campaign)
+
+
+@pytest.fixture
+def candidate(evidence):
+    from amem_repro.config import source_fingerprint
+    import subprocess
+    root, campaign = evidence
+    sources = source_fingerprint(ROOT)
+    for name in sources['files']:
+        target = root / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.symlink_to(ROOT / name)
+    (root / '.git').symlink_to(ROOT / '.git')
+    (root / 'data').symlink_to(ROOT / 'data', target_is_directory=True)
+    (root / 'manifests').symlink_to(ROOT / 'manifests', target_is_directory=True)
+    origin = Path(os.environ.get('AMEM_BLK022_EVIDENCE_ROOT', ROOT))
+    (root / 'artifacts/run2/gate-a').mkdir()
+    shutil.copy2(origin / 'artifacts/run2/gate-a/run1-preservation.json',
+                 root / 'artifacts/run2/gate-a/run1-preservation.json')
+    shutil.copy2(origin / 'artifacts/study-budget.sqlite', root / 'artifacts/study-budget.sqlite')
+    directory = root / 'artifacts/run2/runs' / incident.PARENT_RUN
+    preflight = json.loads((directory / 'preflight.json').read_text())
+    # A copied preflight represents the external runtime boundary in these tests.
+    # Production must generate a new network-disabled runtime receipt after merge.
+    preflight['source_sha256'] = run2.fingerprint(sources)
+    financial = incident.verify_financial_adjudication(
+        approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
+        root=root, campaign=campaign)
+    reference = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+    return root, campaign, sources, preflight, financial, reference, origin / 'artifacts/assets'
+
+
+def test_reviewed_source_plan_is_unapproved_and_cannot_claim_or_transmit(candidate):
+    root, campaign, sources, preflight, financial, reference, assets = candidate
+    ledger = root / 'artifacts/run2/budget.sqlite'
+    before = ledger.read_bytes()
+    plan = run2.plan_phase(campaign, preflight, assets, root=root, condition='full',
+        conversation_id='conv-44', parent=root / 'artifacts/run2/runs' / incident.PARENT_RUN / 'phase.json',
+        financial_adjudication=financial, support_reference=reference)
+    assert plan['approved'] is False
+    assert plan['limits'] == {'phase_usd': '3.955163', 'max_logical_calls': 1212, 'max_attempts': 3636}
+    assert plan['binding']['source_sha256'] == run2.fingerprint(sources)
+    assert plan['binding']['checkpoint']['next_turn_id'] == 'D10:11'
+    assert plan['binding']['support_migration']['reviewed_commit'] == reference
+    with pytest.raises(BudgetStop, match='approval'):
+        run2.execute_phase(plan, campaign, preflight, assets, root=root,
+            observer=object(), verify_observations=lambda: None, verify_results=lambda: None)
+    assert ledger.read_bytes() == before
+
+
+@pytest.mark.parametrize('name', ['amem_repro/adapter.py', 'amem_repro/budget.py',
+                                 'memory_layer.py', 'config/run2.json'])
+def test_explicit_reviewed_commit_cannot_migrate_science_or_other_support(candidate, name):
+    root, campaign, sources, preflight, financial, reference, assets = candidate
+    sources = copy.deepcopy(sources)
+    sources['files'][name] = 'e' * 64
+    with pytest.raises(ValueError, match='outside'):
+        incident.verify_support_migration(root=root, campaign=campaign, sources=sources,
+            receipt=preflight, financial_adjudication=financial, reviewed_commit=reference)
