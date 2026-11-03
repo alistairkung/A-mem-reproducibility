@@ -31,7 +31,7 @@ a mandatory unsatisfied gate. See [latest authorization](decisions.md#authorizat
 | [BLK-015](#blk-015) | Historical intermediate states/query vectors were not recorded | Mitigated | T6–T7 replay claims | [Replay gate and oracle provenance](t6-replay.md) |
 | [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Resolved | T8 conv-49 artifact persistence | Exact real-cache byte/state proof;519-test suite |
 | [BLK-017](#blk-017) | Critical faults can be hidden behind tolerated failure paths | Investigating | Run2 recovery eligibility; Run1 guards retained | Combined provider/halt fault red proof; no Run2 paid calls |
-| [BLK-018](#blk-018) | Completion releases the next paid phase before receipt publication | Resolved | T8 phase finalization | Coordinated SQL/publication; threaded and commit-fault rechecks |
+| [BLK-018](#blk-018) | Paid frontier ignores a prior failed/unconfirmed completion | Investigating | Run2 phase admission; Run1 guards retained | Preclaimed next-cell halt red proof; no Run2 paid calls |
 | [BLK-019](#blk-019) | Second recovery provenance admits an extra ancestor edge | Resolved | Second conv-44 continuation engineering | Bounded edge/migration/copy corrections;613-test suite and independent reviews |
 | [BLK-020](#blk-020) | Failed attempt admission enters SDK retry handling | Resolved | Paid-request admission | Terminal reservation boundary; real-SDK faults/genuine retries verified |
 
@@ -529,7 +529,7 @@ are unavailable unless an experiment receipt supplies them.
 
 - **ID:** BLK-018
 - **Title:** Completion exposes a paid-next-phase window before final receipt publication.
-- **Status:** Resolved
+- **Status:** Investigating
 - **First observed:** 2026-11-02, T8 correction Spec review of integration `b41d825`.
 - **Category:** Cost
 - **Expected behaviour:** A next study cell cannot claim/transmit until the preceding cell has a verified published receipt and committed completion; failed finalization blocks both new and already-claimed continuation.
@@ -542,7 +542,8 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-02, initial review of `9fb0b86`: SQL completion failure after writing a usable receipt left misleading status. Correction `84d354a` moved SQL completion before atomic publication and added truthful failure finalization; ordinary SQL/publication regressions passed.
   - 2026-11-02, independent correction review: deterministic interleaving exposes the resulting publication window. Same implementer is adding coordinated release, shared-failure checks and a concurrency/post-publication commit-failure regression. The earlier correction remains recorded rather than described as sufficient.
   - 2026-11-02, correction `022fd46`, integrated as `ae23e291`: hold `BEGIN IMMEDIATE` through atomic receipt publication/readback and completion commit. Before logical-call and physical-attempt admission, reject other failed/unfinished study cells; allow settlement of already incurred usage. Post-publication commit failures preserve the unconfirmed candidate and failure marker, halt and publish truthful Incomplete evidence; paid/report readers reject marked stale completion.
-- **Final resolution or limitation:** Resolved at the study-control boundary. Ordinary partial/model/storage failures still require their approved handling; no paid recovery or generation retry is introduced.
+  - 2026-11-03, Run2 candidate review (offline, uncommitted/undeployed): a next-cell permit claimed while the preceding cell was complete still admits a new logical call after that prior completed phase is durably halted. Failing `test_preclaimed_next_cell_stops_if_prior_completion_becomes_halted`; preserve `artifacts/run2/offline/prior-completion-halt-red.txt`. Current-cell ownership alone is insufficient; every admission must reject failed/unconfirmed earlier completions, including after a post-publication commit fault. Reopen this same frontier control class for correction and regression. No physical provider call, Run1 artifact or real ledger was affected.
+- **Final resolution or limitation:** Run1's coordinated publication/frontier fix remains verified and unchanged. Run2's corresponding per-admission history guard is Investigating and blocks paid readiness until corrected, tested and independently rechecked. A previously valid plan/claim cannot bypass a later preceding-cell failure.
 - **Verification:** Threaded interleaving, previously claimed next permit, commit-after-publication failure, missing/invalid receipts and stale-marker rejection pass. Both reviewers independently pass six safeguards (`artifacts/t8/offline/review/{spec,standards}-final-race-green.txt`). Final suite519 tests/92 subtests and current-source runtime preflight pass, with no paid calls or original artifact changes.
 - **Research significance:** Durable accounting and durable research artifacts span different resources. A completion flag alone is not evidence that the preceding experiment is safe to reuse or that a subsequent paid phase may start.
 
