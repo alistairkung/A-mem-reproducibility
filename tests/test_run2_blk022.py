@@ -480,7 +480,7 @@ def test_observed_child_unknown_usage_stops_before_sdk_retransmission(evidence):
 def test_observed_admission_database_failure_cannot_enter_sdk_retry(evidence, monkeypatch):
     import httpx
     from amem_repro.adapter import create_deepseek_controller
-    from amem_repro.author import load_author_contracts
+    from amem_repro.contracts import load_author_contracts
     from amem_repro.config import RUN2_CONFIG
     root, campaign = evidence
     financial = incident.verify_financial_adjudication(
