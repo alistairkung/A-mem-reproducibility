@@ -886,3 +886,40 @@ counter, scoring, generation or population change is permitted. Current scope en
 and offline readiness evidence. See [recovery preparation](blk022-recovery-preparation.md),
 [BLK-022](blockers.md#blk-022), [affordability](blockers.md#blk-009) and
 [credential security](blockers.md#blk-023) for implementation, costs and remaining gates.
+
+### Authorization — essential Run2 observations and one BLK-022 paid child
+
+On3 November2026 the user confirmed PR#28 merged and private Langfuse rotation, then authorized
+engineering, independent reviews, normal merge, exactly one paid checkpoint continuation and an
+outcome-documentation PR/merge. Preserve all historical Run1/Run2 artifacts and the original ledger.
+The grant supersedes the earlier preparation-only boundary for this child; it grants no later cell,
+additional paid recovery, top-up, contingency use or scientific change.
+
+Verify new project authentication/existing-trace access and old-key revocation with safe evidence;
+do not regenerate keys. Adopt the smallest verified observability cost policy retaining generations,
+usage/latency/errors, identities, actions, retrieval/answers, complete question-level Experiments,
+checkpoint/degradation and authoritative local journals. Freeze `run2-audit-essential-v1`, successful
+import-bookkeeping filtering, omission of duplicate original Scores and redundant wire envelopes,
+and a30K original-observation fail-closed phase ceiling. Preserve prompts/schema/raw argument strings,
+all metric values and original algorithm/settings. Offline equivalence and actual cloud GateB must
+pass, with source-bound preflight and independent Standards/Spec reviews before paid execution.
+
+Authorize child `run2-full-conv-44-r0-p1` from exactly227 ordered notes/counter226/stale index, nextD10:11:
+448 turns and all158 questions; maximum1,212 new logical calls/3,636 attempts andUSD3.955163 new
+conservative spending. Retain knownUSD0.720433 plus unknownUSD0.324404 =USD1.044837 exposure, original
+USD5 cell, fresh Run2 USD50 ceiling/USD8 protected reserve and all historical accounting. Generate a
+new single-use approval bound to the merged source, dataset/model, secured policy gate and exact
+checkpoint. A forecast above the remainder prohibits transmission. Never repair/regenerate history.
+
+New unknown usage, authentication/ingestion, provenance or financial-control failure stops. Use only
+already reviewed recovery capabilities; this financial lineage has no further supported child, and
+the one-shot launcher never loops. Any length exhaustion therefore preserves fallback/evidence and
+stops without inventing another continuation. No semantic retries or scientific-setting changes.
+
+For this child the policy's structural capacity check fits included Langfuse units without extra
+overage: at most79,833 units including conservative original/import/existing/verification capacity.
+No additional service charge or upgrade is committed. Normal whole-campaign provider/service/reserve
+pointUSD48.731314–49.798114 remains conditional and tight; reforecast from this completed cell before
+requesting another scope. Stop after verified completion or a material failure, preserve incurred
+charges and failures, update blockers/report/forecast and merge the outcome documentation.
+See [release specification and evidence](run2-observation-policy.md).

@@ -63,6 +63,10 @@ Before BLK-022 adjudication, checkpoint preparation or service-cost/security wor
 upper-bound decision retaining attempt454 as unknown/full-reserved, and offline exact227-note
 recovery preparation. The child stays unapproved; PR merge, paid continuation, Langfuse overage
 and credential rotation require separate authority. Preserve original artifacts and every charge.
+The latest user grant now authorizes the reviewed essential-observation policy, normal PR merge,
+one exact227-note BLK-022 child and an outcome-documentation PR/merge. Before this release or
+continuation, read `docs/reproducibility/run2-observation-policy.md` and the latest decision.
+The child retains the original cell remainder; no subsequent cell or extra recovery is authorized.
 
 ## Reproducibility Blocker Tracking
 
