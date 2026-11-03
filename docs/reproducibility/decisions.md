@@ -725,3 +725,39 @@ Hypothetical preserved-suffix estimate: USD1.282387, conditional balanced total 
 nine ablations and reserve. These are not upper bounds, executable plans or spending grants. No
 accuracy result influenced them. Stop at the material provider-failure boundary; no further paid
 execution occurred. See [verified outcome and inventory](t8-conv44-second-recovery-incomplete-20261103.md).
+
+## Authorization — Run 2 fully observed campaign
+
+On3 November2026 the user authorized a new campaign, after output-limit investigation (GateA) and
+verified real-runner Langfuse observability (GateB). Track [issue#24](https://github.com/alistairkung/A-mem-reproducibility/issues/24).
+All existing runs remain immutable exploratory Run1 evidence, including the USD8.530133/4,292-request
+ledger, completed conv-49/50 and incomplete conv-44 lineage. Do not overwrite/relabel them or pool
+their predictions with Run2 primary evaluation. Run2 has a separate USD50 conservative ceiling:
+USD42 usable, USD8 protected reserve; Run1 spending remains separately recorded.
+
+Engineering, offline tests, focused PRs/reviews/merges and all12 fresh Run2 cells are authorized once
+both gates, frozen configuration, independent reviews/preflight and affordability pass. Preserve the
+four action conditions, all questions from conv-49/50/44, model, prompts/schemas/parsers, temperatures,
+disabled thinking, k=10/five neighbours, index/counter/action/scoring semantics. A documented supported
+larger shared-decision allowance may be selected/frozen uniformly before any Run2 benchmark call.
+GateA recommends8,192 with1,000 elsewhere; [evidence](run2-output-limit-investigation.md). Hosted
+long-output reliability remains untested; official support and offline SDK serialization are distinct
+from a paid probe. No exploratory paid probe is implicitly authorized or charged to experimental cells.
+
+Run2 may automatically continue sequential BLK-013 checkpoints within each original cell's allocation,
+retaining original failed output/fallback, exact ordered notes/counter/stale embeddings, immutable
+lineage and cumulative charges. Never repeat/repair a failed semantic decision or reset cell quotas.
+At least two successive simulated failures must pass before execution. Other provider/transport,
+provenance/scientific, observability or spending failures stop; no schema/compatibility changes,
+contingency top-up or silent population reduction are authorized.
+
+GateB must exercise the real instrumented runner with offline responses, fetch actual observations
+from the configured project, verify all stage/action/retrieval/QA inputs/outputs/usage/failures/IDs,
+import saved question results into Experiments, prove instrumented/uninstrumented replay equivalence
+and zero extra model calls, and simulate output exhaustion/tracing failure. Authentication or a
+standalone synthetic trace is insufficient. Local immutable artifacts remain authoritative.
+
+Execute one bounded verified cell at a time, reconcile cost/observations and reforecast before each
+next cell. Stop on an unsatisfied gate/material scientific change or unaffordable continuation;
+otherwise proceed autonomously. At this authorization checkpoint no Run2 code or paid benchmark
+execution exists. Final generation policy, live observability gate and campaign preflight are pending.
