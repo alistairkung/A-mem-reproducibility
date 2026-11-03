@@ -218,3 +218,91 @@ existing4,000-token baselines. No JSON repair, prompt shortening or silent cap i
 All further paid collection is stopped pending the separate recovery/scientific decision required by
 the frozen protocol. Unspent main-phase budget is not recovery authorization. PR#17 remains draft;
 no T8 merge authority, balanced-study completion or submission readiness is asserted.
+
+## Conv-49 checkpoint engineering — 3 November 2026
+
+The user approved engineering and offline tests only in the
+[latest authorization](decisions.md#authorization--blk-013-conv-49-checkpoint-engineering-only).
+Implementation `1ffa184`, integrated as `a5695be`, adds the explicit
+`blk013-conv49-checkpoint-v1` policy for this one parent. It does not repair the truncated response,
+raise D9a's cap, authorize a paid phase, enable general recovery or merge PR#17.
+
+The verifier pins canonical parent receipt
+`19e863ea00b066f358e3518a9d22ee3c9767a9311057a5a545712561348d511d` and checks its artifact inventory,
+exact turn prefix/state, frozen inputs/assets/source migration and every original attempt/usage/charge.
+Restoration preserves all413 notes, failed `D22:2`, counter411 and the413×384 float32 stale index
+without re-encoding. Original history stays immutable; later authorized operations may naturally update
+existing notes using the unchanged algorithm. Remaining work begins at `D22:3`:96 turns and all196 QA,
+584 logical calls and at most1,752 physical attempts.
+
+A future approved permit atomically records the one-shot parent/child ownership edge and transfers
+this same study cell to its child. Parent approvals, halts and charges remain intact. Other paid cells
+stay blocked until child receipt publication and SQL completion both verify; a failed/interrupted child
+continues to block them. Planning is read-only against the old ledger schema. Parent/child generation
+telemetry, stage-cost forecasts and saved-result costs count both segments exactly once. A successful
+completed lineage is Degraded, preserving every inherited failure and D3a audit.
+
+The 26 focused tests pass, including exact restore, all-positive/valid-negative counter behavior,
+consolidation at500, one-shot ownership, workload/provenance/accounting rejection, old-schema planning,
+196 ordered QA, and early memory/late question/postprocessing failures. Related regression group:
+119 tests/60 subtests passed. The complete integrated suite passes **545 tests and92 subtests**
+(`artifacts/t8/offline/conv49-checkpoint-full-suite.txt`);16 warnings are intentional invalid SDK
+metadata fixtures. Both independent reviews, current-source preflight and the final unapproved plan
+verification pass. These checks grant no paid authority.
+
+Historical stage costs suggest USD1.566190 for the remaining work. A proposed USD3 phase ceiling
+would remain inside the USD42 usable study limit and preserve USD8 contingency; it is neither an
+approved allocation nor an upper-bound forecast. Cumulative actual conservative study spending remains
+USD4.439045 across2,436 settled attempts. Truncation can recur at the unchanged4,000-token cap, and
+any future paid failure stops the child without an automatic second recovery. BLK-013 stays Open.
+
+### Current-source preparation evidence
+
+Source fingerprint `0b2287b19626da56d7bd567c6073ac15000a4f73c98e9b3510ca18d5ba6faaa9`:
+
+- Runtime preflight `artifacts/t8/conv49-checkpoint-preflight.json`: assets ready, runtime passes,
+  sockets disabled and `paid_execution_authorized:false`.
+- `artifacts/t8/offline/conv49-checkpoint-verification.json`: exact real-parent restore/export,
+  413×384 float32 state, all273 inherited failure records/270 D3a deviations, correct `D22:3` boundary,
+  and unchanged parent files/ledger bytes. Unapproved execution rejects before client creation,
+  phase claim, run-directory creation or schema migration; zero network/model calls.
+  `artifacts/t8/offline/conv49-checkpoint-final-integrity.json` rechecks these preservation and
+  unchanged-scientific-source assertions after the complete suite.
+- Independent Standards and Spec reviews are clear, each with26 focused tests; reports and logs are
+  in `artifacts/t8/offline/review/conv49-{standards,spec}-review.md` and adjacent test logs.
+- Reviewed proposal `artifacts/t8/conv49-checkpoint-plan.json` remains **approved:false**, with no
+  approval author/time. It lowers only the default planner's USD10 ceiling to the proposed USD3;
+  584 logical calls/1,752 maximum attempts and all scientific bindings are unchanged. Proposal SHA256
+  `ab2807f8eab2d860d1b7f8b469dec455c7781f951405fb27d189cf9ec8727bd4`.
+
+Recorded preparation commands (use fresh output filenames if repeating; never overwrite evidence):
+
+```sh
+.venv/bin/pytest tests/test_study_checkpoint.py -q
+.venv/bin/pytest -q
+.venv/bin/python -m amem_repro.phases preflight \
+  --assets artifacts/assets --output artifacts/t8/conv49-checkpoint-preflight.json
+.venv/bin/python -m amem_repro.study plan \
+  --receipt artifacts/t8/conv49-checkpoint-preflight.json --assets artifacts/assets \
+  --condition full --conversation conv-49 \
+  --checkpoint artifacts/runs/t8-full-conv49-r0-20261102/phase.json \
+  --run-id t8-full-conv49-checkpoint-child \
+  --output artifacts/t8/conv49-checkpoint-default-plan.json
+```
+
+The prepared USD3 proposal is a separate unapproved copy of that default plan. A future paid grant
+must explicitly approve one child under its exact caps and current bindings; materialize a new
+immutable approved artifact, never edit or reuse the consumed parent approval. The child has not
+been claimed and no approved child artifact exists. After that separate approval only, the command
+would be (the future approval path below is deliberately not created):
+
+```sh
+.venv/bin/python -m amem_repro.study run \
+  --approval artifacts/t8/approvals/t8-full-conv49-checkpoint-child.json \
+  --receipt artifacts/t8/conv49-checkpoint-preflight.json --assets artifacts/assets \
+  --checkpoint artifacts/runs/t8-full-conv49-r0-20261102/phase.json
+```
+
+Do not run a paid recovery or another main cell on the strength of these engineering checks.
+The parent remains Incomplete, no conv-49 questions have been answered, and no balanced study result
+or live recovery success is claimed. PR#17 remains draft for engineering review and the paid hold.

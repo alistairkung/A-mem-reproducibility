@@ -470,3 +470,18 @@ T8 PR#17. It grants no paid continuation/recovery, new main cell, cap/prompt/sch
 retrieval/model change or merge. Reuse existing checkpoint/phase/permit/runner/result-import seams;
 retain one-shot parent claims, cumulative ledger history, immutable evidence and inherited degradation.
 Keep BLK-013 Open: engineering verification cannot resolve the observed output-cap limitation.
+
+### Verified conv-49 checkpoint engineering outcome
+
+Implementation `1ffa184`, integrated as `a5695be`, passes545 offline tests/92 subtests and clear
+independent Standards/Spec reviews. Network-disabled current-source preflight and exact real-parent
+restoration pass, with unchanged parent artifacts and cumulative USD4.439045/2,436-attempt ledger.
+Unapproved execution rejects before client creation, phase claim or schema migration. Frozen author,
+provider, scoring, retrieval, model/settings and benchmark inputs remain unchanged.
+
+Prepared `artifacts/t8/conv49-checkpoint-plan.json` stays `approved:false`: proposed USD3 ceiling,
+584 logical calls and at most1,752 attempts, source
+`0b2287b19626da56d7bd567c6073ac15000a4f73c98e9b3510ca18d5ba6faaa9`.
+Its historical-cost estimate is USD1.566190, not an upper bound or spending grant. No approved child
+artifact exists and no paid recovery was executed. BLK-013 remains Open because truncation can recur;
+PR#17 remains draft and unmerged. Separate paid approval after review is still required.
