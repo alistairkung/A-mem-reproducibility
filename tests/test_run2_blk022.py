@@ -303,3 +303,118 @@ def test_explicit_reviewed_commit_cannot_migrate_science_or_other_support(candid
     with pytest.raises(ValueError, match='outside'):
         incident.verify_support_migration(root=root, campaign=campaign, sources=sources,
             receipt=preflight, financial_adjudication=financial, reviewed_commit=reference)
+
+
+@pytest.mark.parametrize('complete', [False, True])
+def test_real_runner_resumes_D10_11_once_and_retains_exact_prefix(candidate, monkeypatch, complete):
+    import httpx
+    import numpy as np
+    from amem_repro.adapter import create_deepseek_controller
+    from amem_repro.author import make_agent_factory
+    from amem_repro.measurements import TokenCounter
+    from amem_repro.scoring import AuthorScorer
+    from test_foundation import LocalRetriever, Provider, original_memory_module
+    from test_scoring import dependencies
+    from test_run2 import OfflineObserver, observed, experiments
+    root, campaign, sources, preflight, financial, reference, assets = candidate
+    parent = root / 'artifacts/run2/runs' / incident.PARENT_RUN
+    original_state = json.loads((parent / 'partial-memory.json').read_text())['state']
+    original_inventory = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                          for p in parent.iterdir() if p.is_file()}
+    child = run2.plan_phase(campaign, preflight, assets, root=root, condition='full',
+        conversation_id='conv-44', parent=parent / 'phase.json',
+        financial_adjudication=financial, support_reference=reference)
+    child = approve(child)
+    class Retriever(LocalRetriever):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, **kw)
+            self.embeddings = np.empty((0, 384), dtype=np.float32)
+        def add_documents(self, documents):
+            for document in documents:
+                self.document_ids[document] = len(self.corpus)
+                self.corpus.append(document)
+                self.embeddings = np.vstack((self.embeddings, np.ones((1, 384), dtype=np.float32)))
+    class StopAfterNextNote(OfflineObserver):
+        pending = False
+        def __call__(self, event):
+            super().__call__(event)
+            if not complete and event.get('type') == 'evolution_outcome' and event.get('turn_id') == 'D10:11':
+                self.pending = True
+        def assert_healthy(self):
+            if self.pending:
+                self.pending = False
+                raise RuntimeError('synthetic safe-boundary stop after next original note')
+    provider = Provider()
+    def sdk(request):
+        wire = json.loads(request.content)
+        response = provider.complete(**wire)
+        response['system_fingerprint'] = run2.MODEL_FINGERPRINT
+        fields = wire['tools'][0]['function']['parameters']['properties']
+        if 'should_evolve' in fields:
+            response['choices'][0]['message']['tool_calls'][0]['function']['arguments'] = json.dumps({
+                'should_evolve': False, 'actions': [], 'suggested_connections': [],
+                'tags_to_update': [], 'new_context_neighborhood': [], 'new_tags_neighborhood': []})
+        return httpx.Response(200, json=response)
+    def controller(**kw):
+        return create_deepseek_controller(**kw, http_transport=httpx.MockTransport(sdk))
+    def factory(controller, counter, condition):
+        assert condition == 'full'
+        module = original_memory_module()
+        module.SimpleEmbeddingRetriever = Retriever
+        module.print = lambda *a, **kw: None
+        return make_agent_factory(ROOT, memory_module=module,
+            controller_factory=lambda observer: controller(observer), token_counter=counter)
+    monkeypatch.setenv('DEEPSEEK_API_KEY', 'offline-placeholder')
+    phase = run2.execute_phase(child, campaign, preflight, assets, root=root,
+        observer=StopAfterNextNote(), verify_observations=observed, verify_results=experiments,
+        controller_factory=controller, factory_builder=factory,
+        scorer=AuthorScorer(ROOT, dependencies=dependencies()),
+        token_counter=TokenCounter(str.split, 'offline', 'fixture'))
+    directory = root / 'artifacts/run2/runs' / phase['run_id']
+    events = [json.loads(line) for line in (directory / 'events.jsonl').read_text().splitlines()]
+    generated = [e for e in events if e['type'] == 'generation']
+    assert [e['stage'] for e in generated[:2]] == ['metadata', 'shared_decision']
+    original_events = [json.loads(line) for line in (parent / 'events.jsonl').read_text().splitlines()]
+    assert generated[0]['prompt'] == [e for e in original_events if e['type'] == 'generation'][-1]['prompt']
+    outcomes = [e for e in events if e['type'] == 'evolution_outcome']
+    assert outcomes[0]['turn_id'] == 'D10:11'
+    assert len(provider.requests) == (1212 if complete else 2)
+    assert phase['status'] == ('degraded' if complete else 'incomplete')
+    assert phase['total_memory_notes'] == (675 if complete else 228)
+    assert phase['evolution_counter'] == 226
+    assert phase['cell_budget']['unknown_attempts'] == 1
+    assert phase['cell_budget']['unadjudicated_unknown_attempts'] == 0
+    assert phase['campaign_budget']['unknown_attempts'] == 1
+    assert phase['campaign_budget']['unadjudicated_unknown_attempts'] == 0
+    if complete:
+        build = next(e['build_id'] for e in events if e['type'] == 'build_complete')
+        saved = json.loads((root / 'artifacts/run2/cache' / build / 'state.json').read_text())
+        assert phase['usable_for_next_phase'] is True and phase['completed_questions'] == 158
+        assert len(outcomes) == 448 and len({e['turn_id'] for e in outcomes}) == 448
+        assert phase['cell_budget']['logical_calls'] == 1666
+        assert phase['cell_budget']['physical_attempts'] == 1667
+        next_plan = run2.plan_phase(campaign, preflight, assets, root=root, condition='full',
+            conversation_id='conv-49', financial_adjudication=financial, support_reference=reference)
+        next_permit = run2.Run2Permit(approve(next_plan), root, campaign)
+        assert next_permit.campaign_summary()['unknown_attempts'] == 1
+        assert next_permit.campaign_summary()['unadjudicated_unknown_attempts'] == 0
+        assert next_permit.campaign_summary()['charged_or_reserved_microusd'] == 1095741
+        logical = next_permit.start_logical('metadata')
+        assert logical == 1667
+        attempt = next_permit.reserve_attempt(logical, {'model': 'deepseek-flash',
+            'endpoint': 'https://api.deepseek.com/beta/chat/completions', 'max_tokens': 1000,
+            'temperature': .7, 'thinking': 'disabled', 'stream': False,
+            'provider_contract_policy': 'canonical-index-strings-v1'})
+        next_permit.settle(attempt, None)
+        assert next_permit.campaign_summary()['unknown_attempts'] == 2
+        assert next_permit.campaign_summary()['unadjudicated_unknown_attempts'] == 1
+        assert next_permit.campaign_summary()['charged_or_reserved_microusd'] == 1411514
+        with pytest.raises(BudgetStop, match='Unknown charge'):
+            next_permit.start_logical('metadata')
+    else:
+        saved = json.loads((directory / 'partial-memory.json').read_text())['state']
+    assert saved['notes'][:227] == original_state['notes']
+    assert saved['retriever']['embeddings'][:227] == original_state['retriever']['embeddings']
+    assert saved['outcomes'][:227] == original_state['outcomes']
+    assert all(hashlib.sha256((parent / name).read_bytes()).hexdigest() == digest
+               for name, digest in original_inventory.items())
