@@ -41,6 +41,7 @@ def test_real_runner_export_is_passive_and_preserves_original_scores(tmp_path):
         assert generation['output']['algorithm_input_modified'] is False
         assert 'wire_request' not in generation['metadata']
         assert len(generation['metadata']['wire_request_sha256']) == 64
+        assert 'budget_logical_id' not in generation['metadata']['local_evidence']
         assert generation['usage_details']['total'] > 0
     assert after['network_llm_requests'] == 0
 

@@ -246,8 +246,9 @@ class LangfuseObserver:
             if self.essential_export:
                 from .config import fingerprint
                 metadata['wire_request_sha256'] = fingerprint(attempts[0]['request_body'])
-                metadata['local_evidence'] = {'journal': 'events.jsonl',
-                    'budget_logical_id': event.get('budget_logical_id'), 'stage': event.get('stage')}
+                metadata['local_evidence'] = {'journal': 'events.jsonl', 'stage': event.get('stage')}
+                if event.get('budget_logical_id') is not None:
+                    metadata['local_evidence']['budget_logical_id'] = event['budget_logical_id']
             else:
                 metadata['wire_request'] = copy.deepcopy(attempts[0]['request_body'])
         for field, source in (('request_id', 'id'), ('returned_model', 'model'),
