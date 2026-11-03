@@ -32,7 +32,7 @@ a mandatory unsatisfied gate. See [latest authorization](decisions.md#authorizat
 | [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Resolved | T8 conv-49 artifact persistence | Exact real-cache byte/state proof;519-test suite |
 | [BLK-017](#blk-017) | Critical faults can be hidden behind tolerated failure paths | Investigating | Run2 recovery eligibility; Run1 guards retained | Combined provider/halt fault red proof; no Run2 paid calls |
 | [BLK-018](#blk-018) | Paid frontier ignores a prior failed/unconfirmed completion | Investigating | Run2 phase admission; Run1 guards retained | Preclaimed next-cell halt red proof; no Run2 paid calls |
-| [BLK-019](#blk-019) | Second recovery provenance admits an extra ancestor edge | Resolved | Second conv-44 continuation engineering | Bounded edge/migration/copy corrections;613-test suite and independent reviews |
+| [BLK-019](#blk-019) | Recovery provenance can accept altered ancestry or unchecked edges | Investigating | Run2 immutable receipt seal; Run1 guards retained | Synthetic edited-state/inventory red proof; no Run2 paid calls |
 | [BLK-020](#blk-020) | Failed attempt admission enters SDK retry handling | Resolved | Paid-request admission | Terminal reservation boundary; real-SDK faults/genuine retries verified |
 | [BLK-021](#blk-021) | Run2 ledger path can alias immutable Run1 accounting | Investigating | Run2 storage isolation | Synthetic symlink/DDL red proof; real Run1 unchanged |
 
@@ -554,8 +554,8 @@ are unavailable unless an experiment receipt supplies them.
 ## BLK-019
 
 - **ID:** BLK-019
-- **Title:** Second recovery provenance admits an extra ancestor edge.
-- **Status:** Resolved
+- **Title:** Recovery provenance can accept altered ancestry or unchecked edges.
+- **Status:** Investigating
 - **First observed:** 2026-11-03, pre-merge second conv-44 continuation engineering.
 - **Category:** Infrastructure
 - **Expected behaviour:** A claimed leaf must reject transmission after any invalid edge touches its pinned ancestry. Migration records must list the actual support-file changes, and returned lineage data must not alias a verified parent's binding.
@@ -568,7 +568,8 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-03: reproduce all three failures with deterministic synthetic ledgers and zero network/model calls. Preserve the red log and actual-parent audit; the implementer is applying narrow corrections before integration.
   - 2026-11-03, correction `acefbfa`, integrated at `7211a4a`: validate every edge touching the bounded ancestry at admission, keep source-change and note-field sets separate, and deep-copy the verified parent lineage.37 new continuation cases pass; combined controls/checkpoint/import checks pass189 tests/60 subtests. Both independent reviews pass62 focused tests each. Actual archived610-note restore and accurate six-file migration metadata verify under source `0341a2a579842725c9ac6a18a110e2816a2896c32e07cf883fd36e2ef1ab681f`, with51 protected files and real ledger unchanged. Full-suite completion remains pending at this checkpoint; no paid continuation occurred.
   - 2026-11-03, final integrated verification:613 tests/92 subtests pass (16 intentional SDK metadata warnings), plus189 focused/60 and both independent62-test groups. Exact610-memory/embedding-byte restore and six-file migration record pass; all51 protected files and the real ledger stay unchanged. No new phase is claimed. Final evidence is `artifacts/t8/offline/conv44-second-full-suite-20261103.txt`, `conv44-second-checkpoint-verification.json` and the two review receipts.
-- **Final resolution or limitation:** Resolved at the bounded provenance/admission boundary. Extra ancestor edges reject, migration metadata is accurate and the parent record is isolated. This verifies software safeguards, not provider-cap adequacy or a successful paid continuation. BLK-013 remains Open.
+  - 2026-11-03, Run2 candidate review (offline, undeployed): editing a synthetic partial state and recomputing its phase artifact inventory is accepted by the first recovery plan because the newly published phase lacks an independently sealed receipt hash. Preserve `artifacts/run2/offline/receipt-seal-red.txt`. The implementer is adding one immutable receipt hash column to the new Run2 phase ledger, sealed with publication and checked before recovery/admission; no generic recovery framework or Run1 change. Red proof affects synthetic temp artifacts only; real historical states/ledger remain unchanged. Correction and independent verification are pending.
+- **Final resolution or limitation:** Run1's bounded edge/migration/copy corrections remain verified. Run2 independent receipt anchoring is Investigating: a self-consistent filesystem inventory alone cannot establish that the state is the one actually archived at the failure. Paid readiness remains blocked until publication/seal/ancestry regressions and independent review pass. BLK-013 output exhaustion remains separate and Open.
 - **Verification:**613 tests/92 subtests,189 focused tests/60 subtests, independent62-test groups, actual-parent proof and network-disabled preflight pass. The original failing evidence remains preserved.
 - **Research significance:** Multi-phase reproducibility requires both graph ownership and accurate isolated provenance records. Safe single-hop behaviour does not establish correct ancestry handling after an extra recovery hop.
 
