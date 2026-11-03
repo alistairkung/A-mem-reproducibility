@@ -12,15 +12,29 @@ from functools import wraps
 import hashlib
 import json
 from pathlib import Path
+import re
+import subprocess
 
 from .artifacts import CacheStore, snapshot_memory
-from .config import AUTHOR_REVISION, fingerprint, load_config, source_fingerprint
+from .config import AUTHOR_REVISION, fingerprint, load_config, source_fingerprint, stage_output_limits
 from .checkpoint import _read_archive
 from .phases import _verified_phase, _deny_network, _asset_environment, _save
 from .replay import ReplayController, ReplayMismatch, memory_view, failure_view
 from .runner import run_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# The existing T5 support files changed by reviewed T8/Run2 execution safeguards,
+# the explicit generation profile and passive observation. No author, contract,
+# scorer, asset or original study-configuration pin is exempted.
+REVIEWED_SUPPORT_FILES = frozenset({
+    'amem_repro/adapter.py', 'amem_repro/artifacts.py', 'amem_repro/author.py',
+    'amem_repro/budget.py', 'amem_repro/checkpoint.py', 'amem_repro/config.py',
+    'amem_repro/measurements.py', 'amem_repro/phases.py', 'amem_repro/reporting.py',
+    'amem_repro/runner.py',
+})
+RUN1_OUTPUT_LIMITS = {'metadata': 1000, 'shared_decision': 4000,
+                      'query_keywords': 1000, 'answer': 1000}
 
 
 def require_equal(actual, expected, label):
@@ -33,7 +47,62 @@ def require_failure_evidence(summary, expected):
     require_equal(failure_view(summary['failures']), failure_view(expected), 'failure evidence')
 
 
-def load_lineage(root=ROOT):
+def verify_replay_sources(root, archived, current, *, support_reference=None):
+    """Keep historical pins unless exact reviewed support bytes are requested.
+
+    A caller must name a full commit SHA; branch names and current HEAD are never
+    inferred. Even then all other historical pins remain authoritative and every
+    current source/config file, including additions, must match that commit.
+    """
+    if support_reference is None:
+        # Preserve T6's original runner-only exemption and strict default gate.
+        for name, digest in archived['files'].items():
+            if name != 'amem_repro/runner.py':
+                require_equal(current['files'].get(name), digest, f'source {name}')
+        return None
+    if not isinstance(support_reference, str) or not re.fullmatch(r'[0-9a-f]{40}', support_reference):
+        raise ReplayMismatch('Support reference must be a full immutable commit SHA')
+    try:
+        kind = subprocess.check_output(
+            ['git', 'cat-file', '-t', support_reference], cwd=root, stderr=subprocess.DEVNULL,
+            text=True).strip()
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ReplayMismatch('Support reference commit is unavailable') from error
+    if kind != 'commit':
+        raise ReplayMismatch('Support reference must identify a commit')
+    require_equal(current['author_revision'], archived['author_revision'], 'author revision')
+    for name, digest in archived['files'].items():
+        if name not in REVIEWED_SUPPORT_FILES or name not in current['files']:
+            require_equal(current['files'].get(name), digest, f'source {name}')
+    references = {}
+    for name, digest in current['files'].items():
+        try:
+            blob = subprocess.check_output(
+                ['git', 'show', f'{support_reference}:{name}'], cwd=root,
+                stderr=subprocess.DEVNULL)
+        except (OSError, subprocess.CalledProcessError) as error:
+            raise ReplayMismatch(f'Support reference has no source {name}') from error
+        references[name] = hashlib.sha256(blob).hexdigest()
+        require_equal(digest, references[name], f'support reference source {name}')
+    require_equal(stage_output_limits(), RUN1_OUTPUT_LIMITS, 'Run1 output limits')
+    return {
+        'policy': 'explicit-reviewed-replay-support-v1',
+        'reference_commit': support_reference,
+        'archived_source_sha256': fingerprint(archived),
+        'current_source_sha256': fingerprint(current),
+        'changed_existing_files': {
+            name: {'archived_sha256': digest, 'current_sha256': current['files'][name],
+                   'reference_sha256': references[name]}
+            for name, digest in archived['files'].items() if digest != current['files'][name]},
+        'added_files': {name: digest for name, digest in current['files'].items()
+                        if name not in archived['files']},
+        'all_current_sources_match_reference': True,
+        'archived_critical_pins_retained': True,
+        'run1_output_limits': dict(RUN1_OUTPUT_LIMITS),
+    }
+
+
+def load_lineage(root=ROOT, *, support_reference=None):
     root = Path(root)
     parent_dir = root / 'artifacts/runs/pilot-conv50-d9a'
     child_dir = root / 'artifacts/runs/pilot-conv50-checkpoint-child'
@@ -49,11 +118,8 @@ def load_lineage(root=ROOT):
     require_equal(hashlib.sha256((root / 'data/locomo10.json').read_bytes()).hexdigest(),
                   manifest['dataset_sha256'], 'dataset')
     current = source_fingerprint(root)
-    # T6 may add replay code/runner mode. Existing author, provider, scorer and
-    # assets remain pinned; an algorithm/contract change cannot redefine this oracle.
-    for name, digest in start['source_hashes']['files'].items():
-        if name != 'amem_repro/runner.py':
-            require_equal(current['files'].get(name), digest, f'source {name}')
+    source_migration = verify_replay_sources(
+        root, start['source_hashes'], current, support_reference=support_reference)
     records = [e for e in old + new if e['type'] == 'generation' and e.get('attempts')]
     require_equal(len(records), 1544, 'generation coverage')
     require_equal(sum(bool(e.get('error_type')) for e in records), 1, 'rejected decision count')
@@ -77,14 +143,16 @@ def load_lineage(root=ROOT):
                 questions=[e['result'] for e in new if e['type'] == 'question_result'],
                 retrieval=[e for e in new if e['type'] == 'retrieval'],
                 views=json.loads((child_dir / 'scoring-views.json').read_text()),
-                preflight=json.loads((child_dir / 'preflight.json').read_text()))
+                preflight=json.loads((child_dir / 'preflight.json').read_text()),
+                source_migration=source_migration)
 
 
-def replay_baseline(asset_root, output, *, root=ROOT, factory_builder=None, oracle_path=None):
+def replay_baseline(asset_root, output, *, root=ROOT, factory_builder=None, oracle_path=None,
+                    support_reference=None):
     root, output = Path(root).resolve(), Path(output).resolve()
     if output.exists() or any(output.is_relative_to(root / p) for p in ('artifacts/runs', 'artifacts/cache')):
         raise ValueError('Use a fresh separate replay output directory')
-    baseline = load_lineage(root)
+    baseline = load_lineage(root, support_reference=support_reference)
     oracle_path = Path(oracle_path) if oracle_path is not None else root / 'tests/fixtures/conv50-replay-state-hashes.json'
     oracle = json.loads(oracle_path.read_text())
     require_equal(oracle['author_revision'], AUTHOR_REVISION, 'oracle author revision')
@@ -191,6 +259,7 @@ def replay_baseline(asset_root, output, *, root=ROOT, factory_builder=None, orac
                       'historical_full_state_checkpoints': [263, 568],
                       'protected_baseline_files_and_ledger_unchanged': True,
                       'logical_failure_records_exact': len(summary['failures']),
+                      'support_source_migration': baseline['source_migration'],
                       'all_recorded_outcomes_requests_retrieval_predictions_scores_exact': True}
             _save(output / 'verification.json', result)
             return result
@@ -206,10 +275,12 @@ def main():
     parser.add_argument('--output', required=True)
     parser.add_argument('--oracle', default=str(ROOT / 'tests/fixtures/conv50-replay-state-hashes.json'))
     parser.add_argument('--full-mode-candidate', action='store_true', help='Exercise T7 gates, both actions enabled')
+    parser.add_argument('--support-reference', help='Full reviewed commit SHA for the named support-source delta')
     args = parser.parse_args()
     if args.full_mode_candidate:
         from .actions import make_action_agent_factory
     result = replay_baseline(args.assets, args.output, oracle_path=args.oracle,
+                             support_reference=args.support_reference,
                              factory_builder=make_action_agent_factory if args.full_mode_candidate else None)
     print(json.dumps({k: v for k, v in result.items() if k != 'per_insertion_comparison_hashes'}))
 
