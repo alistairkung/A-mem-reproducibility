@@ -23,7 +23,11 @@ This checklist records preparation, not submission or a completed recording.
 Current status: conv-49/conv-50 completed Degraded and are unchanged. The full conv-44 parent and
 one authorized child are Incomplete after two4,000-token exhaustions.610 total notes/counter607,
 zero of158 QA; cumulative USD8.407857/4,240 settled requests, zero unknown charges. All paid grants
-are consumed; no restart, second recovery or ablation is authorized. First-ablation readiness remains
+from those two phases are consumed. One second continuation is now separately authorized after
+engineering/review/merge/preflight, under USD3/446 logical/1,338 physical limits; no third recovery,
+restart or ablation is authorized. See the
+[latest grant](docs/reproducibility/decisions.md#authorization--second-pinned-conv-44-continuation).
+First-ablation readiness remains
 blocked; no balanced-study or submission completion is claimed. See
 [the verified child failure](docs/reproducibility/t8-conv44-recovery-incomplete-20261103.md).
 
