@@ -143,7 +143,18 @@ failed decisions and zero QA; no full conv-44 quality metric is available. Child
 calls; combined lineage USD2.117959/1,220; cumulative USD8.407857/4,240, zero unknown charges.
 All inherited failures/deviations and original completed baselines remain unchanged. Current
 whole-fresh-cell scenario: USD48.096559 including incurred charges and USD8 reserve. No further
-recovery chain or ablation is authorized; [verified child outcome](t8-conv44-recovery-incomplete-20261103.md).
+recovery chain or ablation was authorized at that checkpoint; [verified child outcome](t8-conv44-recovery-incomplete-20261103.md).
+The subsequently authorized second continuation, after PR#22 merge `5ddc96e`, restored610 notes/
+counter607/exact stale index and processed26 more turns before another BLK-013 exhaustion at `D26:44`.
+The lineage now preserves636 notes/counter632, all three failed decisions and zero of158 QA.
+New52 requests/USD0.122276; combined conv-44 lineage1,272/USD2.240235; cumulative4,292/USD8.530133,
+zero unknown charges. Root and independent audits preserve original baseline/ancestor/ledger evidence;
+no complete cache or quality metrics exist for conv-44.39 turns/158 QA remain, next `D26:45`.
+Current whole-fresh-cell point scenario is USD48.218835; hypothetical preserved-suffix scenario is
+USD46.246007, each including incurred costs, nine ablations and USD8 reserve. The latter's suffix
+estimate is USD1.282387 for394 logical calls. These are cost-only arithmetic, not upper bounds or
+spending/recovery approvals. Third recovery is unsupported/unauthorized; first-ablation readiness
+remains blocked. See [verified second-continuation outcome](t8-conv44-second-recovery-incomplete-20261103.md).
 The original token-based forecast puts all ten conversations/four conditions at USD127.391486 and
 the frozen fallback at USD42.762234 including incurred spending and contingency. Its2× cost sensitivity
 exceeds USD50: the estimate is not a spending guarantee. T8 will reconcile actual stage costs and
