@@ -73,6 +73,12 @@ finished malformed shared decision (BLK-014). Before further Run2 work, read
 USD2.370010 exposure, including unknown454's full USD0.324404 reservation. No paid continuation
 or later cell is authorized; the reviewed financial recovery supports only the consumed227-note prefix.
 
+The latest user grant separately authorizes the narrow original-evolution-fallback verifier,
+sequential checkpoint engineering/reviews/merge and exactly one566-note p2 continuation. Before
+that work, read `docs/reproducibility/run2-author-fallback-recovery.md` and the latest decision.
+Limits are534 logical/1,602 physical calls andUSD2.629990; retain unknown454 and all ancestry.
+Other failures stay terminal. This grants no later paid child, cell or contingency use.
+
 ## Reproducibility Blocker Tracking
 
 Before coding or research work affecting reproduction, experimental integrity, model compatibility,

@@ -1,5 +1,9 @@
 # Run 2 — fully observed controlled campaign
 
+Latest separate grant: [original evolution fallback and one566-note continuation](run2-author-fallback-recovery.md).
+It permits narrow engineering/review/merge and one p2 phase after all gates, replacing excessive
+wrapper fatality only for the verified author fallback. No later cell or additional paid child is authorized.
+
 Status: frozen3 November2026 after GateA/GateB,715 offline tests/92 subtests, both complete archive
 replays, independent Standards/Spec reviews and current-source runtime preflight. PR#25 is merged
 as `c7cd12b`, PR#26 as `207eac0`, and the independently checked immutable approval was activated.

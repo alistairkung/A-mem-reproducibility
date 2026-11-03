@@ -277,7 +277,11 @@ class DeepSeekController:
         except BaseException as error:
             event["error_type"] = type(error).__name__
             if self.phase_permit is not None:
-                self.phase_permit.stop("provider_contract_or_transport_failure")
+                adjudicate = getattr(self.phase_permit, "handle_generation_failure", None)
+                if adjudicate is None:
+                    self.phase_permit.stop("provider_contract_or_transport_failure")
+                else:
+                    adjudicate(event, error)
             raise
         finally:
             event["duration_seconds"] = time.perf_counter() - started

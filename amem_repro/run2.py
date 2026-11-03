@@ -125,11 +125,14 @@ def _validate_phase(approval, campaign):
         expected.update(financial_adjudication=financial, support_migration=b['support_migration'],
             source_sha256=b['support_migration']['candidate_source_sha256'],
             preflight_sha256=b['support_migration']['candidate_preflight_sha256'])
+        if 'evolution_failure_policy' in b['support_migration']:
+            expected['evolution_failure_policy'] = b['support_migration']['evolution_failure_policy']
     checkpoint = b.get('checkpoint')
     if checkpoint is not None:
         expected['checkpoint'] = checkpoint
         if (checkpoint.get('campaign_id') != CAMPAIGN_ID
                 or checkpoint.get('policy') != (
+                    'run2-financial-sequential-state-v1' if financial is not None and b.get('evolution_failure_policy') and approval.get('phase_index',0)>=2 else
                     'run2-blk022-exact227-state-v1' if financial is not None else RECOVERY_POLICY)
                 or checkpoint.get('condition') != expected['condition']
                 or checkpoint.get('conversation_id') != expected['conversation_ids'][0]
@@ -137,7 +140,7 @@ def _validate_phase(approval, campaign):
                 or type(checkpoint.get('completed_turns')) is not int
                 or not 0 < checkpoint['completed_turns'] <= expected['expected_turns']):
             raise BudgetStop('Run2 checkpoint identity differs')
-        if financial is not None:
+        if financial is not None and not b.get('evolution_failure_policy'):
             from .run2_blk022 import PARENT_RUN, PARENT_APPROVAL, PARENT_RECEIPT
             if (index != 0 or approval.get('phase_index') != 1
                     or checkpoint.get('parent_run_id') != PARENT_RUN
@@ -261,6 +264,7 @@ class Run2Permit(PhasePermit):
         self.approval_id = approval['approval_id'];self.owner = uuid.uuid4().hex;self.pid = os.getpid()
         self.reserve_micros = 324404;self.input_rate = Decimal('.3');self.output_rate = Decimal('1.2')
         self._terminal_reason = None;self._halt_persistence_error = None
+        self._pending_evolution = None
         with self._transaction(initialize=True) as db:
             # Only this fresh campaign may inhabit the ledger. Never import Run1.
             db.executescript(SCHEMA)
@@ -346,6 +350,8 @@ class Run2Permit(PhasePermit):
     def _phase(self, db, allow_halted=False):
         row = super()._phase(db, allow_halted)
         if not allow_halted:
+            if self._pending_evolution is not None:
+                self._halt(db, 'Original evolution fallback has not been verified')
             campaign = db.execute('SELECT auth_json FROM run2_campaign WHERE singleton=1').fetchone()
             if campaign is None or campaign[0] != _canonical(self.campaign):
                 self._halt(db, 'Run2 campaign ledger changed')
@@ -365,6 +371,45 @@ class Run2Permit(PhasePermit):
             if cell[1] != self.approval_id or cell[2]:
                 self._halt(db, 'Run2 phase no longer owns an unfinished cell')
         return row
+
+    def handle_generation_failure(self, event, error):
+        """Keep strict rejection; defer only an explicitly approved author fallback."""
+        try:
+            from .evolution_fallback import POLICY_ID, malformed_decision
+            if (self.binding.get('evolution_failure_policy') != POLICY_ID
+                    or not malformed_decision(event, error)):
+                self.stop('provider_contract_or_transport_failure')
+                return
+            with self._transaction() as db:
+                self._phase(db)
+                from .run2_blk022 import unknown_counts
+                if unknown_counts(db, self.financial_adjudication)['unadjudicated_unknown_attempts']:
+                    self._halt(db, 'Unknown charge prevents original evolution fallback')
+                logical = event['budget_logical_id']
+                if db.execute('SELECT approval_id,stage FROM logical_calls WHERE id=?', (logical,)).fetchone() != (self.approval_id,'shared_decision'):
+                    self._halt(db, 'Evolution fallback logical identity differs')
+                rows = db.execute('SELECT id,status,usage_json FROM attempts WHERE logical_id=? ORDER BY id', (logical,)).fetchall()
+                if (not rows or [r[0] for r in rows] != [a.get('budget_attempt_id') for a in event['attempts']]
+                        or any(r[1]!='settled' or json.loads(r[2])!=a.get('usage')
+                               for r,a in zip(rows,event['attempts']))):
+                    self._halt(db, 'Evolution fallback usage is not fully settled')
+            self._pending_evolution = {'budget_logical_id':logical,
+                                       'output_sha256':fingerprint(event['output'])}
+        except BaseException as err:
+            self.stop('evolution_fallback_admission_failed')
+            raise BudgetStop('Original evolution fallback admission failed') from err
+
+    def confirm_evolution_fallback(self, pending):
+        """No unhalt/restart: release an in-process gate after durable state proof."""
+        with self._transaction() as db:
+            row = self._phase(db, allow_halted=True)
+            if (self._terminal_reason or row[2] or pending != self._pending_evolution
+                    or pending is None):
+                self._halt(db, 'Original evolution fallback ownership or halt differs')
+            _cell_history(db, self.binding['cell_index'], self.campaign)
+            _verify_attempt_journal(db, self.binding['cell_index'],
+                                    financial_adjudication=self.financial_adjudication)
+        self._pending_evolution = None
 
     def start_logical(self, stage):
         with self._transaction() as db:
@@ -550,11 +595,17 @@ def _read_phase_archive(path, root):
 def verify_checkpoint(path, *, root, campaign, manifest, sources, receipt,
                       financial_adjudication=None, support_migration=None):
     """Verify every exact-state ancestor, not just a mutable latest snapshot."""
-    if financial_adjudication is not None:
-        from .run2_blk022 import verify_exact_checkpoint
-        return verify_exact_checkpoint(path, root=root, campaign=campaign, manifest=manifest,
-            sources=sources, receipt=receipt, financial_adjudication=financial_adjudication,
-            support_migration=support_migration)
+    from .evolution_fallback import NORMAL_FAILURE_RECEIPT, RECOVERY_POLICY as SEQUENTIAL_POLICY
+    financial_chain = financial_adjudication is not None
+    if financial_chain:
+        from .run2_blk022 import (verify_exact_checkpoint, PARENT_RUN, PARENT_RECEIPT,
+                                  validate_financial_receipt, _check_original)
+        validate_financial_receipt(financial_adjudication)
+        _check_original(root, campaign)
+        if Path(path).parent.name == PARENT_RUN:
+            return verify_exact_checkpoint(path, root=root, campaign=campaign, manifest=manifest,
+                sources=sources, receipt=receipt, financial_adjudication=financial_adjudication,
+                support_migration=support_migration)
     from .artifacts import _validate_state
     import numpy as np
     root = Path(root).resolve();path,phase = _read_phase_archive(path,root)
@@ -564,16 +615,27 @@ def verify_checkpoint(path, *, root, campaign, manifest, sources, receipt,
         if prior['run_id'] in seen or len(chain) > max(t for t,q in CONVERSATIONS.values()):
             raise ValueError('Run2 checkpoint cycle or non-progressing lineage')
         seen.add(prior['run_id']);auth=_read(p.parent/'approval.json');_validate_phase(auth,campaign)
+        start = _read_lines(p.parent/'events.jsonl')[0]
+        archived_receipt = _read(p.parent/'preflight.json')
+        fixed_root = financial_chain and fingerprint(prior) == PARENT_RECEIPT
+        fixed_malformed = financial_chain and fingerprint(prior) == NORMAL_FAILURE_RECEIPT
+        if fixed_root:
+            verify_exact_checkpoint(p, root=root, campaign=campaign, manifest=manifest,
+                sources=start['source_hashes'], receipt=archived_receipt,
+                financial_adjudication=financial_adjudication, allow_consumed=True)
+        eligible_failure = fixed_root or (fixed_malformed and _malformed_failure(p.parent)) or (
+            prior.get('recoverable_length_failure') is True and _length_failure(p.parent,prior['binding']))
         if (auth['binding'] != prior['binding'] or auth['run_id'] != prior['run_id']
                 or prior['status'] != 'incomplete' or prior.get('completed_questions') != 0
-                or prior.get('recoverable_length_failure') is not True
-                or prior.get('secondary_failures')
+                or not eligible_failure or prior.get('secondary_failures')
                 or prior.get('observability',{}).get('verified') is not True
-                or prior['budget'].get('unknown_attempts') != 0 or not prior['budget'].get('halted')
-                or prior['binding']['source_sha256'] != fingerprint(sources)
-                or prior['binding']['preflight_sha256'] != fingerprint(receipt)
-                or not _length_failure(p.parent,prior['binding'])):
-            raise ValueError('Only verified BLK013 Run2 memory phases may continue')
+                or (prior['budget'].get('unknown_attempts') != (1 if fixed_root else 0))
+                or not prior['budget'].get('halted')
+                or prior['binding']['source_sha256'] != fingerprint(start['source_hashes'])
+                or prior['binding']['preflight_sha256'] != fingerprint(archived_receipt)
+                or start['manifest'] != manifest
+                or (not financial_chain and (start['source_hashes'] != sources or archived_receipt != receipt))):
+            raise ValueError('Only verified original-fallback Run2 memory phases may continue (BLK013 or pinned BLK014)')
         if chain and (prior['binding']['condition'],prior['binding']['conversation_ids']) != (phase['binding']['condition'],phase['binding']['conversation_ids']):
             raise ValueError('Run2 checkpoint condition/population differs')
         chain.append((p,prior,auth))
@@ -582,7 +644,10 @@ def verify_checkpoint(path, *, root, campaign, manifest, sources, receipt,
         cursor=root/'artifacts/run2/runs'/cp['parent_run_id']/'phase.json'
         if fingerprint(_read(cursor)) != cp['parent_receipt_sha256']:
             raise ValueError('Run2 ancestor receipt changed')
-    chain.reverse();b=phase['binding'];conversation=next(c for c in manifest['conversations'] if c['original_id']==b['conversation_ids'][0])
+    chain.reverse()
+    if financial_chain and [fingerprint(p) for _,p,_ in chain[:2]] != [PARENT_RECEIPT,NORMAL_FAILURE_RECEIPT]:
+        raise ValueError('Financial continuation must retain both pinned original ancestors')
+    b=phase['binding'];conversation=next(c for c in manifest['conversations'] if c['original_id']==b['conversation_ids'][0])
     events=[_read_lines(p.parent/'events.jsonl') for p,_,_ in chain]
     turns=[e for group in events for e in group if e['type']=='evolution_outcome']
     partial=_read(path.parent/'partial-memory.json');identity,state=partial['identity'],partial['state'];_validate_state(state)
@@ -594,7 +659,7 @@ def verify_checkpoint(path, *, root, campaign, manifest, sources, receipt,
             or emb.shape != (n,384) or str(emb.dtype) != 'float32' or not np.isfinite(emb).all()
             or state['evo_threshold'] != 100 or state['evo_cnt'] != turns[-1]['counter_after']
             or identity['configuration'] != RUN2_CONFIG or identity['condition'] != b['condition']
-            or identity['conversation'] != conversation or identity['source_hashes'] != sources
+            or identity['conversation'] != conversation or identity['source_hashes'] != events[-1][0]['source_hashes']
             or identity['dataset_sha256'] != manifest['dataset_sha256']
             or identity['provider_contract_policy'] != INDEX_STRING_POLICY):
         raise ValueError('Run2 exact checkpoint memory/index/provenance differs')
@@ -624,11 +689,11 @@ def verify_checkpoint(path, *, root, campaign, manifest, sources, receipt,
             if not local or prior['budget']['logical_calls'] != 2*len(local):
                 raise ValueError('Run2 recovered phase made extra/missing model calls')
             cumulative+=len(local)
-        totals=_cell_totals(db,b['cell_index'])
-        if cumulative != n or totals['logical_calls'] != 2*n or totals['unknown_attempts']:
+        totals=_cell_totals(db,b['cell_index'],financial_adjudication)
+        if cumulative != n or totals['logical_calls'] != 2*n or totals.get('unadjudicated_unknown_attempts',totals['unknown_attempts']):
             raise ValueError('Run2 checkpoint accounting is incomplete')
-        _verify_attempt_journal(db,b['cell_index'])
-    lineage={'policy':RECOVERY_POLICY,'campaign_id':CAMPAIGN_ID,'condition':b['condition'],
+        _verify_attempt_journal(db,b['cell_index'],financial_adjudication=financial_adjudication)
+    lineage={'policy':SEQUENTIAL_POLICY if financial_chain else RECOVERY_POLICY,'campaign_id':CAMPAIGN_ID,'condition':b['condition'],
              'conversation_id':b['conversation_ids'][0],'parent_run_id':phase['run_id'],
              'parent_approval_id':chain[-1][2]['approval_id'],'parent_receipt_sha256':fingerprint(phase),
              'parent_snapshot_sha256':phase['artifact_sha256']['partial-memory.json'],
@@ -637,6 +702,8 @@ def verify_checkpoint(path, *, root, campaign, manifest, sources, receipt,
              'ancestor_receipts':[{'run_id':p0['run_id'],'approval_id':a0['approval_id'],
                                    'receipt_sha256':fingerprint(p0),'approval_sha256':fingerprint(a0)}
                                   for _,p0,a0 in chain]}
+    if financial_chain:
+        lineage['next_turn_id'] = conversation['turn_ids'][n] if n<len(conversation['turn_ids']) else None
     failures=[e for e in events[-1] if e['type']=='failure']
     return {'lineage':lineage,'state':copy.deepcopy(state),'failures':copy.deepcopy(failures)}
 
@@ -698,6 +765,8 @@ def plan_phase(campaign, receipt, asset_root, *, root, condition, conversation_i
             financial_adjudication=financial_adjudication, reviewed_commit=support_reference)
         b.update(financial_adjudication=copy.deepcopy(financial_adjudication), support_migration=migration,
                  source_sha256=fingerprint(sources), preflight_sha256=fingerprint(receipt))
+        if 'evolution_failure_policy' in migration:
+            b['evolution_failure_policy'] = migration['evolution_failure_policy']
         with sqlite3.connect((root/'artifacts/run2/budget.sqlite').as_uri()+'?mode=ro',uri=True) as db:
             if unknown_counts(db, financial_adjudication)['unadjudicated_unknown_attempts']:
                 raise BudgetStop('Run2 has an unadjudicated unknown charge')
@@ -777,13 +846,43 @@ def forecast_campaign(campaign, *, root):
         if db is not None:db.close()
 
 
+def _malformed_failure(output):
+    """Only the sealed historical BLK014 leaf is eligible for a new checkpoint."""
+    from .evolution_fallback import malformed_decision
+    try:
+        events = _read_lines(Path(output)/'events.jsonl')
+        paid = [e for e in events if e['type']=='generation' and e.get('attempts')]
+        bad = [e for e in paid if e.get('error_type')]
+        outcomes = [e for e in events if e['type']=='evolution_outcome']
+        last = outcomes[-1]
+        kinds = {e['kind'] for e in events if e['type']=='failure' and not e.get('inherited_from')}
+        metadata = json.loads([e for e in paid if e['stage']=='metadata'][-1]['output'])
+        note = _read(Path(output)/'partial-memory.json')['state']['notes'][-1]['attributes']
+        return (len(bad)==1 and bad[0] is paid[-1] and malformed_decision(bad[0])
+                and last['proposed_decision'] is None and not last['changed_existing_note_ids']
+                and last['counter_before']==last['counter_after']
+                and not kinds-{'provider_contract_deviation','provider_completion','evolve'}
+                and note['links']==[] and all(note[k]==metadata[k] for k in ('context','tags','keywords')))
+    except (KeyError, IndexError, ValueError, TypeError, OSError):
+        return False
+
+
 def _length_failure(output, binding):
     """Recognise only a retained shared-decision exhaustion and original failure fallback."""
     try:
         events=_read_lines(Path(output)/'events.jsonl')
         if any(e['type']=='question_result' for e in events):return False
         paid=[e for e in events if e['type']=='generation' and e.get('attempts')]
-        bad=[e for e in paid if e.get('error_type')]
+        from .evolution_fallback import POLICY_ID, malformed_decision
+        verified = {e.get('budget_logical_id'):e for e in events
+                    if e['type']=='failure' and e.get('kind')=='original_evolution_fallback'
+                    and not e.get('inherited_from')}
+        handled = {e.get('budget_logical_id') for e in paid if malformed_decision(e)
+                   and (proof:=verified.get(e.get('budget_logical_id')))
+                   and proof.get('evolution_failure_policy')==POLICY_ID
+                   and proof.get('original_fallback_verified') is True
+                   and proof.get('raw_arguments_sha256')==hashlib.sha256(e['output'].encode()).hexdigest()}
+        bad=[e for e in paid if e.get('error_type') and e.get('budget_logical_id') not in handled]
         if len(bad)!=1 or bad[0] is not paid[-1] or bad[0]['stage']!='shared_decision':return False
         last=bad[0];choice=last['provider_response']['choices'][0]
         if (last['error_type']!='AdapterError' or choice['finish_reason']!='length'
@@ -804,7 +903,7 @@ def _length_failure(output, binding):
         final=outcomes[-1]
         if final['proposed_decision'] is not None or final['changed_existing_note_ids'] or final['counter_before']!=final['counter_after']:return False
         kinds={e['kind'] for e in events if e['type']=='failure' and not e.get('inherited_from')}
-        if kinds-{'provider_contract_deviation','provider_completion','evolve'}:return False
+        if kinds-{'provider_contract_deviation','provider_completion','evolve','original_evolution_fallback'}:return False
         partial=_read(Path(output)/'partial-memory.json')['state'];note=partial['notes'][-1]['attributes']
         metadata=[e for e in paid if e['stage']=='metadata'][-1]
         original=json.loads(metadata['output'])
@@ -890,11 +989,20 @@ def execute_phase(approval, campaign, receipt, asset_root, *, root, observer,
             if factory_builder is not None:factory=factory_builder(controller,counter,binding['condition'])
             elif binding['condition']=='full':factory=make_agent_factory(root,controller_factory=controller,token_counter=counter)
             else:factory=make_action_agent_factory(root,condition=binding['condition'],controller_factory=controller,token_counter=counter)
+            guard = None
+            if binding.get('evolution_failure_policy'):
+                from .evolution_fallback import OriginalFallbackGuard
+                from .author import _load_memory
+                from types import SimpleNamespace
+                document = _load_memory(root).note_document
+                guard = OriginalFallbackGuard(permit, observer.assert_healthy,
+                    lambda attributes: document(SimpleNamespace(**attributes)))
             summary=run_manifest(root/'data/locomo10.json',manifest,config,output_dir=output,
                 cache_root=root/'artifacts/run2/cache',source_hashes=sources,agent_factory=factory,
                 scorer=scorer,observer=observe,run_id=approval['run_id'],provider_contract_policy=INDEX_STRING_POLICY,
                 checkpoint=recovered,execution_type='checkpoint_recovery' if recovered else 'fresh_build',
-                condition=binding['condition'],conversation_ids=binding['conversation_ids'],boundary_check=boundary)
+                condition=binding['condition'],conversation_ids=binding['conversation_ids'],boundary_check=boundary,
+                evolution_guard=guard)
             if permit.summary().get('halted') or permit.summary()['unknown_attempts']:
                 raise BudgetStop('Run2 phase halted or retained unknown charges')
             predictions=[e['result'] for e in _read_lines(output/'events.jsonl') if e['type']=='question_result']
@@ -974,8 +1082,8 @@ def execute_phase(approval, campaign, receipt, asset_root, *, root, observer,
         recoverable=bool(expected_length_abort and not secondary_failures and obs.get('verified')
                          and budget.get('halt_persisted') is True
                          and budget.get('halted')=='provider_contract_or_transport_failure'
-                         and not cell_budget['unknown_attempts']
-                         and financial is None
+                         and not cell_budget.get('unadjudicated_unknown_attempts',cell_budget['unknown_attempts'])
+                         and (financial is None or binding.get('evolution_failure_policy'))
                          and _length_failure(output,binding))
         events=_read_lines(output/'events.jsonl') if (output/'events.jsonl').exists() else []
         generations=[e for e in events if e['type']=='generation']

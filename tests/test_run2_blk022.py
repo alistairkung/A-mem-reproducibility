@@ -266,6 +266,11 @@ def candidate(evidence, monkeypatch):
         'policy': observation_policy.POLICY_ID, 'gate_sha256':'a'*64,
         'credential_receipt_sha256':'b'*64,
         'execution_script_sha256':hashlib.sha256((ROOT/observation_policy.LAUNCHER).read_bytes()).hexdigest()})
+    # The same mocked external gate now includes the original-fallback proof.
+    # This is fixture admission data, never a claim of actual cloud verification.
+    gate = root / observation_policy.GATE_DIRECTORY / run2.fingerprint(sources)
+    gate.mkdir(parents=True)
+    (gate/'receipt.json').write_text(json.dumps({'malformed_fallback_verified':True}))
     origin = Path(os.environ.get('AMEM_BLK022_EVIDENCE_ROOT', ROOT))
     (root / 'artifacts/run2/gate-a').mkdir()
     shutil.copy2(origin / 'artifacts/run2/gate-a/run1-preservation.json',
@@ -303,11 +308,11 @@ def test_reviewed_source_plan_is_unapproved_and_cannot_claim_or_transmit(candida
 
 @pytest.mark.parametrize('name', ['amem_repro/adapter.py', 'amem_repro/budget.py',
                                  'memory_layer.py', 'config/run2.json'])
-def test_explicit_reviewed_commit_cannot_migrate_science_or_other_support(candidate, name):
+def test_explicit_reviewed_commit_rejects_science_or_unreviewed_bytes(candidate, name):
     root, campaign, sources, preflight, financial, reference, assets = candidate
     sources = copy.deepcopy(sources)
     sources['files'][name] = 'e' * 64
-    with pytest.raises(ValueError, match='outside'):
+    with pytest.raises(ValueError, match='outside|explicit reviewed commit'):
         incident.verify_support_migration(root=root, campaign=campaign, sources=sources,
             receipt=preflight, financial_adjudication=financial, reviewed_commit=reference)
 

@@ -953,3 +953,30 @@ checkpoint extension and another bounded paid phase require a separate decision;
 authorized or implemented here. No later cell may start. The separately authorized outcome-
 documentation PR/merge records this material stop without changing the scientific protocol.
 Read [the complete verified outcome](run2-conv44-recovery-incomplete-20261103.md).
+
+### Authorization — original evolution fallback and one exact566-note Run2 continuation
+
+On3 November2026 the user authorized investigation, narrow implementation/offline tests, independent
+reviews, normal merge and one new paid continuation from p1, plus an outcome-documentation PR/merge.
+Verify the author's supported fallback before changing experiment-level fatality. Do not repair or
+accept invalid JSON, retry a semantic decision, weaken schemas, or change scientific settings.
+
+The verified scope is `run2-original-evolution-fallback-v1`: only normal, correctly identified strict
+shared-decision syntax errors whose object-delimited text also fails the unchanged author cleanup.
+Keep strict rejection/AdapterError and original fallback; verify complete memory/index/counter and
+settled accounting before another transmission. Other stages, schema types, wrappers, length,
+transport, storage, provenance, observability and financial failures stay terminal. A completed cell
+with these failures is Degraded. This replaces excessive wrapper fatality for a supported author
+fallback while preserving its effective algorithm and all prior Run2 state.
+
+Authorize exact566-note/counter564/stale-index recovery from `run2-full-conv-44-r0-p1` atD24:13,
+with both ancestors and all inherited failures/charges. Permit the smallest sequential checkpoint
+extension, exclusive ownership, cumulative budgets and single-use approval. Historical sources are
+validated against their own archived bindings; only the new candidate uses current release pins.
+
+Exactly one fresh p2 paid phase:109 turns/158 questions,534 logical calls,1,602 physical attempts,
+maximumUSD2.629990 additional conservative exposure. OriginalUSD5 cell and Run2USD50 ceiling/8
+protected reserve remain; unknown454 retainsUSD0.324404 and existing exposureUSD2.370010 is not
+reset. Require all offline/cloud/review/merge/preflight and conservative affordability gates before
+transmission. No further actual recovery, later cell, additional budget or contingency use is granted.
+See [verified design and execution boundary](run2-author-fallback-recovery.md).

@@ -166,7 +166,7 @@ def verify_financial_adjudication(approval, *, root, campaign):
 
 
 def verify_exact_checkpoint(path, *, root, campaign, manifest, sources, receipt,
-                            financial_adjudication, support_migration=None):
+                            financial_adjudication, support_migration=None, allow_consumed=False):
     """Restore the sole approved prefix; the final valid decision is never replayed."""
     import numpy as np
     from .artifacts import _validate_state
@@ -223,9 +223,9 @@ def verify_exact_checkpoint(path, *, root, campaign, manifest, sources, receipt,
     with _ledger(root) as db:
         _check_prefix(db)
         cell, rows = _cell_history(db, 0, campaign)
-        if cell != (PARENT_APPROVAL, PARENT_APPROVAL, 0) or len(rows) != 1:
+        if not allow_consumed and (cell != (PARENT_APPROVAL, PARENT_APPROVAL, 0) or len(rows) != 1):
             raise ValueError('BLK-022 parent is no longer the exclusive unconsumed leaf')
-        if db.execute('SELECT 1 FROM checkpoint_claims WHERE parent_phase_sha256=?',
+        if not allow_consumed and db.execute('SELECT 1 FROM checkpoint_claims WHERE parent_phase_sha256=?',
                       (PARENT_RECEIPT,)).fetchone():
             raise ValueError('BLK-022 parent checkpoint was already claimed')
         _verify_attempt_journal(db, 0, financial_adjudication=financial_adjudication)
@@ -249,28 +249,36 @@ MIGRATION_FILES = {'amem_repro/run2.py', 'amem_repro/run2_blk022.py'}
 OBSERVED_MIGRATION_POLICY = 'run2-blk022-observed-support-v2'
 OBSERVED_FILES = MIGRATION_FILES | {'amem_repro/observability.py',
     'amem_repro/langfuse_verify.py', 'amem_repro/observation_policy.py'}
+FALLBACK_MIGRATION_POLICY = 'run2-original-fallback-reviewed-support-v3'
+FALLBACK_FILES = OBSERVED_FILES | {'amem_repro/adapter.py', 'amem_repro/runner.py',
+                                  'amem_repro/evolution_fallback.py'}
 
 
 def validate_support_migration(value, financial_adjudication, campaign):
     """Check phase-bound pins; the runtime additionally verifies every Git blob."""
     validate_financial_receipt(financial_adjudication)
-    observed = isinstance(value, dict) and value.get('policy') == OBSERVED_MIGRATION_POLICY
+    fallback = isinstance(value, dict) and value.get('policy') == FALLBACK_MIGRATION_POLICY
+    observed = fallback or isinstance(value, dict) and value.get('policy') == OBSERVED_MIGRATION_POLICY
     fields = {
             'policy', 'reviewed_commit', 'original_source_sha256', 'candidate_source_sha256',
             'original_preflight_sha256', 'candidate_preflight_sha256',
-            'financial_receipt_sha256', 'changed_files'} | ({'observability'} if observed else set())
+            'financial_receipt_sha256', 'changed_files'} | ({'observability'} if observed else set()) | ({'evolution_failure_policy'} if fallback else set())
     if not isinstance(value, dict) or set(value) != fields:
         raise BudgetStop('BLK-022 support migration is malformed')
-    if (value['policy'] != (OBSERVED_MIGRATION_POLICY if observed else MIGRATION_POLICY)
+    if (value['policy'] != (FALLBACK_MIGRATION_POLICY if fallback else OBSERVED_MIGRATION_POLICY if observed else MIGRATION_POLICY)
             or not isinstance(value['reviewed_commit'], str)
             or not re.fullmatch('[0-9a-f]{40}', value['reviewed_commit'])
             or value['original_source_sha256'] != campaign['binding']['source_sha256']
             or value['original_preflight_sha256'] != campaign['binding']['preflight_sha256']
             or value['financial_receipt_sha256'] != fingerprint(financial_adjudication)
-            or value['changed_files'] != sorted(OBSERVED_FILES if observed else MIGRATION_FILES)
+            or value['changed_files'] != sorted(FALLBACK_FILES if fallback else OBSERVED_FILES if observed else MIGRATION_FILES)
             or any(not isinstance(value[key], str) or not re.fullmatch('[0-9a-f]{64}', value[key])
                    for key in ('candidate_source_sha256', 'candidate_preflight_sha256'))):
         raise BudgetStop('BLK-022 support migration differs from the narrow reviewed policy')
+    if fallback:
+        from .evolution_fallback import POLICY_ID
+        if value['evolution_failure_policy'] != POLICY_ID:
+            raise BudgetStop('Original evolution fallback policy differs')
     if observed:
         from .observation_policy import POLICY_ID
         policy = value['observability']
@@ -299,11 +307,12 @@ def verify_support_migration(*, root, campaign, sources, receipt,
             or sources.get('author_revision') != archived['author_revision']
             or set(sources.get('files', {})) not in (
                 set(archived['files']) | {'amem_repro/run2_blk022.py'},
-                set(archived['files']) | {'amem_repro/run2_blk022.py', 'amem_repro/observation_policy.py'})):
+                set(archived['files']) | {'amem_repro/run2_blk022.py', 'amem_repro/observation_policy.py'},
+                set(archived['files']) | {'amem_repro/run2_blk022.py', 'amem_repro/observation_policy.py', 'amem_repro/evolution_fallback.py'})):
         raise ValueError('BLK-022 original scientific/source inventory changed')
     changed = {name for name, digest in sources['files'].items()
                if digest != archived['files'].get(name)}
-    if changed not in (MIGRATION_FILES, OBSERVED_FILES):
+    if changed not in (MIGRATION_FILES, OBSERVED_FILES, FALLBACK_FILES):
         raise ValueError('BLK-022 migration changed files outside the named reviewed support files')
     if (receipt.get('source_sha256') != fingerprint(sources)
             or receipt.get('assets') != original_receipt['assets']
@@ -327,7 +336,7 @@ def verify_support_migration(*, root, campaign, sources, receipt,
         'original_source_sha256': fingerprint(archived), 'candidate_source_sha256': fingerprint(sources),
         'original_preflight_sha256': fingerprint(original_receipt), 'candidate_preflight_sha256': fingerprint(receipt),
         'financial_receipt_sha256': fingerprint(financial_adjudication), 'changed_files': sorted(changed)}
-    if changed == OBSERVED_FILES:
+    if changed in (OBSERVED_FILES, FALLBACK_FILES):
         from .observation_policy import release_binding, LAUNCHER
         result['policy'] = OBSERVED_MIGRATION_POLICY
         result['observability'] = release_binding(root, fingerprint(sources))
@@ -338,6 +347,12 @@ def verify_support_migration(*, root, campaign, sources, receipt,
             raise ValueError('Reviewed one-cell launcher is unavailable') from error
         if hashlib.sha256(script).hexdigest() != result['observability']['execution_script_sha256']:
             raise ValueError('One-cell launcher differs from the reviewed commit')
+        if changed == FALLBACK_FILES:
+            from .evolution_fallback import POLICY_ID
+            result.update(policy=FALLBACK_MIGRATION_POLICY, evolution_failure_policy=POLICY_ID)
+            gate = _read(Path(root)/'artifacts/run2/observed-recovery/gate-b'/fingerprint(sources)/'receipt.json')
+            if gate.get('malformed_fallback_verified') is not True:
+                raise ValueError('Actual-runner malformed fallback cloud evidence is missing')
     validate_support_migration(result, financial_adjudication, campaign)
     return result
 
