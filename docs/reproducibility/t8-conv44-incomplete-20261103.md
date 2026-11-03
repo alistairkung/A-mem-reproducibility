@@ -54,9 +54,11 @@ The partial snapshot passes state validation; there is no complete cache marker 
 
 Exact real-SDK replay through HTTPX MockTransport, with sockets disabled, sends one identical mock
 request and reproduces rejection while preserving the response. No offline model calls or output
-repair occurred. Existing failure/spending/phase/study/comparison regression results are recorded in
+repair occurred. All120 existing adapter-budget/phase/study/comparison regressions pass (16 warnings
+from intentional SDK malformed-metadata fixtures), recorded in
 `artifacts/t8/offline/conv44-failure-regressions-20261103.txt`; pre-paid controls passed48 tests/60
-subtests. No production changes or new compatibility policy were needed.
+subtests. Independent Standards and Spec/factual reviews are clear. No production changes or new
+compatibility policy were needed.
 
 ## Cost-only forecast and next decision
 
