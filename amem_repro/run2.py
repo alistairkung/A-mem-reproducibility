@@ -118,17 +118,37 @@ def _validate_phase(approval, campaign):
     if type(index) is not int or not 0 <= index < len(CELL_ORDER):
         raise BudgetStop('Unknown Run2 cell')
     expected = _binding(campaign, index)
+    financial = b.get('financial_adjudication')
+    if financial is not None:
+        from .run2_blk022 import validate_support_migration
+        validate_support_migration(b.get('support_migration'), financial, campaign)
+        expected.update(financial_adjudication=financial, support_migration=b['support_migration'],
+            source_sha256=b['support_migration']['candidate_source_sha256'],
+            preflight_sha256=b['support_migration']['candidate_preflight_sha256'])
     checkpoint = b.get('checkpoint')
     if checkpoint is not None:
         expected['checkpoint'] = checkpoint
         if (checkpoint.get('campaign_id') != CAMPAIGN_ID
-                or checkpoint.get('policy') != RECOVERY_POLICY
+                or checkpoint.get('policy') != (
+                    'run2-blk022-exact227-state-v1' if financial is not None else RECOVERY_POLICY)
                 or checkpoint.get('condition') != expected['condition']
                 or checkpoint.get('conversation_id') != expected['conversation_ids'][0]
                 or not _digest(checkpoint.get('parent_receipt_sha256'))
                 or type(checkpoint.get('completed_turns')) is not int
                 or not 0 < checkpoint['completed_turns'] <= expected['expected_turns']):
             raise BudgetStop('Run2 checkpoint identity differs')
+        if financial is not None:
+            from .run2_blk022 import PARENT_RUN, PARENT_APPROVAL, PARENT_RECEIPT
+            if (index != 0 or approval.get('phase_index') != 1
+                    or checkpoint.get('parent_run_id') != PARENT_RUN
+                    or checkpoint.get('parent_approval_id') != PARENT_APPROVAL
+                    or checkpoint.get('parent_receipt_sha256') != PARENT_RECEIPT
+                    or checkpoint.get('completed_turns') != 227
+                    or checkpoint.get('remaining_logical_calls') != 1212
+                    or checkpoint.get('next_turn_id') != 'D10:11'):
+                raise BudgetStop('Run2 BLK-022 checkpoint differs from the sole approved prefix')
+    elif financial is not None and index == 0:
+        raise BudgetStop('Run2 BLK-022 cannot restart its original cell')
     completed = checkpoint['completed_turns'] if checkpoint else 0
     logical = 2 * (expected['expected_turns'] - completed + expected['expected_questions'])
     limits = approval.get('limits', {})
@@ -149,15 +169,22 @@ def _validate_phase(approval, campaign):
     return int((cap * 1000000).to_integral_value(rounding=ROUND_FLOOR))
 
 
-def _cell_totals(db, index):
+def _cell_totals(db, index, financial_adjudication=None):
     ids = [r[0] for r in db.execute('SELECT approval_id FROM run2_phases WHERE cell_index=?', (index,))]
     if not ids:
         return {'logical_calls': 0, 'physical_attempts': 0, 'charged_or_reserved_microusd': 0, 'unknown_attempts': 0}
     marks = ','.join('?' for _ in ids)
     calls = db.execute(f'SELECT COUNT(*) FROM logical_calls WHERE approval_id IN ({marks})', ids).fetchone()[0]
     count, cost, unknown = db.execute(f"SELECT COUNT(*),COALESCE(SUM(charge),0),COALESCE(SUM(status!='settled'),0) FROM attempts WHERE approval_id IN ({marks})", ids).fetchone()
-    return {'logical_calls': calls, 'physical_attempts': count,
-            'charged_or_reserved_microusd': cost, 'unknown_attempts': unknown}
+    result = {'logical_calls': calls, 'physical_attempts': count,
+              'charged_or_reserved_microusd': cost, 'unknown_attempts': unknown}
+    if financial_adjudication is not None:
+        from .run2_blk022 import adjudicated_unknown_ids
+        allowed = adjudicated_unknown_ids(db, financial_adjudication)
+        unknown_ids = {r[0] for r in db.execute(
+            f"SELECT id FROM attempts WHERE status!='settled' AND approval_id IN ({marks})", ids)}
+        result['unadjudicated_unknown_attempts'] = len(unknown_ids - allowed)
+    return result
 
 
 def _cell_history(db, index, campaign):
@@ -225,6 +252,7 @@ class Run2Permit(PhasePermit):
         self.root = root
         self._check_storage_scope()
         self.campaign = copy.deepcopy(campaign)
+        self.financial_adjudication = copy.deepcopy(approval.get('binding', {}).get('financial_adjudication'))
         cap = _validate_phase(approval, campaign)
         if not self.path.exists() and any((self.path.parent/'runs').glob('*/approval.json')):
             raise BudgetStop('Run2 ledger is missing while historical phases exist')
@@ -246,7 +274,8 @@ class Run2Permit(PhasePermit):
                 raise BudgetStop('Run2 campaign approval changed')
             if db.execute('SELECT COUNT(*) FROM phases').fetchone()[0] != db.execute('SELECT COUNT(*) FROM run2_phases').fetchone()[0]:
                 raise BudgetStop('Run2 ledger has unregistered/lost phase history')
-            if db.execute("SELECT 1 FROM attempts WHERE status!='settled' LIMIT 1").fetchone():
+            from .run2_blk022 import unknown_counts
+            if unknown_counts(db, self.financial_adjudication)['unadjudicated_unknown_attempts']:
                 raise BudgetStop('Run2 has unknown or interrupted charges; continuation prohibited')
             for index, in db.execute('SELECT cell_index FROM run2_cells'):
                 _cell_history(db, index, campaign)
@@ -266,12 +295,14 @@ class Run2Permit(PhasePermit):
                 path, archived = _read_phase_archive(self.path.parent/'runs'/cp['parent_run_id']/'phase.json', self.root)
                 if (fingerprint(archived) != cp['parent_receipt_sha256']
                         or archived.get('observability',{}).get('verified') is not True
-                        or archived.get('recoverable_length_failure') is not True):
+                        or (self.financial_adjudication is None
+                            and archived.get('recoverable_length_failure') is not True)):
                     raise BudgetStop('Run2 checkpoint parent receipt is unverified or changed')
                 start = _read_lines(path.parent/'events.jsonl')[0]
                 checked = verify_checkpoint(path, root=self.root, campaign=campaign,
                                             manifest=start['manifest'], sources=start['source_hashes'],
-                                            receipt=_read(path.parent/'preflight.json'))
+                                            receipt=_read(path.parent/'preflight.json'),
+                                            financial_adjudication=self.financial_adjudication)
                 if checked['lineage'] != cp:
                     raise BudgetStop('Run2 checkpoint binding differs from verified exact state')
                 if (cell[2] or cell[1] != parent or self.auth['phase_index'] != len(rows)
@@ -338,13 +369,22 @@ class Run2Permit(PhasePermit):
     def start_logical(self, stage):
         with self._transaction() as db:
             self._phase(db)
-            if db.execute("SELECT 1 FROM attempts WHERE status!='settled' LIMIT 1").fetchone():
+            from .run2_blk022 import unknown_counts
+            if unknown_counts(db, self.financial_adjudication)['unadjudicated_unknown_attempts']:
                 self._halt(db, 'Unknown charge prevents another Run2 logical request')
         return super().start_logical(stage)
 
+    def campaign_summary(self):
+        result = ledger_summary(self.path)
+        if self.financial_adjudication is not None:
+            from .run2_blk022 import unknown_counts
+            with self._transaction() as db:
+                result.update(unknown_counts(db, self.financial_adjudication))
+        return result
+
     def cell_summary(self):
         with self._transaction() as db:
-            return _cell_totals(db, self.binding['cell_index'])
+            return _cell_totals(db, self.binding['cell_index'], self.financial_adjudication)
 
     def _publish_and_seal(self,db,receipt,publish):
         if db.execute('SELECT receipt_sha256 FROM run2_phases WHERE approval_id=?',(self.approval_id,)).fetchone() != (None,):
@@ -366,15 +406,15 @@ class Run2Permit(PhasePermit):
                             (self.binding['cell_index'],)).fetchone()
             if (leaf!=(self.approval_id,0) or receipt.get('binding')!=self.binding
                     or receipt.get('status')!='incomplete' or receipt.get('usable_for_next_phase')
-                    or receipt.get('cell_budget')!=_cell_totals(db,self.binding['cell_index'])):
+                    or receipt.get('cell_budget')!=_cell_totals(db,self.binding['cell_index'],self.financial_adjudication)):
                 self._halt(db,'Incomplete Run2 receipt does not match its retained phase')
-            if receipt.get('recoverable_length_failure'):_verify_attempt_journal(db,self.binding['cell_index'])
+            if receipt.get('recoverable_length_failure'):_verify_attempt_journal(db,self.binding['cell_index'],financial_adjudication=self.financial_adjudication)
             self._publish_and_seal(db,receipt,publish)
 
     def complete_cell(self, receipt, publish):
         with self._transaction() as db:
             self._phase(db)
-            totals = _cell_totals(db, self.binding['cell_index'])
+            totals = _cell_totals(db, self.binding['cell_index'], self.financial_adjudication)
             turns, questions = CONVERSATIONS[self.binding['conversation_ids'][0]]
             ids = [r[0] for r in db.execute('SELECT approval_id FROM run2_phases WHERE cell_index=?', (self.binding['cell_index'],))]
             marks = ','.join('?' for _ in ids)
@@ -382,13 +422,14 @@ class Run2Permit(PhasePermit):
             if (receipt.get('binding') != self.binding or receipt.get('run_id') != self.auth['run_id']
                     or receipt.get('status') not in ('complete','degraded')
                     or receipt.get('completed_questions') != questions or not receipt.get('usable_for_next_phase')
-                    or receipt.get('cell_budget') != totals or totals['unknown_attempts']
+                    or receipt.get('cell_budget') != totals
+                    or totals.get('unadjudicated_unknown_attempts', totals['unknown_attempts'])
                     or totals['logical_calls'] != 2 * (turns+questions)
                     or stages != {'metadata':turns,'shared_decision':turns,'query_keywords':questions,'answer':questions}
                     or not receipt.get('observability',{}).get('verified')
                     or not receipt.get('experiments',{}).get('verified') or not callable(publish)):
                 self._halt(db, 'Incomplete/unobserved Run2 cell cannot release the frontier')
-            _verify_attempt_journal(db,self.binding['cell_index'])
+            _verify_attempt_journal(db,self.binding['cell_index'],financial_adjudication=self.financial_adjudication)
             self._publish_and_seal(db,receipt,publish)
             changed = db.execute('UPDATE run2_cells SET complete=1 WHERE cell_index=? AND leaf_approval=? AND complete=0',
                                  (self.binding['cell_index'],self.approval_id))
@@ -450,13 +491,24 @@ def plan_campaign(receipt, gate_a, gate_b, *, root, asset_root):
     return campaign
 
 
-def _check_campaign_runtime(campaign, receipt, asset_root, root):
+def _check_campaign_runtime(campaign, receipt, asset_root, root, *,
+                            financial_adjudication=None, support_reference=None, phase_binding=None):
     _validate_campaign(campaign)
     config, manifest, sources = _runtime_inputs(receipt, asset_root, root)
     b = campaign['binding']
-    if any(b[key] != value for key,value in (
-            ('config_sha256',fingerprint(config)),('manifest_sha256',fingerprint(manifest)),
-            ('source_sha256',fingerprint(sources)),('preflight_sha256',fingerprint(receipt)))):
+    pins = [('config_sha256', fingerprint(config)), ('manifest_sha256', fingerprint(manifest))]
+    if financial_adjudication is None:
+        pins += [('source_sha256', fingerprint(sources)), ('preflight_sha256', fingerprint(receipt))]
+    else:
+        from .run2_blk022 import verify_support_migration
+        migration = verify_support_migration(root=root, campaign=campaign, sources=sources, receipt=receipt,
+            financial_adjudication=financial_adjudication, reviewed_commit=support_reference)
+        if phase_binding is not None and (
+                phase_binding.get('source_sha256') != fingerprint(sources)
+                or phase_binding.get('preflight_sha256') != fingerprint(receipt)
+                or phase_binding.get('support_migration') != migration):
+            raise BudgetStop('Run2 approved runtime source/preflight/support migration differs')
+    if any(b[key] != value for key, value in pins):
         raise ValueError('Run2 frozen source/configuration/preflight changed')
     preservation = _read(Path(root)/'artifacts/run2/gate-a/run1-preservation.json')
     if (fingerprint(preservation) != b['run1_preservation_sha256']
@@ -484,8 +536,14 @@ def _read_phase_archive(path, root):
     return path,phase
 
 
-def verify_checkpoint(path, *, root, campaign, manifest, sources, receipt):
+def verify_checkpoint(path, *, root, campaign, manifest, sources, receipt,
+                      financial_adjudication=None, support_migration=None):
     """Verify every exact-state ancestor, not just a mutable latest snapshot."""
+    if financial_adjudication is not None:
+        from .run2_blk022 import verify_exact_checkpoint
+        return verify_exact_checkpoint(path, root=root, campaign=campaign, manifest=manifest,
+            sources=sources, receipt=receipt, financial_adjudication=financial_adjudication,
+            support_migration=support_migration)
     from .artifacts import _validate_state
     import numpy as np
     root = Path(root).resolve();path,phase = _read_phase_archive(path,root)
@@ -576,8 +634,10 @@ def _read_lines(path):
     return [json.loads(line) for line in Path(path).read_text().splitlines()]
 
 
-def _verify_attempt_journal(db,cell_index):
+def _verify_attempt_journal(db,cell_index, *, financial_adjudication=None):
     """Reject lost charges/calls even when aggregate counters happen to match."""
+    from .run2_blk022 import adjudicated_unknown_ids
+    allowed_unknown = adjudicated_unknown_ids(db, financial_adjudication)
     ledger=Path(db.execute('PRAGMA database_list').fetchone()[2]);attempts={};logical={}
     ids=[]
     for ident,raw in db.execute('SELECT p.approval_id,f.auth_json FROM run2_phases p JOIN phases f ON f.approval_id=p.approval_id WHERE p.cell_index=? ORDER BY p.phase_index',(cell_index,)):
@@ -600,21 +660,39 @@ def _verify_attempt_journal(db,cell_index):
     if {r[0] for r in rows}!=set(attempts):raise BudgetStop('Run2 attempt journal/accounting differs')
     for ident,logical_id,status,charge,usage_json in rows:
         expected_logical,usage=attempts[ident]
+        if (ident in allowed_unknown and status == 'unknown' and charge == 324404
+                and logical_id == expected_logical and usage is None and usage_json == 'null'):
+            continue
         if status!='settled' or logical_id!=expected_logical or not isinstance(usage,dict) or json.loads(usage_json)!=usage:
             raise BudgetStop('Run2 attempt usage is missing, changed or unknown')
         calculated=int((Decimal('.3')*usage['prompt_tokens']+Decimal('1.2')*usage['completion_tokens']).to_integral_value(rounding=ROUND_CEILING))
         if charge!=calculated:raise BudgetStop('Run2 actual charge differs from retained provider usage')
 
 
-def plan_phase(campaign, receipt, asset_root, *, root, condition, conversation_id, parent=None):
-    root=Path(root).resolve();config,manifest,sources=_check_campaign_runtime(campaign,receipt,asset_root,root)
+def plan_phase(campaign, receipt, asset_root, *, root, condition, conversation_id, parent=None,
+               financial_adjudication=None, support_reference=None):
+    root=Path(root).resolve()
+    options = {} if financial_adjudication is None else {
+        'financial_adjudication': financial_adjudication, 'support_reference': support_reference}
+    config,manifest,sources=_check_campaign_runtime(campaign,receipt,asset_root,root,**options)
     if not forecast_campaign(campaign, root=root)['fits_execution_allocation']:
         raise ValueError('Run2 remaining cost-only forecast exceeds USD42; stop for a budget decision')
     try:index=CELL_ORDER.index((condition,conversation_id))
     except ValueError:raise ValueError('Unknown fixed Run2 cell') from None
     b=_binding(campaign,index);seq=0;prior={'charged_or_reserved_microusd':0,'physical_attempts':0}
+    migration = None
+    if financial_adjudication is not None:
+        from .run2_blk022 import verify_support_migration, unknown_counts
+        migration = verify_support_migration(root=root, campaign=campaign, sources=sources, receipt=receipt,
+            financial_adjudication=financial_adjudication, reviewed_commit=support_reference)
+        b.update(financial_adjudication=copy.deepcopy(financial_adjudication), support_migration=migration,
+                 source_sha256=fingerprint(sources), preflight_sha256=fingerprint(receipt))
+        with sqlite3.connect((root/'artifacts/run2/budget.sqlite').as_uri()+'?mode=ro',uri=True) as db:
+            if unknown_counts(db, financial_adjudication)['unadjudicated_unknown_attempts']:
+                raise BudgetStop('Run2 has an unadjudicated unknown charge')
     if parent is not None:
-        cp=verify_checkpoint(parent,root=root,campaign=campaign,manifest=manifest,sources=sources,receipt=receipt)
+        cp=verify_checkpoint(parent,root=root,campaign=campaign,manifest=manifest,sources=sources,receipt=receipt,
+            financial_adjudication=financial_adjudication,support_migration=migration)
         b['checkpoint']=cp['lineage'];seq=len(cp['lineage']['ancestor_receipts'])
         with sqlite3.connect((root/'artifacts/run2/budget.sqlite').as_uri()+'?mode=ro',uri=True) as db:
             prior=_cell_totals(db,index)
@@ -740,10 +818,12 @@ def execute_phase(approval, campaign, receipt, asset_root, *, root, observer,
     from .scoring import AuthorScorer, rescore_records
     from .phases import _asset_environment
     from .preflight import make_token_counter
-    root=Path(root).resolve();config,manifest,sources=_check_campaign_runtime(campaign,receipt,asset_root,root)
+    root=Path(root).resolve()
     _validate_phase(approval,campaign);binding=approval['binding']
-    if any(binding.get(k)!=v for k,v in _binding(campaign,binding['cell_index']).items()):
-        raise BudgetStop('Run2 phase binding changed')
+    financial=binding.get('financial_adjudication');migration=binding.get('support_migration')
+    options = {} if financial is None else {'financial_adjudication':financial,
+        'support_reference':migration['reviewed_commit'], 'phase_binding':binding}
+    config,manifest,sources=_check_campaign_runtime(campaign,receipt,asset_root,root,**options)
     output=root/'artifacts/run2/runs'/approval['run_id']
     if output.exists():raise FileExistsError('Run2 phase identity is immutable and single use')
     if not callable(verify_observations) or not callable(verify_results) or observer is None:
@@ -751,7 +831,8 @@ def execute_phase(approval, campaign, receipt, asset_root, *, root, observer,
     recovered=None
     if 'checkpoint' in binding:
         recovered=verify_checkpoint(root/'artifacts/run2/runs'/binding['checkpoint']['parent_run_id']/'phase.json',
-                                    root=root,campaign=campaign,manifest=manifest,sources=sources,receipt=receipt)
+                                    root=root,campaign=campaign,manifest=manifest,sources=sources,receipt=receipt,
+                                    financial_adjudication=financial,support_migration=migration)
         if recovered['lineage']!=binding['checkpoint']:raise ValueError('Run2 approved checkpoint binding differs')
     if controller_factory is None and not os.environ.get('DEEPSEEK_API_KEY'):
         raise ValueError('DEEPSEEK_API_KEY is required in the environment')
@@ -883,6 +964,7 @@ def execute_phase(approval, campaign, receipt, asset_root, *, root, observer,
                          and budget.get('halt_persisted') is True
                          and budget.get('halted')=='provider_contract_or_transport_failure'
                          and not cell_budget['unknown_attempts']
+                         and financial is None
                          and _length_failure(output,binding))
         events=_read_lines(output/'events.jsonl') if (output/'events.jsonl').exists() else []
         generations=[e for e in events if e['type']=='generation']
@@ -907,11 +989,12 @@ def execute_phase(approval, campaign, receipt, asset_root, *, root, observer,
                'system_fingerprints':sorted({e['system_fingerprint'] for e in generations if isinstance(e.get('system_fingerprint'),str) and e['system_fingerprint']}),
                'schema_outcomes':schema_outcomes,
                'expected_questions':binding['expected_questions'],'error_type':type(failure).__name__ if failure else None,
-               'budget':budget,'cell_budget':cell_budget,'campaign_budget':ledger_summary(permit.path),
+               'budget':budget,'cell_budget':cell_budget,'campaign_budget':permit.campaign_summary(),
                'observability':obs,'experiments':experiments,'recoverable_length_failure':recoverable,
                'secondary_failures':secondary_failures,
                'usable_for_next_phase':bool(summary and failure is None and not budget.get('halted')
-                    and not cell_budget['unknown_attempts'] and obs.get('verified') and experiments.get('verified')),
+                    and not cell_budget.get('unadjudicated_unknown_attempts', cell_budget['unknown_attempts'])
+                    and obs.get('verified') and experiments.get('verified')),
                'completed_at':datetime.now(timezone.utc).isoformat(),
                'artifact_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(output.iterdir()) if p.is_file()}}
         try:
