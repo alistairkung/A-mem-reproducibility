@@ -1,5 +1,6 @@
 """Real-runner tracing is passive; Langfuse stores observations, never generates."""
 import copy
+import hashlib
 import json
 import uuid
 from pathlib import Path
@@ -96,6 +97,29 @@ def test_live_generation_retains_original_arguments_usage_and_unit_identity():
     assert receipt['observations'][-1]['id'] == generation.id
     observer.assert_healthy()
     assert receipt['cloud_visibility_verified'] is False
+    assert 'wire_request' not in generation.value['metadata']  # No captured physical request.
+
+
+def test_actual_runner_logs_exact_safe_wire_request_without_changing_parser_input_or_calls(tmp_path):
+    client = Client();observer = LangfuseObserver(client, identity('wire-request-fixture'))
+    traced = run_fixture(tmp_path/'traced', observer=observer)
+    plain = run_fixture(tmp_path/'plain')
+    receipt = observer.finish()
+    generations = [row for row in receipt['observations'] if row['type'] == 'generation']
+    events = [event for event in traced['events'] if event['type'] == 'generation']
+    assert receipt['errors'] == []
+    assert traced['requests'] == plain['requests']
+    assert len(generations) == len(traced['requests']) == 44
+    assert [row['metadata']['wire_request'] for row in generations] == traced['requests']
+    assert [span.value['metadata']['wire_request'] for span in client.spans
+            if span.value['as_type'] == 'generation'] == traced['requests']
+    for row, event in zip(generations, events):
+        assert row['input'] == {'prompt': event['prompt'], 'response_format': event['response_format']}
+        assert row['metadata']['wire_request']['messages'][0]['role'] == 'system'
+        assert row['metadata']['wire_request']['tool_choice']['type'] == 'function'
+        assert row['output']['provider_arguments'] == event['output']
+        assert row['output']['parser_input_sha256'] == hashlib.sha256(event['output'].encode()).hexdigest()
+        assert row['output']['algorithm_input_modified'] is False
 
 
 def test_unknown_attempt_usage_is_explicitly_partial_and_never_invented_as_zero_cost():
