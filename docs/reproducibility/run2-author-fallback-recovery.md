@@ -115,7 +115,6 @@ pass without production changes. Preserve both logs, including the earlier prepa
 PR#31 merged `66d3ffa`; the single p2 approval is consumed. Exact566-note recovery collects all675
 turns/158 QA with zero new malformed outputs,534 requests/USD1.796479 and totalUSD4.166489 exposure.
 All1,771 runtime observations verify; final Experiment import exceeds64MiB local batch size and
-readback fails. The sealed phase stays Incomplete on BLK-024, despite locally complete/Degraded
-scientific records. Offline16-span batching is a prospective reporting-only remedy, not live verified
+readback fails. The sealed phase stays Incomplete on BLK-024, despite locally complete scientific collection with inherited degradation. Offline16-span batching is a prospective reporting-only remedy, not live verified
 or authorized re-import. BLK-009 reopens for measured affordability. No further paid phase/import or
 frontier release is authorized. Read [verified outcome and evidence](run2-conv44-collected-export-blocked-20261103.md).

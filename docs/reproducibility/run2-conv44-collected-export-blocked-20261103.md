@@ -3,8 +3,9 @@
 3 November2026. **All675 memory turns and158 questions are collected and locally verified. The
 sealed phase is Incomplete because Langfuse Experiments failed its visibility gate (BLK-024).**
 Its halt/receipt remain unchanged; do not label this a completed Degraded cell or release another
-paid cell. The original author-runner summary is Degraded from inherited failures; the outer phase's
-Incomplete status takes precedence. No additional model request, paid restart or re-import occurred.
+paid cell. The author runner completed with inherited Degraded status before postprocessing failed;
+final persisted `summary.json` and `phase.json` are Incomplete. No model request, paid restart or
+re-import occurred after that failure.
 
 ## Implementation and original fallback
 
