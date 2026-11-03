@@ -84,3 +84,27 @@ include explicit malformed-fallback verification. Immutable p0/p1 directories an
 Run2 ledger remain authoritative. Failed test/preparation attempts remain in the evidence directory.
 Release test/review/cloud evidence and the one approved execution outcome will be appended after
 verification; this engineering record does not claim a successful paid continuation.
+
+Current source fingerprint: `fc5fc67e0a0276948b1c8ac38ec4bbd0fab2fa09b44badc4c2a517cee3503fa7`;
+reviewed source commit `7921b15cccb7b6517e2b2e77a35576cdb04285eb`. Both independent code reviews
+and gate audits are clear. The source-bound gate verifies75 evidence hashes, including130 observations
+from the actual new Run2 phase/permit/fallback executor:24 turns/one question, two rejected decisions,
+counter22 and50 settled mock attempts. Both saved-result Experiments verify two items/28 scores.
+Its actual manifest hash matches run, binding and cloud metadata. The separate18-turn helper's
+manifest label is an explicit synthetic placeholder; it supplies engineering replay/tracing/length
+coverage, not a primary manifest-identity claim. Its131 success/18 length observations and eight
+Experiment items/112 scores also verify. All model transmissions use MockTransport, zero LLM network.
+
+Complete original/full-candidate archive replays match1,544 requests,568 notes,204 questions and all
+state/index/retrieval/prediction/scoring comparisons, differing only in the implementation label.
+Runtime preflight is ready with network disabled. Cost-only sensitivity prices every remaining call
+at its empirical stageP95 (Run2 construction, labelled Run1 QA proxy), adds10% retry cost and one
+peak-request reservation headroom:USD2.604027 fitsUSD2.629990 byUSD0.025963. This is a conservative
+scenario, not a completion guarantee; hard limits dominate. Included Core capacity is bounded at
+82,701 units for this one phase, without a new service allocation. See `cost-preflight.json`.
+
+Final release: **784 tests/92 subtests pass**,17 expected warnings,1164.19s. Independent Standards
+and Spec reviews and75-file cloud audits are clear. The first full run's sole failure was an
+outdated negative-test message expectation (783 tests/92 subtests passed); the implementation had
+correctly rejected stale source at preflight. The corrected four rejection cases and complete rerun
+pass without production changes. Preserve both logs, including the earlier preparation failures.
