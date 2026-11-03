@@ -84,7 +84,12 @@ def run_manifest(
             or (condition != 'full' and bound_condition != condition)):
         raise ValueError('Condition requires its matching action-gated factory')
     if checkpoint is not None and condition != 'full':
-        raise ValueError('The frozen full-mode checkpoint cannot seed an ablation')
+        from .config import RUN2_CONFIG
+        lineage = checkpoint.get('lineage', {})
+        if (config != RUN2_CONFIG or lineage.get('policy') != 'run2-blk013-exact-state-v1'
+                or lineage.get('campaign_id') != 'amem-run2-20261103-v1'
+                or lineage.get('condition') != condition):
+            raise ValueError('The frozen full-mode checkpoint cannot seed an ablation')
     action_implementation = 't7-action-gates' if bound_condition is not None else 'frozen-author'
     if execution_type not in ("fresh_build", "cached_qa", "checkpoint_recovery", "deterministic_replay"):
         raise ValueError("This runner supports fresh_build and cached_qa; replay is T6")
