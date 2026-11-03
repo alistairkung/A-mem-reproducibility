@@ -1,5 +1,9 @@
 # Conv-44 recovery — second output exhaustion, Incomplete
 
+This outcome snapshot predates the separately authorized
+[second pinned continuation](decisions.md#authorization--second-pinned-conv-44-continuation).
+That later grant does not alter either failed phase or authorize ablations.
+
 PR#19 merged as `11685b228f75e508d763be5417af5a5cef2a6d26`. Recovery PR#20 merged normally as
 `3d0e04ac3054266cce8a82c3408d734de76a0fda` after570 offline tests/92 subtests,146 focused tests/60
 subtests and clear independent Standards/Spec reviews. Local main was synchronized before execution.

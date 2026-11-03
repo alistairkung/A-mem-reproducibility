@@ -4,8 +4,11 @@ Status: conv-49/conv-50 completed Degraded and remain unchanged. The original Fu
 its one authorized checkpoint child both stopped Incomplete on BLK-013 output exhaustion.
 PR#20 merged as `3d0e04a`; the child restored424 notes/counter422, processed186 new turns, then stopped
 at `D26:18`:610 notes/counter607, zero QA. Parent+child USD2.117959/1,220 calls; cumulative
-USD8.407857/4,240 settled requests, zero unknown charges. All paid grants are consumed; no second
-recovery, restart, ablation or scientific-setting change is authorized. Both planners remain blocked.
+USD8.407857/4,240 settled requests, zero unknown charges. The earlier grants are consumed. The user
+subsequently authorized one pinned second continuation after engineering/review/merge/preflight,
+under USD3/446 logical/1,338 physical limits; it is not implemented/executed at this checkpoint.
+See the [latest authority](decisions.md#authorization--second-pinned-conv-44-continuation).
+No third recovery, restart, ablation or scientific-setting change is authorized.
 See the [verified child failure and forecast](t8-conv44-recovery-incomplete-20261103.md) and
 [consumed one-child grant](decisions.md#authorization--exact-conv-44-checkpoint-engineering-merge-and-one-child).
 Authority: [latest decision](decisions.md#authorization--t8-implementation-and-paid-main-execution),
