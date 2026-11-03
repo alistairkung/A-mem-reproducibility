@@ -17,7 +17,8 @@ class ReplayMismatch(BaseException):
 
 
 class ReplayController:
-    def __init__(self, records, *, provider_contract_policy=STRICT_PROVIDER_POLICY, observer=None):
+    def __init__(self, records, *, provider_contract_policy=STRICT_PROVIDER_POLICY, observer=None,
+                 generation_config=None):
         self._records = copy.deepcopy(list(records))
         self._position = 0
         self._failure = None
@@ -26,6 +27,7 @@ class ReplayController:
         self._adapter = DeepSeekController(
             SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=self._create))),
             observer=self._observe, provider_contract_policy=provider_contract_policy,
+            generation_config=generation_config,
         )
         for record in self._records:
             if (record.get('type') != 'generation' or len(record.get('attempts', [])) != 1
