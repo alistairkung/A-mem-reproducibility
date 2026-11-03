@@ -492,7 +492,7 @@ def plan_campaign(receipt, gate_a, gate_b, *, root, asset_root):
 
 
 def _check_campaign_runtime(campaign, receipt, asset_root, root, *,
-                            financial_adjudication=None, support_reference=None):
+                            financial_adjudication=None, support_reference=None, phase_binding=None):
     _validate_campaign(campaign)
     config, manifest, sources = _runtime_inputs(receipt, asset_root, root)
     b = campaign['binding']
@@ -501,8 +501,13 @@ def _check_campaign_runtime(campaign, receipt, asset_root, root, *,
         pins += [('source_sha256', fingerprint(sources)), ('preflight_sha256', fingerprint(receipt))]
     else:
         from .run2_blk022 import verify_support_migration
-        verify_support_migration(root=root, campaign=campaign, sources=sources, receipt=receipt,
+        migration = verify_support_migration(root=root, campaign=campaign, sources=sources, receipt=receipt,
             financial_adjudication=financial_adjudication, reviewed_commit=support_reference)
+        if phase_binding is not None and (
+                phase_binding.get('source_sha256') != fingerprint(sources)
+                or phase_binding.get('preflight_sha256') != fingerprint(receipt)
+                or phase_binding.get('support_migration') != migration):
+            raise BudgetStop('Run2 approved runtime source/preflight/support migration differs')
     if any(b[key] != value for key, value in pins):
         raise ValueError('Run2 frozen source/configuration/preflight changed')
     preservation = _read(Path(root)/'artifacts/run2/gate-a/run1-preservation.json')
@@ -817,7 +822,7 @@ def execute_phase(approval, campaign, receipt, asset_root, *, root, observer,
     _validate_phase(approval,campaign);binding=approval['binding']
     financial=binding.get('financial_adjudication');migration=binding.get('support_migration')
     options = {} if financial is None else {'financial_adjudication':financial,
-        'support_reference':migration['reviewed_commit']}
+        'support_reference':migration['reviewed_commit'], 'phase_binding':binding}
     config,manifest,sources=_check_campaign_runtime(campaign,receipt,asset_root,root,**options)
     output=root/'artifacts/run2/runs'/approval['run_id']
     if output.exists():raise FileExistsError('Run2 phase identity is immutable and single use')

@@ -418,3 +418,28 @@ def test_real_runner_resumes_D10_11_once_and_retains_exact_prefix(candidate, mon
     assert saved['outcomes'][:227] == original_state['outcomes']
     assert all(hashlib.sha256((parent / name).read_bytes()).hexdigest() == digest
                for name, digest in original_inventory.items())
+
+
+@pytest.mark.parametrize('tamper', ['source', 'preflight', 'both', None])
+def test_fresh_cell_execution_checks_approved_runtime_before_admission(candidate, tamper):
+    root, campaign, sources, preflight, financial, reference, assets = candidate
+    plan = approve(run2.plan_phase(campaign, preflight, assets, root=root, condition='full',
+        conversation_id='conv-49', financial_adjudication=financial, support_reference=reference))
+    binding = plan['binding']
+    if tamper in ('source', 'both'):
+        binding['source_sha256'] = binding['support_migration']['candidate_source_sha256'] = '1' * 64
+    if tamper in ('preflight', 'both'):
+        binding['preflight_sha256'] = binding['support_migration']['candidate_preflight_sha256'] = '2' * 64
+    ledger = root / 'artifacts/run2/budget.sqlite'
+    before = ledger.read_bytes()
+    def no_client(**kwargs):
+        pytest.fail('Admission failure must precede client creation or transmission')
+    # With valid pins, execution reaches the existing cell-seriality guard:
+    # this fixture intentionally retains the original incomplete first cell.
+    expected = 'approved runtime' if tamper else 'fresh, unique and serial'
+    with pytest.raises(BudgetStop, match=expected):
+        run2.execute_phase(plan, campaign, preflight, assets, root=root, observer=object(),
+            verify_observations=lambda *a: None, verify_results=lambda *a: None,
+            controller_factory=no_client)
+    assert ledger.read_bytes() == before
+    assert not (root / 'artifacts/run2/runs' / plan['run_id']).exists()
