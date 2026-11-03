@@ -611,3 +611,30 @@ execution rejects before client/claim creation. The prepared plan remains `appro
 USD3/818 logical/2,454 physical,251 new turns/158 QA. The existing user grant permits merge and one
 fresh approved child after final gates, but no child has executed at this checkpoint. No scientific
 or provider policy changed; BLK-013 remains Open. No ablation or second recovery is authorized.
+
+## Outcome — authorized conv-44 child stopped; all grants consumed
+
+PR#20 merged normally as `3d0e04ac3054266cce8a82c3408d734de76a0fda`; post-merge preflight and exact
+parent/current-source/ledger/cache checks passed. New approval `ad09fe3d-5401-4898-a64e-294491a6dc64`
+funded only `t8-full-conv44-checkpoint-child`, USD3/818-logical/2,454-attempt ceilings. It restored424
+notes/counter422/stale index and resumed `D18:22` without regenerating the prefix or failed decision.
+
+After186 new turns, `D26:18` exhausted the unchanged4,000-token cap, HTTP200/`length`. Original
+fallback/failed decision,610 total notes/counter607 and610×384 partial index are retained. Natural
+original consolidations at500/600 are observed; no refresh occurred during restoration. Zero of158
+QA completed, so corrected/historical metrics and adversarial correctness are unavailable. Status is
+Incomplete, not a completed Degraded baseline. No second recovery/restart or ablation was executed.
+
+Child372 settled requests/USD0.702421; parent+child1,220/USD2.117959; cumulative USD8.407857/4,240,
+zero retries in the child and zero unknown charges. All274 inherited failure records,131 new/271
+inherited D3a deviations and all original parent/baseline hashes/old ledger rows verify. Exact offline
+SDK replay reproduces rejection;97 post-failure regressions pass. The child is durably halted and
+its grant consumed. No complete cache, new question result or scoring view exists for conv-44.
+
+The whole-fresh-cell cost-only scenario totals USD48.096559 including incurred costs and USD8
+reserve. A hypothetical further suffix (65 turns/158 QA,446 calls/1,338 attempts) estimates
+USD1.344443, conditional balanced total USD46.185787; another recovery chain is unsupported and
+unauthorized. These are planning arithmetic, not bounds or spending approvals. BLK-013 remains Open;
+T5/T8 and first-ablation readiness remain blocked. Stop at the explicit provider-failure boundary.
+See [verified outcome](t8-conv44-recovery-incomplete-20261103.md). No population, schema, prompt,
+model, generation limit, scoring, retrieval or memory change is approved by this outcome record.

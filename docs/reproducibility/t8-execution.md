@@ -1,16 +1,13 @@
 # T8 execution and comparative evidence
 
-Status: conv-49/conv-50 completed Degraded and remain unchanged. The single authorized Full conv-44
-phase stopped Incomplete at424 notes/zero QA after BLK-013 output exhaustion at `D18:21`.
-Its fresh-run grant is consumed; only the bounded checkpoint child below is subsequently authorized.
-No restart, ablation or other paid phase is authorized.
-Cumulative USD7.705436/3,868 settled attempts, zero unknown charges. See the
-[verified conv-44 failure and forecast](t8-conv44-incomplete-20261103.md) and
-[consumed authority](decisions.md#authorization--pr18-merge-and-one-full-conv-44-phase).
-The user subsequently authorized exact-state conv-44 checkpoint engineering/review/merge and one
-USD3/818-logical/2,454-attempt child after safeguards; no child exists at this engineering checkpoint.
-See the [latest bounded grant](decisions.md#authorization--exact-conv-44-checkpoint-engineering-merge-and-one-child).
-No ablation, second recovery or scientific-setting change is authorized.
+Status: conv-49/conv-50 completed Degraded and remain unchanged. The original Full conv-44 phase and
+its one authorized checkpoint child both stopped Incomplete on BLK-013 output exhaustion.
+PR#20 merged as `3d0e04a`; the child restored424 notes/counter422, processed186 new turns, then stopped
+at `D26:18`:610 notes/counter607, zero QA. Parent+child USD2.117959/1,220 calls; cumulative
+USD8.407857/4,240 settled requests, zero unknown charges. All paid grants are consumed; no second
+recovery, restart, ablation or scientific-setting change is authorized. Both planners remain blocked.
+See the [verified child failure and forecast](t8-conv44-recovery-incomplete-20261103.md) and
+[consumed one-child grant](decisions.md#authorization--exact-conv-44-checkpoint-engineering-merge-and-one-child).
 Authority: [latest decision](decisions.md#authorization--t8-implementation-and-paid-main-execution),
 [issue #8](https://github.com/alistairkung/A-mem-reproducibility/issues/8).
 Integration branch: `codex/t8-study-execution`, based on T7 merge `577a1e3`.
