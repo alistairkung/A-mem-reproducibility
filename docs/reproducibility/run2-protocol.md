@@ -1,21 +1,26 @@
 # Run 2 — fully observed controlled campaign
 
-Latest separate grant: [original evolution fallback and one566-note continuation](run2-author-fallback-recovery.md).
-It permits narrow engineering/review/merge and one p2 phase after all gates, replacing excessive
-wrapper fatality only for the verified author fallback. No later cell or additional paid child is authorized.
+Current stop: **all675 Full conv-44 memory turns and158 QA are locally verified, but p2 is sealed
+Incomplete on BLK-024**. Runtime1,771 observations/623 traces verify; both full-cell Experiment
+exports exceed the local64MiB OTLP batch guard and visibility fails. The original claim/IDs/halt
+remain immutable. Read [the verified outcome](run2-conv44-collected-export-blocked-20261103.md).
 
-Status: frozen3 November2026 after GateA/GateB,715 offline tests/92 subtests, both complete archive
-replays, independent Standards/Spec reviews and current-source runtime preflight. PR#25 is merged
-as `c7cd12b`, PR#26 as `207eac0`, and the independently checked immutable approval was activated.
-**Execution is stopped after the sole BLK-022 child failed**, at566 Full conv-44 notes/counter564
-and zero QA. The shared decision atD24:12 contains malformed JSON despite normal completion
-(BLK-014), not output exhaustion. Both phases are Incomplete. Conservative Run2 exposure is
-USD2.370010, including unknown454's unchanged USD0.324404 reservation.
-Read the [verified recovery outcome](run2-conv44-recovery-incomplete-20261103.md) and historical
-[first stop](run2-first-cell-incomplete-20261103.md). PR#29 merged the verified
-[essential-observation policy](run2-observation-policy.md); all2,048 child observations are visible.
-The one-child approval is consumed. No later cell, additional recovery, service-budget increase or
-contingency use is authorized. The scientific profile below remains frozen.
+PR#31 merged `66d3ffa` after784 tests/92 subtests, exact reference/full-candidate archive equivalence,
+real-runner cloud GateB and independent reviews. The narrow original evolution fallback is verified;
+provider reliability is not repaired. Sole566-note p2 grant is consumed:534 calls/USD1.796479,
+no new malformed output/retry/unknown, total Run2USD4.166489 includingUSD0.324404 unknown/full-reserved.
+BLK-014 is Mitigated, BLK-022 remains Mitigated and BLK-023 Resolved. BLK-024 and renewed BLK-009
+are Open. Measured Full-stage sensitivity projectsUSD48.235144 provider total aboveUSD42 usable,
+before service fees; protectedUSD8 is untouched. No further paid cell/recovery, automatic import,
+frontier release, scope/settings change or reserve use is authorized. Reporting-only reconciliation
+and acceptance require a separate decision. The scientific profile below remains frozen.
+
+Historical freeze: PR#25 `c7cd12b`, PR#26 `207eac0`; original715-test/92-subtest release and GateA/B
+passed. P0 stopped on BLK-022 at227 notes; p1 stopped on BLK-014 at566 notes. Preserve both sealed
+phases. [Historical first stop](run2-first-cell-incomplete-20261103.md),
+[p1 outcome](run2-conv44-recovery-incomplete-20261103.md),
+[essential observation policy](run2-observation-policy.md),
+[original-fallback design](run2-author-fallback-recovery.md).
 Authority: [user grant](decisions.md#authorization--run-2-fully-observed-campaign),
 [issue#24](https://github.com/alistairkung/A-mem-reproducibility/issues/24).
 

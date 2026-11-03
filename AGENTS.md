@@ -79,6 +79,14 @@ that work, read `docs/reproducibility/run2-author-fallback-recovery.md` and the 
 Limits are534 logical/1,602 physical calls andUSD2.629990; retain unknown454 and all ancestry.
 Other failures stay terminal. This grants no later paid child, cell or contingency use.
 
+The566-note p2 approval is now consumed: all675 notes/158 QA are locally verified, but its sealed
+phase is Incomplete on BLK-024 (oversized Langfuse Experiment export). Before further Run2 work,
+read `docs/reproducibility/run2-conv44-collected-export-blocked-20261103.md`. Preserve original
+import claims/IDs/receipt/halt; no automatic re-import, frontier release or further paid cell.
+Run2 exposureUSD4.166489 includes the unchangedUSD0.324404 unknown reservation. BLK-009 is Open:
+measured cost sensitivity exceedsUSD42 usable. Reporting-only recovery and future budget/execution
+need separate explicit decisions; the existing grants cannot be reused.
+
 ## Reproducibility Blocker Tracking
 
 Before coding or research work affecting reproduction, experimental integrity, model compatibility,
