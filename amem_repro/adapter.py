@@ -23,6 +23,7 @@ from .config import (
     reject_credentials, fingerprint, validate_provider_policy,
     STRICT_PROVIDER_POLICY, INDEX_STRING_POLICY,
     stage_output_limits,
+    validate_config,
 )
 
 MODEL = "deepseek-flash"
@@ -133,8 +134,12 @@ class DeepSeekController:
         stage: str | None = None,
         phase_permit=None,
         provider_contract_policy=STRICT_PROVIDER_POLICY,
+        generation_config=None,
     ):
         validate_provider_policy(provider_contract_policy)
+        if generation_config is not None:
+            validate_config(generation_config)
+        self.output_limits = stage_output_limits(generation_config)
         self.client = client
         self.model = MODEL
         self.observer = observer
@@ -157,7 +162,7 @@ class DeepSeekController:
                 "Only the four unchanged frozen author contracts are supported"
             )
         stage = matched[0]
-        output_limit = stage_output_limits()[stage]
+        output_limit = self.output_limits[stage]
         if self.stage is not None and self.stage != stage:
             raise ContractError("Explicit stage does not match the author contract")
         if temperature not in ({0.5, 0.7} if stage == "answer" else {0.7}):
@@ -196,6 +201,12 @@ class DeepSeekController:
                 logical_id = self.phase_permit.start_logical(stage)
                 event["budget_logical_id"] = logical_id
                 logical_token = _LOGICAL.set(logical_id)
+            begin = getattr(self.observer, 'begin_generation', None)
+            if begin is not None:
+                try:
+                    begin(_observed_payload(event, getattr(self.client, 'api_key', None)))
+                except Exception as error:
+                    self.observer_errors.append({'stage': stage, 'error_type': type(error).__name__})
             response = _mapping(
                 self.client.chat.completions.create(
                     model=MODEL,
@@ -286,6 +297,7 @@ def create_deepseek_controller(
     *, paid_authorized: bool = False, observer=None, http_transport=None,
     phase_permit=None,
     provider_contract_policy=STRICT_PROVIDER_POLICY,
+    generation_config=None,
 ):
     """Explicit execution gate; implementation approval alone cannot create a live client."""
     if paid_authorized is not True:
@@ -325,7 +337,8 @@ def create_deepseek_controller(
         http_client=httpx.Client(transport=transport, timeout=120.0),
     )
     return DeepSeekController(client, observer=observer, phase_permit=phase_permit,
-                              provider_contract_policy=provider_contract_policy)
+                              provider_contract_policy=provider_contract_policy,
+                              generation_config=generation_config)
 
 
 def _recording_transport(delegate, permit=None, provider_contract_policy=STRICT_PROVIDER_POLICY):

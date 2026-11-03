@@ -158,7 +158,7 @@ def make_agent_factory(
 
             def retrieve(content, k=10):
                 context, event = observe_retrieval(
-                    agent.memory_system, content, k, token_counter
+                    agent.memory_system, content, k, token_counter, observer=observer
                 )
                 try:
                     observer(event)

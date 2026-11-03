@@ -68,6 +68,7 @@ def run_manifest(
     provider_contract_policy=STRICT_PROVIDER_POLICY,
     checkpoint=None,
     conversation_ids=None,
+    boundary_check=None,
 ):
     """Run an approved manifest. Injected interfaces support deterministic offline contracts.
 
@@ -83,7 +84,12 @@ def run_manifest(
             or (condition != 'full' and bound_condition != condition)):
         raise ValueError('Condition requires its matching action-gated factory')
     if checkpoint is not None and condition != 'full':
-        raise ValueError('The frozen full-mode checkpoint cannot seed an ablation')
+        from .config import RUN2_CONFIG
+        lineage = checkpoint.get('lineage', {})
+        if (config != RUN2_CONFIG or lineage.get('policy') != 'run2-blk013-exact-state-v1'
+                or lineage.get('campaign_id') != 'amem-run2-20261103-v1'
+                or lineage.get('condition') != condition):
+            raise ValueError('The frozen full-mode checkpoint cannot seed an ablation')
     action_implementation = 't7-action-gates' if bound_condition is not None else 'frozen-author'
     if execution_type not in ("fresh_build", "cached_qa", "checkpoint_recovery", "deterministic_replay"):
         raise ValueError("This runner supports fresh_build and cached_qa; replay is T6")
@@ -130,6 +136,18 @@ def run_manifest(
     cache = CacheStore(cache_root)
     active = {}
     generations = []
+    lifecycle = bool(getattr(observer, 'captures_lifecycle', False))
+    local_record = ledger.record
+
+    if lifecycle:
+        def publish(event):
+            local_record(event)  # Durable local evidence precedes optional cloud work.
+            try:
+                observer(copy.deepcopy(ledger.events[-1]))
+            except Exception as error:
+                local_record({'type': 'failure', 'kind': 'reporting',
+                              'error_type': type(error).__name__, **active})
+        ledger.record = publish
 
     def record(event):
         value = dict(event)
@@ -164,7 +182,7 @@ def run_manifest(
                     **active,
                 }
             )
-        if observer:
+        if observer and not lifecycle:
             try:
                 observer(copy.deepcopy(value))
             except Exception as error:
@@ -177,6 +195,17 @@ def run_manifest(
                         **active,
                     }
                 )
+
+    for hook in ('begin_generation', 'begin_action', 'begin_retrieval'):
+        callback = getattr(observer, hook, None)
+        if callback is not None:
+            def begin(event, callback=callback):
+                try:
+                    callback(copy.deepcopy({**active, **event, 'run_id': ledger.run_id}))
+                except Exception as error:
+                    ledger.record({'type': 'failure', 'kind': 'reporting',
+                                   'error_type': type(error).__name__, **active})
+            setattr(record, hook, begin)
 
     if hasattr(scorer, "observer"):
         scorer.observer = record
@@ -278,6 +307,14 @@ def run_manifest(
                         turn_offset += 1
                         if turn_offset <= len(prefix):
                             continue
+                        if lifecycle:
+                            active.update(turn_id=turn.dia_id)
+                        if boundary_check is not None:
+                            boundary_check()
+                        if lifecycle:
+                            record({'type': 'memory_turn_start',
+                                    'input': {'content': 'Speaker ' + turn.speaker + 'says : ' + turn.text,
+                                              'timestamp': session.date_time}})
                         previous = _counts(agent)
                         before = {
                             key: {"context": note.context, "tags": list(note.tags)}
@@ -342,6 +379,11 @@ def run_manifest(
                 {"type": "build_complete", **active, "execution_type": execution_type}
             )
             for selection in conversation["questions"]:
+                if lifecycle:
+                    active.pop('turn_id', None)
+                    active.update(level='question', question_id=selection['question_id'])
+                if boundary_check is not None:
+                    boundary_check()
                 index = selection["original_qa_index"]
                 qa_raw = sample["qa"][index]
                 qa = parser.QA(
@@ -352,6 +394,10 @@ def run_manifest(
                     adversarial_answer=qa_raw.get("adversarial_answer"),
                 )
                 active.update(level="question", question_id=selection["question_id"])
+                if lifecycle:
+                    record({'type': 'question_start',
+                            'input': {'question': qa.question, 'category': qa.category,
+                                      'reference': qa.final_answer}})
                 previous = _counts(agent)
                 prediction, prompt, context = agent.answer_question(
                     qa.question,
@@ -405,7 +451,11 @@ def run_manifest(
                 record(
                     {"type": "failure", "kind": "reporting", "error_type": error_type}
                 )
-        return ledger.finish()
+        summary = ledger.finish()
+        if lifecycle:
+            ledger.record({'type': 'run_complete', 'status': summary['status'],
+                           'completed_questions': summary['completed_questions']})
+        return summary
     except BaseException as error:
         if "agent" in locals():
             try:

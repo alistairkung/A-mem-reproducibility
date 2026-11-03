@@ -1,6 +1,7 @@
 """Approved configuration and secret-free deterministic provenance."""
 
 import hashlib
+import copy
 import json
 from pathlib import Path
 import subprocess
@@ -61,9 +62,19 @@ DEFAULT_CONFIG = {
 }
 
 
-def stage_output_limits():
-    """The approved D9a limits; return a fresh map for immutable run bindings."""
-    generation = DEFAULT_CONFIG["generation"]
+RUN2_CONFIG = copy.deepcopy(DEFAULT_CONFIG)
+RUN2_CONFIG["protocol_id"] = "amem-controlled-reproduction-run2-v1"
+RUN2_CONFIG["generation"].update(
+    shared_decision_max_tokens=8192,
+    output_token_policy="run2-shared-decision-8192-v1",
+)
+
+
+def stage_output_limits(config=None):
+    """Return the explicitly selected frozen profile; Run1 remains the default."""
+    if config is not None:
+        validate_config(config)
+    generation = (DEFAULT_CONFIG if config is None else config)["generation"]
     return {stage: generation["shared_decision_max_tokens"] if stage == "shared_decision"
             else generation["max_tokens"]
             for stage in ("metadata", "shared_decision", "query_keywords", "answer")}
@@ -120,7 +131,7 @@ def fingerprint(value):
 def validate_config(config):
     """Reject deviations rather than silently adjusting the approved protocol."""
     reject_credentials(config)
-    if fingerprint(config) != fingerprint(DEFAULT_CONFIG):
+    if fingerprint(config) not in (fingerprint(DEFAULT_CONFIG), fingerprint(RUN2_CONFIG)):
         raise ValueError("Configuration differs from the frozen protocol")
 
 
@@ -132,6 +143,14 @@ def load_config(path=None):
     )
     config = json.loads(path.read_text())
     validate_config(config)
+    return config
+
+
+def load_run2_config(path=None):
+    config = json.loads((Path(path) if path else Path(__file__).resolve().parents[1] / "config/run2.json").read_text())
+    validate_config(config)
+    if config != RUN2_CONFIG:
+        raise ValueError("Configuration differs from the frozen Run2 protocol")
     return config
 
 
