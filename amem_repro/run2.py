@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS run2_cells (cell_index INTEGER PRIMARY KEY, root_appr
  leaf_approval TEXT NOT NULL UNIQUE, complete INTEGER NOT NULL DEFAULT 0 CHECK(complete IN (0,1)));
 CREATE TABLE IF NOT EXISTS run2_phases (approval_id TEXT PRIMARY KEY REFERENCES phases(approval_id),
  cell_index INTEGER NOT NULL REFERENCES run2_cells(cell_index), phase_index INTEGER NOT NULL,
- parent_approval TEXT UNIQUE, parent_receipt_sha256 TEXT UNIQUE, UNIQUE(cell_index,phase_index));
+ parent_approval TEXT UNIQUE, parent_receipt_sha256 TEXT UNIQUE, receipt_sha256 TEXT UNIQUE,
+ UNIQUE(cell_index,phase_index));
 '''
 
 
@@ -191,6 +192,7 @@ def _cell_history(db, index, campaign):
                 cost, attempts, unknown = db.execute("SELECT COALESCE(SUM(charge),0),COUNT(*),COALESCE(SUM(status!='settled'),0) FROM attempts WHERE approval_id=?", (ident,)).fetchone()
                 logical = db.execute('SELECT COUNT(*) FROM logical_calls WHERE approval_id=?',(ident,)).fetchone()[0]
                 if (_canonical(original) != stored[0] or old['binding'] != auth['binding']
+                        or db.execute('SELECT receipt_sha256 FROM run2_phases WHERE approval_id=?',(ident,)).fetchone() != (fingerprint(old),)
                         or old['budget']['charged_or_reserved_microusd'] != cost
                         or old['budget']['physical_attempts'] != attempts
                         or old['budget']['logical_calls'] != logical
@@ -287,7 +289,7 @@ class Run2Permit(PhasePermit):
                 db.execute('INSERT INTO checkpoint_claims VALUES (?,?)', (cp['parent_receipt_sha256'],self.approval_id))
             else:
                 db.execute('INSERT INTO run2_cells VALUES (?,?,?,0)', (index,self.approval_id,self.approval_id))
-            db.execute('INSERT INTO run2_phases VALUES (?,?,?,?,?)',
+            db.execute('INSERT INTO run2_phases VALUES (?,?,?,?,?,NULL)',
                        (self.approval_id,index,self.auth['phase_index'],cp['parent_approval_id'] if cp else None,
                         cp['parent_receipt_sha256'] if cp else None))
 
@@ -342,6 +344,31 @@ class Run2Permit(PhasePermit):
         with self._transaction() as db:
             return _cell_totals(db, self.binding['cell_index'])
 
+    def _publish_and_seal(self,db,receipt,publish):
+        if db.execute('SELECT receipt_sha256 FROM run2_phases WHERE approval_id=?',(self.approval_id,)).fetchone() != (None,):
+            self._halt(db,'Run2 phase receipt has already been sealed')
+        publish()
+        path=self.path.parent/'runs'/self.auth['run_id']/'phase.json'
+        try:same=_canonical(_read(path))==_canonical(receipt)
+        except (OSError,ValueError):same=False
+        if not same:self._halt(db,'Run2 final receipt publication failed')
+        changed=db.execute('UPDATE run2_phases SET receipt_sha256=? WHERE approval_id=? AND receipt_sha256 IS NULL',
+                           (fingerprint(receipt),self.approval_id))
+        if changed.rowcount!=1:self._halt(db,'Run2 immutable receipt seal changed')
+
+    def seal_incomplete(self,receipt,publish):
+        """Anchor even failed output inventories before a child can be planned."""
+        with self._transaction() as db:
+            self._phase(db,allow_halted=True)
+            leaf=db.execute('SELECT leaf_approval,complete FROM run2_cells WHERE cell_index=?',
+                            (self.binding['cell_index'],)).fetchone()
+            if (leaf!=(self.approval_id,0) or receipt.get('binding')!=self.binding
+                    or receipt.get('status')!='incomplete' or receipt.get('usable_for_next_phase')
+                    or receipt.get('cell_budget')!=_cell_totals(db,self.binding['cell_index'])):
+                self._halt(db,'Incomplete Run2 receipt does not match its retained phase')
+            if receipt.get('recoverable_length_failure'):_verify_attempt_journal(db,self.binding['cell_index'])
+            self._publish_and_seal(db,receipt,publish)
+
     def complete_cell(self, receipt, publish):
         with self._transaction() as db:
             self._phase(db)
@@ -360,14 +387,7 @@ class Run2Permit(PhasePermit):
                     or not receipt.get('experiments',{}).get('verified') or not callable(publish)):
                 self._halt(db, 'Incomplete/unobserved Run2 cell cannot release the frontier')
             _verify_attempt_journal(db,self.binding['cell_index'])
-            publish()
-            path = self.path.parent/'runs'/self.auth['run_id']/'phase.json'
-            try:
-                same = _canonical(_read(path)) == _canonical(receipt)
-            except (OSError, ValueError):
-                same = False
-            if not same:
-                self._halt(db, 'Run2 final receipt publication failed')
+            self._publish_and_seal(db,receipt,publish)
             changed = db.execute('UPDATE run2_cells SET complete=1 WHERE cell_index=? AND leaf_approval=? AND complete=0',
                                  (self.binding['cell_index'],self.approval_id))
             if changed.rowcount != 1:
@@ -522,6 +542,8 @@ def verify_checkpoint(path, *, root, campaign, manifest, sources, receipt):
         for (p,prior,auth),row in zip(chain,rows):
             if row[0] != auth['approval_id'] or db.execute('SELECT auth_json FROM phases WHERE approval_id=?',(row[0],)).fetchone() != (_canonical(auth),):
                 raise ValueError('Run2 archive/ledger approval differs')
+            if db.execute('SELECT receipt_sha256 FROM run2_phases WHERE approval_id=?',(auth['approval_id'],)).fetchone() != (fingerprint(prior),):
+                raise ValueError('Run2 sealed checkpoint receipt changed')
             if ledger_summary(root/'artifacts/run2/budget.sqlite',auth['approval_id']) != prior['budget']:
                 # Permit summary may additionally retain the explicit in-process halt flag.
                 actual=ledger_summary(root/'artifacts/run2/budget.sqlite',auth['approval_id'])
@@ -758,6 +780,7 @@ def execute_phase(approval, campaign, receipt, asset_root, *, root, observer,
                     or event.get('system_fingerprint')!=binding['expected_system_fingerprint']
                     or not event.get('usage')):
                 permit.stop('provider_model_usage_or_fingerprint_changed')
+    observe.captures_lifecycle=bool(getattr(observer,'captures_lifecycle',False))
     for hook in ('begin_generation','begin_action','begin_retrieval'):
         if hasattr(observer,hook):setattr(observe,hook,getattr(observer,hook))
     def boundary():
@@ -892,15 +915,25 @@ def execute_phase(approval, campaign, receipt, asset_root, *, root, observer,
         try:
             if phase['usable_for_next_phase']:
                 permit.complete_cell(phase,lambda:_save(output/'phase.json',phase))
-            else:_save(output/'phase.json',phase)
+            else:permit.seal_incomplete(phase,lambda:_save(output/'phase.json',phase))
         except BaseException as err:
             secondary_failures.append({'stage':'final_publication','error_type':type(err).__name__})
             try:permit.stop('run2_final_publication_failed')
             except BaseException as halt_error:
                 secondary_failures.append({'stage':'publication_halt','error_type':type(halt_error).__name__})
             if (output/'phase.json').exists():os.replace(output/'phase.json',output/'phase-unconfirmed.json')
+            _save(output/'finalization-error.json',{'error_type':type(err).__name__,
+                  'frames':[{'file':f.filename,'line':f.lineno,'function':f.name}
+                            for f in traceback.extract_tb(err.__traceback__)]})
             phase.update(status='incomplete',usable_for_next_phase=False,recoverable_length_failure=False,
                          error_type=type(err).__name__,budget=permit.summary())
+            if summary is not None and summary.get('status')!='incomplete':
+                from .phases import _replace_summary
+                notice={'type':'run_abort','error_type':type(err).__name__,'run_id':approval['run_id'],
+                        'level':'run','execution_stage':'run2_final_publication'}
+                with (output/'events.jsonl').open('a') as stream:
+                    stream.write(json.dumps(notice,sort_keys=True)+'\n');stream.flush();os.fsync(stream.fileno())
+                summary['status']='incomplete';_replace_summary(output,summary)
             phase['artifact_sha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(output.iterdir()) if p.is_file()}
             _save(output/'phase.json',phase)
     return phase

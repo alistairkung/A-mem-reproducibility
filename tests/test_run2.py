@@ -113,7 +113,7 @@ def experiments(views,context):
 
 
 @pytest.fixture
-def short_runner(tmp_path,monkeypatch):
+def short_runner(tmp_path,monkeypatch,request):
     """Original runner/algorithm, explicitly smaller offline execution partition."""
     import httpx
     import numpy as np
@@ -131,10 +131,16 @@ def short_runner(tmp_path,monkeypatch):
     manifest=build_manifest(ROOT/'data/locomo10.json','fallback')
     conversation=next(c for c in manifest['conversations'] if c['original_id']=='conv-44')
     raw=json.loads((ROOT/'data/locomo10.json').read_text())[conversation['sample_index']]
-    first=conversation['session_keys'][0];n=len(raw['conversation'][first])
-    conversation['session_keys']=[first];conversation['turn_ids']=conversation['turn_ids'][:n]
+    variant=getattr(request,'param',('full',1))
+    condition,session_count=variant if isinstance(variant,tuple) else ('full',variant)
+    selected_sessions=conversation['session_keys'][:session_count]
+    n=sum(len(raw['conversation'][key]) for key in selected_sessions)
+    conversation['session_keys']=selected_sessions;conversation['turn_ids']=conversation['turn_ids'][:n]
     conversation['questions']=conversation['questions'][:1]
     monkeypatch.setitem(run2.CONVERSATIONS,'conv-44',(n,1))
+    if condition!='full':
+        order=list(run2.CELL_ORDER);index=order.index((condition,'conv-44'));order[0],order[index]=order[index],order[0]
+        monkeypatch.setattr(run2,'CELL_ORDER',order) # Offline same-condition recovery seam, not production order.
     sources=source_fingerprint(ROOT);receipt={'assets':{},'runtime':{'ok':True}}
     campaign=approved_campaign();campaign['binding'].update(source_sha256=fingerprint(sources),
             manifest_sha256=fingerprint(manifest),preflight_sha256=fingerprint(receipt))
@@ -160,7 +166,7 @@ def short_runner(tmp_path,monkeypatch):
             for document in documents:
                 self.document_ids[document]=len(self.corpus);self.corpus.append(document)
                 self.embeddings=np.vstack((self.embeddings,np.ones((1,384),dtype=np.float32)))
-    provider=Provider();shared=0;failure_turns={2,4}
+    provider=Provider();shared=0;failure_turns={2,4} if session_count==1 else {99,101}
     def sdk(request):
         nonlocal shared
         wire=json.loads(request.content);response=provider.complete(**wire)
@@ -196,6 +202,7 @@ def execute_fixture(approval,fixture,**overrides):
     return run2.execute_phase(approval,**kwargs)
 
 
+@pytest.mark.parametrize('short_runner',[(c,1) for c in ('full','neither','linking_only','evolution_only')],indirect=True)
 def test_two_successive_output_exhaustions_recover_same_cell_without_extra_calls(short_runner):
     fixture=short_runner;campaign=fixture['campaign'];receipt=fixture['receipt'];root=fixture['root']
     first=execute_fixture(approved_phase(campaign),fixture)
@@ -203,14 +210,15 @@ def test_two_successive_output_exhaustions_recover_same_cell_without_extra_calls
     assert first['budget']['logical_calls']==first['budget']['physical_attempts']==4
     parent=root/'artifacts/run2/runs'/first['run_id']/'phase.json'
     first_hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in parent.parent.iterdir() if p.is_file()}
-    a=run2.plan_phase(campaign,receipt,fixture['asset_root'],root=root,condition='full',conversation_id='conv-44',parent=parent)
+    condition=campaign['cells'][0]['condition']
+    a=run2.plan_phase(campaign,receipt,fixture['asset_root'],root=root,condition=condition,conversation_id='conv-44',parent=parent)
     a.update(approved=True,approved_by='offline test',approved_at='2026-11-03T00:00:00Z')
     second=execute_fixture(a,fixture,observer=OfflineObserver())
     assert second['status']=='incomplete' and second['recoverable_length_failure'] is True
     assert second['budget']['logical_calls']==4
     parent2=root/'artifacts/run2/runs'/second['run_id']/'phase.json'
     second_hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in parent2.parent.iterdir() if p.is_file()}
-    a2=run2.plan_phase(campaign,receipt,fixture['asset_root'],root=root,condition='full',conversation_id='conv-44',parent=parent2)
+    a2=run2.plan_phase(campaign,receipt,fixture['asset_root'],root=root,condition=condition,conversation_id='conv-44',parent=parent2)
     a2.update(approved=True,approved_by='offline test',approved_at='2026-11-03T00:00:00Z')
     final=execute_fixture(a2,fixture,observer=OfflineObserver())
     turns,questions=run2.CONVERSATIONS['conv-44']
@@ -233,6 +241,7 @@ def test_two_successive_output_exhaustions_recover_same_cell_without_extra_calls
                for previous,child in zip(old,inherited))
 
 
+@pytest.mark.parametrize('short_runner',[1,5],indirect=True)
 def test_recovered_state_matches_original_uninterrupted_failure_fallbacks(short_runner,tmp_path):
     """Control still receives both rejected responses; nothing is repaired/retried."""
     from amem_repro.adapter import DeepSeekController
@@ -277,6 +286,11 @@ def test_recovered_state_matches_original_uninterrupted_failure_fallbacks(short_
     expected=json.loads((tmp_path/'control-cache'/build/'state.json').read_text())
     assert position==len(responses)==len(requests)
     assert memory_view(actual)==memory_view(expected)
+    assert actual['evo_cnt']==run2.CONVERSATIONS['conv-44'][0]-2
+    if run2.CONVERSATIONS['conv-44'][0]>100:
+        assert phases[1]['evolution_counter']==99
+        suffix=[e for e in final_events if e['type']=='evolution_outcome']
+        assert suffix[0]['counter_before']==99 and suffix[0]['counter_after']==100
     assert [e['result']['prediction'] for e in final_events if e['type']=='question_result']==[e['result']['prediction'] for e in ce if e['type']=='question_result']
     assert [e['result']['metrics'] for e in final_events if e['type']=='question_result']==[e['result']['metrics'] for e in ce if e['type']=='question_result']
 
@@ -510,3 +524,54 @@ def test_invalid_provider_identity_is_archived_and_stops_without_secondary_type_
     assert phase['status']=='incomplete' and phase['recoverable_length_failure'] is False
     assert phase['budget']['physical_attempts']==1 and phase['returned_models']==[]
     assert phase['budget']['halted']=='provider_model_usage_or_fingerprint_changed'
+
+
+def test_rewritten_checkpoint_and_inventory_cannot_replace_sealed_state(short_runner):
+    fixture=short_runner;campaign=fixture['campaign'];root=fixture['root']
+    phase=execute_fixture(approved_phase(campaign),fixture)
+    parent=root/'artifacts/run2/runs'/phase['run_id']/'phase.json'
+    snapshot=parent.parent/'partial-memory.json';value=json.loads(snapshot.read_text())
+    value['state']['notes'][0]['attributes']['context']='corrupted earlier note'
+    snapshot.write_text(json.dumps(value))
+    rewritten=json.loads(parent.read_text());rewritten['artifact_sha256']['partial-memory.json']=hashlib.sha256(snapshot.read_bytes()).hexdigest()
+    parent.write_text(json.dumps(rewritten))
+    with pytest.raises((ValueError,BudgetStop),match='sealed|receipt|archive'):
+        run2.plan_phase(campaign,fixture['receipt'],fixture['asset_root'],root=root,
+                         condition='full',conversation_id='conv-44',parent=parent)
+
+
+@pytest.mark.parametrize('point',['before','after'])
+def test_completion_commit_uncertainty_retains_spending_and_blocks_next_cell(short_runner,monkeypatch,point):
+    import sqlite3
+    from amem_repro import budget
+    fixture=short_runner;fixture['_failure_turns'].clear();original=sqlite3.connect;armed=False;failed=False
+    class Fault(sqlite3.Connection):
+        def execute(self,sql,*a,**kw):
+            nonlocal armed
+            if sql.startswith('UPDATE run2_cells SET complete=1'):armed=True
+            return super().execute(sql,*a,**kw)
+        def commit(self):
+            nonlocal failed
+            if armed and not failed:
+                failed=True
+                if point=='after':super().commit()
+                raise sqlite3.OperationalError('offline completion commit uncertainty')
+            return super().commit()
+    def connect(*a,**kw):return original(*a,**kw,factory=Fault)
+    monkeypatch.setattr(budget.sqlite3,'connect',connect)
+    phase=execute_fixture(approved_phase(fixture['campaign']),fixture)
+    assert phase['status']=='incomplete' and phase['usable_for_next_phase'] is False
+    assert phase['recoverable_length_failure'] is False
+    assert phase['budget']['physical_attempts']==2*sum(run2.CONVERSATIONS['conv-44'])
+    assert phase['budget']['unknown_attempts']==0 and phase['budget']['charged_or_reserved_microusd']>0
+    output=fixture['root']/'artifacts/run2/runs'/phase['run_id']
+    assert json.loads((output/'summary.json').read_text())['status']=='incomplete'
+    with pytest.raises(BudgetStop):run2.Run2Permit(approved_phase(fixture['campaign'],index=1),fixture['root'],fixture['campaign'])
+
+
+def test_campaign_observer_wrapper_preserves_real_runner_lifecycle(short_runner):
+    fixture=short_runner;fixture['_failure_turns'].clear();observer=OfflineObserver();observer.captures_lifecycle=True
+    phase=execute_fixture(approved_phase(fixture['campaign']),fixture,observer=observer)
+    assert phase['usable_for_next_phase'] is True
+    kinds={e['type'] for e in observer.events}
+    assert {'run_start','build_start','memory_turn_start','question_start','question_result','run_complete'} <= kinds
