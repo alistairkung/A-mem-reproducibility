@@ -1,8 +1,9 @@
 # Run 2 — fully observed controlled campaign
 
-Status: engineering draft; GateA reviewed/merged in PR#25 (`c7cd12b`). GateB live visibility, complete
-offline/replay checks, independent reviews and final current-source preflight remain unsatisfied.
-No paid Run2 benchmark cell may start until this status is replaced by an evidenced freeze.
+Status: frozen3 November2026 after GateA/GateB,715 offline tests/92 subtests, both complete archive
+replays, independent Standards/Spec reviews and current-source runtime preflight. GateA is merged
+in PR#25 (`c7cd12b`); PR#26 contains the reviewed execution/observability implementation. Merge and
+the final independently checked immutable approved copy precede any paid benchmark transmission.
 Authority: [user grant](decisions.md#authorization--run-2-fully-observed-campaign),
 [issue#24](https://github.com/alistairkung/A-mem-reproducibility/issues/24).
 
@@ -43,8 +44,8 @@ five construction neighbours, k=10, duplicates/context expansion and intentional
 
 ## Generation policy selected from Gate A
 
-GateA recommends `run2-shared-decision-8192-v1`: shared decision8,192 output tokens; metadata,
-query-keyword and answer stages1,000. This policy will be frozen identically across all12 cells.
+Freeze `run2-shared-decision-8192-v1`: shared decision8,192 output tokens; metadata,
+query-keyword and answer stages1,000. This policy applies identically across all12 cells.
 Run1's default config/replay stays4,000. See [evidence and limitations](run2-output-limit-investigation.md).
 
 Keep `deepseek-flash`, documented DeepSeek-V4.1-Flash-1017,
@@ -126,7 +127,8 @@ retrieval/scoring caveats; evolution-only is novel. One build/cell supports desc
 not stochastic confidence claims. Never interpret higher historical adversarial overlap as quality.
 
 Before each next cell, reconcile Run2 incurred/reserved charges and cost-only remaining forecasts.
-Initial measured point estimate: USD38.764609 execution +USD8 reserve =USD46.764609. It is not an
+Initial measured point estimate: USD38.764612 execution +USD8 reserve =USD46.764612 (summing per-cell
+rounded microUSD estimates adds three microUSD to GateA's combined estimate). It is not an
 upper bound;10% execution growth exceedsUSD42. Update stage means as completed conditions become
 available. Stop for a material financial decision if the balanced remaining campaign cannot fit;
 preserve the fixed population/settings and do not silently spend contingency. No next-cell release
@@ -136,12 +138,66 @@ with missing accounting, observability or final receipt. Run1 costs/results rema
 
 - [x] Current official output constraints, actual SDK path and Run1 size evidence independently reviewed.
 - [x]8,192 recommendation and Run1 preservation recorded; GateA PR#25 merged.
-- [ ] Instrumented real-runner fixture visible and independently fetched/audited in Langfuse.
-- [ ] Saved question-level results visible in Langfuse Experiments with unique scoring identities.
-- [ ] Instrumented/uninstrumented replay, trace-failure and two successive checkpoint regressions pass.
-- [ ] Full offline suite, actual candidate replay and independent Standards/Spec reviews pass.
-- [ ] Final source/config/population/assets/gate receipts and affordable campaign approval are immutable.
+- [x] Instrumented real-runner fixture visible and independently fetched/audited in Langfuse.
+- [x] Saved question-level results visible in Langfuse Experiments with unique scoring identities.
+- [x] Instrumented/uninstrumented replay, trace-failure and two successive checkpoint regressions pass.
+- [x] Full offline suite, actual candidate replay and independent Standards/Spec reviews pass.
+- [x] Final source/config/population/assets/gate receipts and affordable final campaign plan are frozen.
 - [ ] Run all12 bounded cells only after all prior boxes pass; reconcile each before the next.
 
-This draft is not a paid execution artifact. Final commands/identities and evidence will be appended
-only after the implementation and gates are verified.
+## Frozen evidence and execution
+
+Campaign: `amem-run2-20261103-v1`. Source fingerprint:
+`184544748e86f608286a031a86bd53519e5c95b7f6b3eee0ffae8e2ba2e6e2fe`.
+Reviewed support-source commit: `c96daa296544e2396db2b46477a0af50bc88712c`.
+The committed one-cell launch script is independently pinned in the approval to SHA256
+`b86e7471d76b73ad81564911f166dd92806658ee8c9efaa3a692b648b3ad37a1`.
+Source fingerprints cover the author/support modules and configurations; the explicit extra script
+hash covers the launch boundary. Run from the repository root.
+
+Local immutable `artifacts/run2/frozen/manifest.json` pins the source, compact population selection,
+generation config, runtime assets/preflight, both gates, initial cost forecast, launch script and
+review/test evidence. Its SHA256 is
+`5ebd46fd99635d1f74f16935648856de1e5e3c0dc2d6c35ae8b8fef581a7c1c6`.
+`campaign-plan-final.json` is unapproved preparation. After successful final audit/merge, copy it
+to `campaign-approval.json`, changing only authorization metadata under the user's existing grant.
+The earlier `campaign-plan.json` is retained as an unapproved draft with the superseded launch-script
+hash; it must not be activated. Every actual segment writes a new immutable single-use approval.
+
+Evidence: `artifacts/run2/offline/final-full-suite-20261103.txt` records715 tests/92 subtests and17
+expected warnings. `archive-equivalence.json` links the exact568-note/204-Q original and candidate
+receipts; all1,544 recorded requests, every insertion/index/context/prediction/score and376 preserved
+failure records match, with only the implementation label differing. All557 Run1 hashes still match.
+The replay migration is explicit and restricted to reviewed support files; default invocation remains
+fail-closed, and original author/schema/scorer/assets/config pins and fixed oracles are unchanged.
+
+```sh
+.venv/bin/pytest -q
+.venv/bin/python -m amem_repro.replay_baseline --assets artifacts/assets \
+  --output /tmp/run2-reference-new \
+  --support-reference c96daa296544e2396db2b46477a0af50bc88712c
+.venv/bin/python -m amem_repro.replay_baseline --assets artifacts/assets \
+  --output /tmp/run2-candidate-new --full-mode-candidate \
+  --support-reference c96daa296544e2396db2b46477a0af50bc88712c
+```
+
+Read [GateB's actual-runner proof](run2-observability-verification.md). The paid command below uses
+the frozen approval/preflight, privately loads only required credentials, verifies all Run1 hashes,
+reforecasts costs and enforces the reviewed phase controls. It executes one cell and only verified
+BLK-013 continuations of that cell. It cannot reuse a consumed run identity. Local outputs remain
+under `artifacts/run2/runs/`, with the separate `budget.sqlite`, caches and post-cell forecasts.
+
+```sh
+.venv/bin/python scripts/run2-cell.py --cell-index 0
+```
+
+| Indices | Condition | Conversation order |
+| --- | --- | --- |
+|0,1,2 |Full |conv-44, conv-49, conv-50 |
+|3,4,5 |Neither |conv-49, conv-50, conv-44 |
+|6,7,8 |Linking only |conv-49, conv-50, conv-44 |
+|9,10,11 |Evolution only |conv-49, conv-50, conv-44 |
+
+Proceed to each next index only after the preceding sealed receipt, complete question identities,
+both scoring views, settled charges and real Langfuse readback verify, and the new cost-only forecast
+still fitsUSD42. Approval cannot override a failed gate or authorize contingency use.

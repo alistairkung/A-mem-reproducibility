@@ -761,3 +761,46 @@ Execute one bounded verified cell at a time, reconcile cost/observations and ref
 next cell. Stop on an unsatisfied gate/material scientific change or unaffordable continuation;
 otherwise proceed autonomously. At this authorization checkpoint no Run2 code or paid benchmark
 execution exists. Final generation policy, live observability gate and campaign preflight are pending.
+
+### Run2 verified freeze before primary execution
+
+On3 November2026, GateA PR#25 and the reviewed PR#26 implementation establish the frozen
+`run2-shared-decision-8192-v1` policy:8,192 shared-decision output tokens,1,000 at every other stage,
+identical across all12 fresh cells. Official maximum support and real SDK offline serialization
+are verified; no exploratory paid probe or hosted reliability guarantee is claimed. Preserve the
+Run1 default4K profile, original author source/prompts/schemas/parsers/model/temperatures/retrieval/
+index/counter/scoring semantics and D3a unchanged.
+
+Source fingerprint `184544748e86f608286a031a86bd53519e5c95b7f6b3eee0ffae8e2ba2e6e2fe` passes715
+offline tests/92 subtests (17 expected warnings), current-source network-disabled runtime preflight
+and both complete568-note/204-Q archive replays. All1,544 recorded requests, per-insertion memory/
+index, retrieval, predictions, scoring, consolidation and376 logical failure records match between
+original and full candidate; only the implementation label differs. An explicit immutable reviewed
+support-source reference permits named support deltas without relaxing author/schema/scorer/assets/
+config pins, raw evidence or fixed behavioral oracles. Legacy Run1 execution still rejects Run2 source.
+
+GateB's actual8K real-assets18-turn/four-Q fixture has130 visible observations/56 scores and both
+saved scoring-policy Experiments verified by exact readback. Traced/untraced ordered replay and
+simulated tracing failure preserve memory/index/predictions/scoring, with zero network LLM calls.
+The actual campaign executor separately completes two successive mocked length-failure recoveries,
+50 mock calls and final QA/Experiments in an isolated fixture ledger. Independent Standards/Spec
+audits verify raw proof/readback hashes and exact values; no auth-only or standalone trace substitutes.
+BLK-011 is Resolved for Run2; Run1 remains historically unwired. BLK-017/018/019/021 corrections also
+pass final tests/reviews. BLK-013 remains Open as a provider reliability risk.
+
+The frozen [Run2 protocol](run2-protocol.md) and local `artifacts/run2/frozen/manifest.json`
+(`5ebd46fd99635d1f74f16935648856de1e5e3c0dc2d6c35ae8b8fef581a7c1c6`) bind source, compact
+population, configuration, assets, preflight, gates, reviews, cost forecast and the independently
+reviewed one-cell script (`b86e7471d76b73ad81564911f166dd92806658ee8c9efaa3a692b648b3ad37a1`).
+Final campaign preparation is unapproved until the final factual audit and normal PR merge pass;
+then the user's existing grant authorizes an immutable approved copy and phase-bound single-use
+approvals. The superseded draft plan stays unapproved and cannot be reused.
+
+Cost-only initial execution forecastUSD38.764612 plus protectedUSD8 =USD46.764612; three extra
+microUSD relative to GateA result from per-cell rounding. Run2 enforcesUSD42 usable, an originalUSD5
+maximum per cell and18,480 logical/55,440 physical campaign maxima. Recoveries share the original
+cell allocation and remaining quotas. Execute in frozen order (Full44/49/50, then Neither49/50/44,
+Linking49/50/44, Evolution49/50/44), reconcile each cell and reforecast from measured Run2 stage costs
+before the next. No quality-based selection, extra provider policy, semantic retry, JSON repair,
+contingency use or automatic top-up is authorized. All557 Run1 artifacts and USD8.530133 ledger bytes
+verify unchanged. No paid Run2 request existed at this freeze checkpoint.

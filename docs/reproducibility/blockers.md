@@ -9,8 +9,8 @@ GateA/GateB, frozen policy and reviewed affordable preflight. No new paid benchm
 Run1's USD8.530133 ledger and all prior results/artifacts remain immutable exploratory evidence.
 [GateA investigation](run2-output-limit-investigation.md) verifies documented393,216 provider maximum
 and offline serialization, recommending8,192 shared-decision/1,000 other limits for Run2 only. The
-proposal is not a hosted reliability claim. BLK-013 stays Open; BLK-011 real-runner visibility remains
-a mandatory unsatisfied gate. See [latest authorization](decisions.md#authorization--run-2-fully-observed-campaign).
+proposal is not a hosted reliability claim. BLK-013 stays Open; BLK-011 is resolved for Run2 by the independently audited
+real-runner/cloud GateB. The final campaign freeze and each paid-cell receipt remain mandatory. See [latest authorization](decisions.md#authorization--run-2-fully-observed-campaign).
 
 | ID | Blocker | Status | Affected phase | Evidence |
 | --- | --- | --- | --- | --- |
@@ -24,17 +24,17 @@ a mandatory unsatisfied gate. See [latest authorization](decisions.md#authorizat
 | [BLK-008](#blk-008) | Local tokenizer equivalence to hosted DeepSeek is unverified | Open | T4, T5, T8 token reporting | Pinned tokenizer recipe; final preflight receipt |
 | [BLK-009](#blk-009) | Four-condition affordability needs measured cost control | Mitigated | T5 scope decision, T8 | Completed cost pilot; fallback point forecast USD42.762234 |
 | [BLK-010](#blk-010) | Released retrieval default differs from paper category settings | Accepted Limitation | T5, T8, interpretation | D6; runner default; paper Table 8 |
-| [BLK-011](#blk-011) | T5 execution is not connected to Langfuse tracing/export | Open | T5, T8 observability | Runtime call-path audit; verified synthetic trace |
+| [BLK-011](#blk-011) | T5 execution is not connected to Langfuse tracing/export | Resolved | Run2 runtime/Experiments; Run1 limitation retained | [Actual8K runner/cloud verification](run2-observability-verification.md) |
 | [BLK-012](#blk-012) | Failed usage settlement triggers SDK regeneration | Resolved | T5 and later paid phases | Terminal settlement guard; SQLite fault/retry regressions |
 | [BLK-013](#blk-013) | Shared decision exhausts frozen output allowance, including D9a4,000 | Open | T8 conv-44 second child incomplete; ablations blocked | [third conv-44 exhaustion](t8-conv44-second-recovery-incomplete-20261103.md); all failed phases retained |
 | [BLK-014](#blk-014) | Normally finished strict function contains malformed JSON | Mitigated | T5 conv-50; downstream integrity | [Verified degraded lineage](t5-conv50-baseline-20261101.md); raw failure retained |
 | [BLK-015](#blk-015) | Historical intermediate states/query vectors were not recorded | Mitigated | T6–T7 replay claims | [Replay gate and oracle provenance](t6-replay.md) |
 | [BLK-016](#blk-016) | Index text keys trigger credential-field rejection | Resolved | T8 conv-49 artifact persistence | Exact real-cache byte/state proof;519-test suite |
-| [BLK-017](#blk-017) | Critical faults can be hidden behind tolerated failure paths | Investigating | Run2 recovery eligibility; Run1 guards retained | Combined provider/halt fault red proof; no Run2 paid calls |
-| [BLK-018](#blk-018) | Paid frontier ignores a prior failed/unconfirmed completion | Investigating | Run2 phase admission; Run1 guards retained | Preclaimed next-cell halt red proof; no Run2 paid calls |
-| [BLK-019](#blk-019) | Recovery provenance can accept altered ancestry or unchecked edges | Investigating | Run2 immutable receipt seal; Run1 guards retained | Synthetic edited-state/inventory red proof; no Run2 paid calls |
+| [BLK-017](#blk-017) | Critical faults can be hidden behind tolerated failure paths | Resolved | Run2 recovery eligibility; Run1 guards retained | Verified715-test suite, independent audits and preserved red/green proofs |
+| [BLK-018](#blk-018) | Paid frontier ignores a prior failed/unconfirmed completion | Resolved | Run2 phase admission; Run1 guards retained | Verified715-test suite, independent audits and preserved red/green proofs |
+| [BLK-019](#blk-019) | Recovery provenance can accept altered ancestry or unchecked edges | Resolved | Run2 immutable receipt seal; Run1 guards retained | Verified715-test suite, independent audits and preserved red/green proofs |
 | [BLK-020](#blk-020) | Failed attempt admission enters SDK retry handling | Resolved | Paid-request admission | Terminal reservation boundary; real-SDK faults/genuine retries verified |
-| [BLK-021](#blk-021) | Run2 ledger path can alias immutable Run1 accounting | Investigating | Run2 storage isolation | Synthetic symlink/DDL red proof; real Run1 unchanged |
+| [BLK-021](#blk-021) | Run2 ledger path can alias immutable Run1 accounting | Resolved | Run2 storage isolation | Verified715-test suite, independent audits and preserved red/green proofs |
 
 **Run1 final status (3 November 2026):** PR#22 merged as `5ddc96e` after613 offline tests/92 subtests
 and clear independent Standards/Spec reviews. The single authorized second conv-44 continuation
@@ -350,7 +350,7 @@ are unavailable unless an experiment receipt supplies them.
 
 - **ID:** BLK-011
 - **Title:** T5 execution is not connected to Langfuse tracing/export.
-- **Status:** Open
+- **Status:** Resolved
 - **First observed:** 2026-11-01, user review of the incomplete T5 fixture.
 - **Category:** Infrastructure
 - **Expected behaviour:** The next approved run records construction failures and later QA experiments in the configured Langfuse project, without changing model/evaluation behavior.
@@ -366,8 +366,10 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-01, successful D9a fixture: verify the existing saved-QA exporter with both scoring views. Eight question traces were imported and read back with correct identities/policies, saved predictions, original status/deviation count and cost metadata; no model requests or local artifact/ledger changes. See [reporting verification](langfuse-readiness.md). This mitigates missing experiment results after successful QA, while pre-QA/automatic construction tracing remains unwired.
   - 2026-11-02, T8 preparation: configured project CLI authentication/readback succeeds (HTTP200). An isolated temporary npm cache avoids an unrelated local cache-permission failure. Filtered evidence `artifacts/t8-langfuse-project-readback.json` retains no headers/credentials. No new result export or live generation tracing is claimed by this authentication check.
   - 2026-11-03, Run2 candidate implementation `e3a598a`/wire-input correction `3e99da7`, integrated at `01debed`: passive actual-runner lifecycle/generation/action/retrieval/scoring/failure hooks, complete safe wire request, exact raw argument wrapper and explicit cloud-verification receipt.164 regressions/12 subtests and23 latest observer/reporting tests/5 subtests pass. A preliminary18-turn/four-Q real-runner fixture with actual local assets and44 HTTPX-mocked generations emits130 cloud observations and56 score IDs, with zero network LLM calls. Modern CLI observes all130; a session-score query returns zero even after delay, while exact-ID query returns all56. Preserve both readbacks rather than inferring failed score delivery; the server's internal filtering explanation is unverified. Scope score verification to bounded exact IDs. Evidence: `artifacts/run2/gate-b/engineering-4k-20261103/`. This preliminary check uses Run1's4K profile and is explicitly not the final8K/source-bound Run2 gate; failure capture, saved-result Experiments import and final replay/readback review remain pending.
-- **Final resolution or limitation:** Run1 paid execution remains historically unwired and immutable. Actual-runner tracing is now implemented/tested in the Run2 candidate, with preliminary remote visibility; final8K/source-bound GateB and saved-result import are still unverified. Keep this blocker Open until the complete mandatory gate succeeds. Keys are absent from records and `.env` is unchanged; SDK flush/auth alone never authorizes a benchmark.
-- **Verification:** Synthetic observation `56d4b434cfe14653` is visible as `A-MEM/langfuse-configuration-smoke`, environment `configuration-preflight`. Verification of actual model-call capture, failure finalization and study-identity exports remains pending.
+  - 2026-11-03, final8K GateB attempts: the first actual-executor fixture verifies two retained length failures/recoveries and all observations, then rejects Experiments because the API's experiment `name` is SDK `run_name`, distinct from SDK logical `name`. Preserve attempt1 unchanged. Correction `414b97b` records both names and compares the exact run name; old incomplete receipts reject without guessing/reimport. All four fully indexed saved snapshots pass offline characterization and two partial snapshots still reject. A fresh attempt2 completes24 synthetic turns/one QA across three phases,50 MockTransport calls, with all observations and both Experiments independently fetched. A separate real-assets18-turn/four-Q fixture verifies130 observations/56 scores, exact traced/untraced ordered replay, raw argument preservation and unchanged results under tracing failure. Both bind source `184544748e86f608286a031a86bd53519e5c95b7f6b3eee0ffae8e2ba2e6e2fe`; no billable LLM request or primary Run2 ledger exists. See [verification report](run2-observability-verification.md) and `artifacts/run2/gate-b/{executor-8k-20261103-attempt2,real-assets-8k-20261103-attempt1}/`. Final independent audit/full-suite/archive replay remain pending.
+  - 2026-11-03, final Run2 verification: source184544748e86f608286a031a86bd53519e5c95b7f6b3eee0ffae8e2ba2e6e2fe passes715 offline tests/92 subtests (17 expected warnings), both complete original/full-candidate archive replays and clear independent Standards/Spec audits. Current-source runtime preflight passes with sockets disabled. No paid Run2 call or Run1 artifact change occurred. Final evidence: `artifacts/run2/offline/final-full-suite-20261103.txt`, `archive-equivalence.json`, `{spec,standards}-final.md`; GateB source-bound raw proof is separately preserved.
+- **Final resolution or limitation:** Runtime wiring is verified for Run2 at source184544748e86f608286a031a86bd53519e5c95b7f6b3eee0ffae8e2ba2e6e2fe: real-assets traced/untraced replay, actual executor with two successive checkpoint continuations, exact remote observations/Experiments and independent factual audits all pass. Run1 remains historically unwired; no retrospective traces or primary results are fabricated. Every paid Run2 phase must still verify actual cloud visibility before release.
+- **Verification:** Source-bound GateB receipt and122-file hash inventory are preserved under `artifacts/run2/gate-b/`; final offline suite715 tests/92 subtests passes, both complete568-note/204-Q archive replays match and Standards/Spec audits independently verify six actual cloud proofs. See [verification](run2-observability-verification.md).
 - **Research significance:** Valid credentials and an installed observability SDK do not establish that the executed research path emits traces, especially when it fails before evaluation.
 
 ## BLK-012
@@ -510,7 +512,7 @@ are unavailable unless an experiment receipt supplies them.
 
 - **ID:** BLK-017
 - **Title:** Critical paid-run provenance faults can be hidden behind tolerated failure paths.
-- **Status:** Investigating
+- **Status:** Resolved
 - **First observed:** 2026-11-02, pre-paid T8 Spec review of integration `9fb0b86`.
 - **Category:** Infrastructure
 - **Expected behaviour:** A provider identity violation or failed durable generation record halts the phase before a subsequent transmission, retains costs/raw evidence where writable, and cannot yield a reusable completed run. Optional cloud reporting may remain best-effort.
@@ -525,15 +527,16 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-02, correction `84d354a`, final source `ae23e291`: exact provider identity validation precedes set insertion; the baseline critical-local-recorder wrapper persists a halt, retains a safe raw-event companion where writable and always raises terminal `BudgetStop`, including when fallback writing fails. Final-call journal failure preserves195 completed QA rather than falsely reporting zero. Optional cloud reporting remains separate; adapter/prompts/argument strings are unchanged.
   - 2026-11-03, Run2 candidate review (offline, uncommitted/undeployed): a genuine simulated8K shared-decision exhaustion followed by an injected halt-persistence exception still publishes `recoverable_length_failure:true`. Failing test `test_length_failure_cannot_hide_a_later_halt_persistence_fault`; preserved `artifacts/run2/offline/combined-halt-fault-red.txt`. The known provider fallback masks a secondary critical control failure in recovery eligibility. No live call, Run1 artifact or real ledger is affected. Reopen this critical-failure propagation class for a narrow eligibility/secondary-failure receipt correction; no automatic Run2 recovery or paid cell is permitted before verification.
   - 2026-11-03, additional candidate identity regression: a dict-valued returned model correctly halts further requests, but final identity-set aggregation raises `TypeError` and hides the Incomplete phase receipt. Preserve `artifacts/run2/offline/provider-identity-red.txt`. The implementer is preserving the raw invalid metadata while excluding non-string values only from summary sets, never weakening identity validation. No real provider request or Run1 write occurred; correction and independent verification remain pending.
-- **Final resolution or limitation:** Run1's original critical-observer guards remain verified and unchanged. Run2's combined-fault recovery path is Investigating: any secondary halt, provenance, settlement, observation or finalization failure must block continuation even when the last provider response genuinely exhausted its allowance. No success is inferred from the ordinary length-failure test. Correction, regression and independent recheck remain pending.
-- **Verification:** First/final identity types, first/late journal faults and failed fallback writes pass; independent reviews clear. Final519 tests/92 subtests pass in `artifacts/t8/offline/final-serial-frontier-suite.txt`; sixteen SDK warnings arise only from intentionally malformed test metadata. No paid request was used for verification.
+  - 2026-11-03, final Run2 verification: source184544748e86f608286a031a86bd53519e5c95b7f6b3eee0ffae8e2ba2e6e2fe passes715 offline tests/92 subtests (17 expected warnings), both complete original/full-candidate archive replays and clear independent Standards/Spec audits. Current-source runtime preflight passes with sockets disabled. No paid Run2 call or Run1 artifact change occurred. Final evidence: `artifacts/run2/offline/final-full-suite-20261103.txt`, `archive-equivalence.json`, `{spec,standards}-final.md`; GateB source-bound raw proof is separately preserved.
+- **Final resolution or limitation:** Run2 correction182dfe1/15176b2, integrated247a747, retains secondary control failures and forbids their recovery, including when a genuine length failure occurred first. Invalid provider metadata remains raw evidence; only string values enter summary sets, after strict identity enforcement. Critical journal, observation, transport-close, settlement and finalization faults cannot release another request/cell. Run1 guards remain unchanged.
+- **Verification:** The original red proofs remain unchanged. Final715 tests/92 subtests, independent Standards/Spec audits and actual mock-only executor failure/continuation receipts verify terminal combined-fault and invalid-identity behavior. Both full archive replays preserve376 logical failure records exactly; no paid request was used.
 - **Research significance:** Best-effort observability is appropriate for optional reporting, but cannot silently cover critical experiment identity or durable evidence. Request/cost caps alone do not establish experimental integrity.
 
 ## BLK-018
 
 - **ID:** BLK-018
 - **Title:** Completion exposes a paid-next-phase window before final receipt publication.
-- **Status:** Investigating
+- **Status:** Resolved
 - **First observed:** 2026-11-02, T8 correction Spec review of integration `b41d825`.
 - **Category:** Cost
 - **Expected behaviour:** A next study cell cannot claim/transmit until the preceding cell has a verified published receipt and committed completion; failed finalization blocks both new and already-claimed continuation.
@@ -547,15 +550,16 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-02, independent correction review: deterministic interleaving exposes the resulting publication window. Same implementer is adding coordinated release, shared-failure checks and a concurrency/post-publication commit-failure regression. The earlier correction remains recorded rather than described as sufficient.
   - 2026-11-02, correction `022fd46`, integrated as `ae23e291`: hold `BEGIN IMMEDIATE` through atomic receipt publication/readback and completion commit. Before logical-call and physical-attempt admission, reject other failed/unfinished study cells; allow settlement of already incurred usage. Post-publication commit failures preserve the unconfirmed candidate and failure marker, halt and publish truthful Incomplete evidence; paid/report readers reject marked stale completion.
   - 2026-11-03, Run2 candidate review (offline, uncommitted/undeployed): a next-cell permit claimed while the preceding cell was complete still admits a new logical call after that prior completed phase is durably halted. Failing `test_preclaimed_next_cell_stops_if_prior_completion_becomes_halted`; preserve `artifacts/run2/offline/prior-completion-halt-red.txt`. Current-cell ownership alone is insufficient; every admission must reject failed/unconfirmed earlier completions, including after a post-publication commit fault. Reopen this same frontier control class for correction and regression. No physical provider call, Run1 artifact or real ledger was affected.
-- **Final resolution or limitation:** Run1's coordinated publication/frontier fix remains verified and unchanged. Run2's corresponding per-admission history guard is Investigating and blocks paid readiness until corrected, tested and independently rechecked. A previously valid plan/claim cannot bypass a later preceding-cell failure.
-- **Verification:** Threaded interleaving, previously claimed next permit, commit-after-publication failure, missing/invalid receipts and stale-marker rejection pass. Both reviewers independently pass six safeguards (`artifacts/t8/offline/review/{spec,standards}-final-race-green.txt`). Final suite519 tests/92 subtests and current-source runtime preflight pass, with no paid calls or original artifact changes.
+  - 2026-11-03, final Run2 verification: source184544748e86f608286a031a86bd53519e5c95b7f6b3eee0ffae8e2ba2e6e2fe passes715 offline tests/92 subtests (17 expected warnings), both complete original/full-candidate archive replays and clear independent Standards/Spec audits. Current-source runtime preflight passes with sockets disabled. No paid Run2 call or Run1 artifact change occurred. Final evidence: `artifacts/run2/offline/final-full-suite-20261103.txt`, `archive-equivalence.json`, `{spec,standards}-final.md`; GateB source-bound raw proof is separately preserved.
+- **Final resolution or limitation:** Run2 correction182dfe1/15176b2 checks all earlier cell histories at every admission, not only the current claim; publication/sealing and SQL completion remain coordinated. Prior halts, unconfirmed/changed receipts and failed commits block even an already claimed next permit. Run1 publication controls remain unchanged.
+- **Verification:** Final715 tests/92 subtests and both independent reviews pass, including the preserved prior-completion red regression, interleaving and failed-publication controls. Actual mocked executor receipts are sealed before continuation; no paid request was used.
 - **Research significance:** Durable accounting and durable research artifacts span different resources. A completion flag alone is not evidence that the preceding experiment is safe to reuse or that a subsequent paid phase may start.
 
 ## BLK-019
 
 - **ID:** BLK-019
 - **Title:** Recovery provenance can accept altered ancestry or unchecked edges.
-- **Status:** Investigating
+- **Status:** Resolved
 - **First observed:** 2026-11-03, pre-merge second conv-44 continuation engineering.
 - **Category:** Infrastructure
 - **Expected behaviour:** A claimed leaf must reject transmission after any invalid edge touches its pinned ancestry. Migration records must list the actual support-file changes, and returned lineage data must not alias a verified parent's binding.
@@ -570,7 +574,8 @@ are unavailable unless an experiment receipt supplies them.
   - 2026-11-03, final integrated verification:613 tests/92 subtests pass (16 intentional SDK metadata warnings), plus189 focused/60 and both independent62-test groups. Exact610-memory/embedding-byte restore and six-file migration record pass; all51 protected files and the real ledger stay unchanged. No new phase is claimed. Final evidence is `artifacts/t8/offline/conv44-second-full-suite-20261103.txt`, `conv44-second-checkpoint-verification.json` and the two review receipts.
   - 2026-11-03, Run2 candidate review (offline, undeployed): editing a synthetic partial state and recomputing its phase artifact inventory is accepted by the first recovery plan because the newly published phase lacks an independently sealed receipt hash. Preserve `artifacts/run2/offline/receipt-seal-red.txt`. The implementer is adding one immutable receipt hash column to the new Run2 phase ledger, sealed with publication and checked before recovery/admission; no generic recovery framework or Run1 change. Red proof affects synthetic temp artifacts only; real historical states/ledger remain unchanged. Correction and independent verification are pending.
   - 2026-11-03, additional candidate allocation-integrity test: altering the SQL phase-cap column alone can expand a session beyond its immutable approval (the global USD42 guard still holds). Preserve `artifacts/run2/offline/cap-integrity-red.txt`. Compare stored caps with the original approved value at every admission; correction `182dfe1` reports zero transmissions under the same mutation. Exact-tip tests and independent review remain pending. No real ledger or charge was affected.
-- **Final resolution or limitation:** Run1's bounded edge/migration/copy corrections remain verified. Run2 independent receipt anchoring is Investigating: a self-consistent filesystem inventory alone cannot establish that the state is the one actually archived at the failure. Paid readiness remains blocked until publication/seal/ancestry regressions and independent review pass. BLK-013 output exhaustion remains separate and Open.
+  - 2026-11-03, final Run2 verification: source184544748e86f608286a031a86bd53519e5c95b7f6b3eee0ffae8e2ba2e6e2fe passes715 offline tests/92 subtests (17 expected warnings), both complete original/full-candidate archive replays and clear independent Standards/Spec audits. Current-source runtime preflight passes with sockets disabled. No paid Run2 call or Run1 artifact change occurred. Final evidence: `artifacts/run2/offline/final-full-suite-20261103.txt`, `archive-equivalence.json`, `{spec,standards}-final.md`; GateB source-bound raw proof is separately preserved.
+- **Final resolution or limitation:** Run2 correction15176b2 adds a single immutable receipt hash seal to its phase ledger, published before any recovery/next-cell release. Every edge verifies that seal and the full archive. Correction182dfe1 also compares the SQL phase cap with its immutable authorization at every admission. Run1 bounded ancestry/migration/copy corrections remain unchanged.
 - **Verification:**613 tests/92 subtests,189 focused tests/60 subtests, independent62-test groups, actual-parent proof and network-disabled preflight pass. The original failing evidence remains preserved.
 - **Research significance:** Multi-phase reproducibility requires both graph ownership and accurate isolated provenance records. Safe single-hop behaviour does not establish correct ancestry handling after an extra recovery hop.
 
@@ -600,7 +605,7 @@ are unavailable unless an experiment receipt supplies them.
 
 - **ID:** BLK-021
 - **Title:** Run2 ledger path can alias immutable Run1 accounting before scope validation.
-- **Status:** Investigating
+- **Status:** Resolved
 - **First observed:** 2026-11-03, Run2 candidate offline storage-isolation test, issue#24.
 - **Category:** Infrastructure
 - **Expected behaviour:** New campaign accounting writes only its fresh Run2 ledger; Run1 bytes
@@ -620,9 +625,10 @@ are unavailable unless an experiment receipt supplies them.
   the existing accounting/transport implementation rather than adding a storage framework.
 - **Resolution attempts:** 2026-11-03: preserve the failing synthetic proof; implementer is adding
   pre-open symlink/component and same-file/hardlink rejection with byte-preservation regressions.
-- **Final resolution or limitation:** Pending implementation, offline verification and independent
+  - 2026-11-03, final Run2 verification: source184544748e86f608286a031a86bd53519e5c95b7f6b3eee0ffae8e2ba2e6e2fe passes715 offline tests/92 subtests (17 expected warnings), both complete original/full-candidate archive replays and clear independent Standards/Spec audits. Current-source runtime preflight passes with sockets disabled. No paid Run2 call or Run1 artifact change occurred. Final evidence: `artifacts/run2/offline/final-full-suite-20261103.txt`, `archive-equivalence.json`, `{spec,standards}-final.md`; GateB source-bound raw proof is separately preserved.
+- **Final resolution or limitation:** Run2 correction182dfe1/15176b2 checks destination path components, symlinks, hardlinks and same-file aliases against preserved Run1 SQLite artifacts before opening or initializing SQLite, including subsequent transactions. Foreign history is never reset or adopted.
   review. No solution or safe new campaign is inferred from the initial foreign-history exception.
-- **Verification:** Red evidence confirms the failure only. Green proof/review remain pending;
+- **Verification:** Synthetic symlink/component/hardlink/backup-alias tests preserve the old target bytes and admit zero transmissions. Final715 tests/92 subtests and independent reviews pass. All557 actual Run1 files/ledger hashes independently match the GateA inventory; zero paid Run2 requests existed at verification.
   actual Run1 preservation is separately checked, not assumed from the synthetic test.
 - **Research significance:** Separate experiment names and database tables cannot protect a previous
   campaign if both paths reach the same file. Isolation must hold before initialization side effects.

@@ -5,6 +5,12 @@ The approved study is defined in [the frozen protocol](docs/reproducibility/expe
 This foundation adds isolated support code around the author release `f9a173d`. The original Python,
 shell, dataset, requirements and README files remain unchanged.
 
+The current, separately accounted campaign is [Run2](docs/reproducibility/run2-protocol.md),
+with a [verified output policy](docs/reproducibility/run2-output-limit-investigation.md) and
+[actual-runner Langfuse evidence](docs/reproducibility/run2-observability-verification.md).
+Its mandatory cloud-verification and recovery gates supplement the foundation below. Run1 results,
+configuration, artifacts and spending remain immutable exploratory evidence.
+
 ## Install and check offline behavior
 
 Use Python 3.11 or 3.12 with uv. The lock includes the author runtime as an optional extra; basic tests
