@@ -414,3 +414,82 @@ def test_serialized_request_is_observationally_redacted_without_changing_parser_
     assert result == arguments
     assert events[0]["attempts"][0]["request_body"]["messages"][1]["content"] == "original <redacted> prompt"
     assert "offline-placeholder" not in json.dumps(events)
+
+
+@pytest.mark.parametrize('failure_point',['insert','commit_before','commit_after','retry_insert'])
+def test_failed_attempt_admission_is_terminal_before_sdk_can_transmit(tmp_path,failure_point):
+    auth=approval(logical=2);path=tmp_path/'budget.sqlite';permit=PhasePermit(auth,path,auth['binding'])
+    events,requests,faults,admissions=[],[],[],[];connect=sqlite3.connect
+    class AdmissionFault(sqlite3.Connection):
+        admitting=False
+        def execute(self,sql,*args,**kwargs):
+            if sql.startswith('INSERT INTO attempts('):
+                self.admitting=True;admissions.append(True)
+                if failure_point in ('insert','retry_insert') and len(admissions)==(2 if failure_point=='retry_insert' else 1) and not faults:
+                    faults.append(failure_point)
+                    raise sqlite3.OperationalError('offline attempt admission write failure')
+            return super().execute(sql,*args,**kwargs)
+        def commit(self):
+            if self.admitting and failure_point.startswith('commit_') and not faults:
+                faults.append(failure_point)
+                if failure_point=='commit_after':super().commit()
+                raise sqlite3.OperationalError('offline attempt admission commit failure')
+            return super().commit()
+    def faulty(*args,**kwargs):return connect(*args,**kwargs,factory=AdmissionFault)
+    def handler(request):
+        requests.append(request)
+        if failure_point=='retry_insert' and len(requests)==1:
+            return httpx.Response(503,json={'error':{'message':'offline retryable provider error'}},headers={'retry-after-ms':'1'})
+        return httpx.Response(200,json=response())
+    c=controller(permit,handler,events)
+    try:
+        with patch('amem_repro.budget.sqlite3.connect',side_effect=faulty),patch('openai._base_client.time.sleep',return_value=None):
+            with pytest.raises(BudgetStop):c.get_completion('same prompt',load_author_contracts()['answer'])
+        assert faults==[failure_point]
+        assert len(requests)==(1 if failure_point=='retry_insert' else 0)
+        summary=permit.summary();reserved=failure_point in ('commit_after','retry_insert')
+        assert summary['physical_attempts']==int(reserved)
+        assert summary['unknown_attempts']==int(reserved)
+        assert summary['charged_or_reserved_microusd']==(315773 if reserved else 0)
+        assert summary['halted']=='attempt_admission_failed' and summary['halt_persisted'] is True
+        assert ledger_summary(path,auth['approval_id'])['halted']=='attempt_admission_failed'
+        assert events[-1]['error_type']=='BudgetStop'
+        if failure_point=='retry_insert':
+            assert events[-1]['attempts'][0]['response_body']=={'error':{'message':'offline retryable provider error'}}
+        with pytest.raises(BudgetStop):c.get_completion('same prompt',load_author_contracts()['answer'])
+        with pytest.raises(BudgetStop):PhasePermit(auth,path,auth['binding'])
+        assert len(requests)==(1 if failure_point=='retry_insert' else 0)
+    finally:c.client.close()
+
+
+@pytest.mark.parametrize('halt_failure',['update','commit'])
+def test_failed_admission_and_failed_halt_persistence_stay_latched(tmp_path,halt_failure):
+    auth=approval(logical=2);path=tmp_path/'budget.sqlite';permit=PhasePermit(auth,path,auth['binding'])
+    connect=sqlite3.connect;events=[];requests=[]
+    class AdmissionHaltFault(sqlite3.Connection):
+        halting=False
+        def execute(self,sql,*args,**kwargs):
+            if sql.startswith('INSERT INTO attempts('):raise sqlite3.OperationalError('offline admission failed')
+            if sql.startswith('UPDATE phases SET halted='):
+                self.halting=True
+                if halt_failure=='update':raise sqlite3.OperationalError('offline halt update failed')
+            return super().execute(sql,*args,**kwargs)
+        def commit(self):
+            if self.halting and halt_failure=='commit':raise sqlite3.OperationalError('offline halt commit failed')
+            return super().commit()
+    def faulty(*args,**kwargs):return connect(*args,**kwargs,factory=AdmissionHaltFault)
+    def handler(request):requests.append(request);return httpx.Response(200,json=response())
+    c=controller(permit,handler,events)
+    try:
+        with patch('amem_repro.budget.sqlite3.connect',side_effect=faulty),patch('openai._base_client.time.sleep',return_value=None):
+            with pytest.raises(BudgetStop):c.get_completion('same prompt',load_author_contracts()['answer'])
+            assert not requests
+            summary=permit.summary();assert summary['halted']=='attempt_admission_failed'
+            assert summary['halt_persisted'] is False and summary['halt_persistence_error_type']=='OperationalError'
+            with pytest.raises(BudgetStop):c.get_completion('same prompt',load_author_contracts()['answer'])
+            with pytest.raises(BudgetStop):PhasePermit(auth,path,auth['binding'])
+            assert not requests
+        permit.stop('later reason must not replace admission fault')
+        assert ledger_summary(path,auth['approval_id'])['halted']=='attempt_admission_failed'
+        assert permit.summary()['halt_persisted'] is True
+    finally:c.client.close()

@@ -638,3 +638,56 @@ unauthorized. These are planning arithmetic, not bounds or spending approvals. B
 T5/T8 and first-ablation readiness remain blocked. Stop at the explicit provider-failure boundary.
 See [verified outcome](t8-conv44-recovery-incomplete-20261103.md). No population, schema, prompt,
 model, generation limit, scoring, retrieval or memory change is approved by this outcome record.
+
+## Authorization — second pinned conv-44 continuation
+
+On 3 November 2026 the user explicitly authorized the smallest implementation, focused/full offline
+tests, independent Standards/Spec reviews, commits/pushes and merge for one additional conv-44
+continuation, plus a separate reviewed/merged outcome-documentation PR. No intermediate approval is
+required after the safeguards pass. This supersedes the previous hold only for this one continuation.
+
+Immediate parent: `t8-full-conv44-checkpoint-child`, canonical phase SHA256
+`fb730968fc1eec7cd4df4bcae5dc89baa7ff507dc111c5c1868319f5106d7fd9`.
+Verify its full lineage to original `t8-full-conv44-r0-20261103`, canonical phase SHA256
+`dad7f09f944e0de792787cf40f48f22a19af955353601d48f1c16c12fe62d45b`, including both immutable
+snapshots, approvals, source/configuration and all ledger prefixes. Preserve both original failures
+(`D18:21`, `D26:18`) and their unchanged fallbacks; restore610 ordered notes/metadata/links,
+counter607 and exact stale610×384 float32 retrieval state without re-embedding. Resume `D26:19`,
+process65 original turns, then all158 original QA in frozen order. Do not repeat historical requests.
+
+One new single-use approval may authorize **USD3 additional,446 logical calls and1,338 physical
+attempts**, including permitted SDK retries. The workload is130 memory calls plus316 question calls.
+Bind exact parent/root lineage, reviewed current source, dataset/configuration, assets/preflight,
+model and provider policy. Keep the existing USD8.407857/4,240-request cumulative ledger, USD50
+ceiling and USD8 reserve; do not reset accounting or reuse earlier grants. Enforce one-shot chain
+ownership and charge all three phases once. Permit only this named second continuation, not an
+arbitrary chain or third recovery. Support policy: `blk013-conv44-second-checkpoint-v1`.
+
+Frozen algorithm/prompts/schema/parser/model, temperatures, D3a policy,4,000-token shared-decision
+cap, retrieval, index policy and scoring remain unchanged. Preserve existing origin IDs when copying
+inherited failure records across the second hop. A support-only runner annotation correction is
+within scope; no memory algorithm change is permitted. All prior raw artifacts and completed
+conv-49/conv-50 baselines stay immutable.
+
+After offline validation, reviews, merge and exact-state preflight, execute this phase once. On new
+invalid/truncated provider output or provenance/spending-control failure, halt paid transmission,
+preserve partial state/responses/charges and investigate offline. Apply only original fallbacks;
+no JSON repair, cap increase, semantic retry or third paid recovery is authorized. Stop on another
+material blocker or verified675-turn/158-QA completion. A completed lineage must be Degraded with
+all inherited failures/audits, dual author scoring and separate adversarial correctness. Reconcile
+costs without duplication and reforecast by cost evidence alone. No ablation or other paid phase is
+authorized. BLK-013 stays Open unless evidence supports a narrower mitigation claim.
+
+### Verified second-continuation engineering
+
+Feature `f49da9a`, provenance fix `acefbfa` (BLK-019) and terminal admission fix `59ab9ae` (BLK-020),
+integrated at `7211a4a`, pass613 offline tests/92 subtests (16 intentional SDK metadata warnings),
+189 focused tests/60 subtests and two clear independent62-test reviews. Source fingerprint:
+`0341a2a579842725c9ac6a18a110e2816a2896c32e07cf883fd36e2ef1ab681f`.
+Actual610-note/counter607/stale-index restore/export matches exactly, with both ancestor pins and
+408 failure records verified; all51 protected files and the real ledger stay unchanged. Fresh runtime
+preflight passes with sockets disabled; unapproved execution rejects before client/claim creation.
+The root SDK admission-fault replay now halts with zero transmissions and retained reservations;
+genuine transport/provider retries remain unchanged. BLK-019/020 are Resolved; BLK-013 stays Open.
+PR#22, final merge and the new single-use approved copy/live continuation are pending at this checkpoint.
+The unapproved plan binds USD3/446 logical/1,338 physical limits; no new paid phase has executed.

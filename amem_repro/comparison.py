@@ -169,19 +169,21 @@ def load_saved_run(phase_path, manifest, *, root=ROOT, archive_root=None):
     if checkpoint:
         parent_id = checkpoint.get('parent_run_id')
         if (not isinstance(parent_id,str) or Path(parent_id).name != parent_id or parent_id==phase['run_id']
-                or checkpoint.get('policy') not in ('blk014-checkpoint-v1','blk013-conv49-checkpoint-v1','blk013-conv44-checkpoint-v1') or condition != 'full'):
+                or checkpoint.get('policy') not in ('blk014-checkpoint-v1','blk013-conv49-checkpoint-v1','blk013-conv44-checkpoint-v1','blk013-conv44-second-checkpoint-v1') or condition != 'full'):
             raise ValueError('Checkpoint parent identity/policy mismatch')
         parent_path = archive_root/'artifacts/runs'/parent_id/'phase.json'
         parent, _ = _archive(parent_path, archive_root)
         if (fingerprint(parent) != checkpoint.get('parent_phase_sha256')
-                or parent['status'] != 'incomplete' or 'checkpoint' in parent['binding']
+                or parent['status'] != 'incomplete'
+                or ('checkpoint' in parent['binding']) != (checkpoint['policy']=='blk013-conv44-second-checkpoint-v1')
+                or (checkpoint['policy']=='blk013-conv44-second-checkpoint-v1' and checkpoint.get('parent_checkpoint')!=parent['binding']['checkpoint'])
                 or parent['conversation_ids'] != selected):
             raise ValueError('Checkpoint parent receipt mismatch')
-        if checkpoint['policy'] in ('blk013-conv49-checkpoint-v1','blk013-conv44-checkpoint-v1'):
+        if checkpoint['policy'] in ('blk013-conv49-checkpoint-v1','blk013-conv44-checkpoint-v1','blk013-conv44-second-checkpoint-v1'):
             from .checkpoint import study_checkpoint_profile
             if len(selected)!=1:
                 raise ValueError('Checkpoint must contain exactly one frozen conversation')
-            profile=study_checkpoint_profile(selected[0])
+            profile=study_checkpoint_profile(selected[0],checkpoint['policy'])
             if (fingerprint(parent)!=profile['parent_phase_sha256'] or checkpoint['policy']!=profile['policy']
                     or checkpoint.get('completed_turns')!=profile['completed_turns']
                     or checkpoint.get('remaining_logical_calls')!=profile['remaining_logical_calls']
@@ -193,7 +195,7 @@ def load_saved_run(phase_path, manifest, *, root=ROOT, archive_root=None):
         if prior['results'] or prior['condition'] != condition:
             raise ValueError('Checkpoint parent cannot contain regenerated QA')
         sources.update(prior['sources'])
-        lineage_events = prior['events'] + events
+        lineage_events = prior['lineage_events'] + events
     return copy.deepcopy({'run_id':phase['run_id'], 'condition':condition, 'conversation_ids':selected,
                           'status':phase['status'], 'phase':phase, 'views':views, 'events':events,
                           'expected_questions':len(expected_ids),'completed_questions':len(results),

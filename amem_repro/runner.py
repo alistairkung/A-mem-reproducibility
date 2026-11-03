@@ -263,8 +263,8 @@ def run_manifest(
                     for index, failure in enumerate(checkpoint['failures']):
                         ledger.record({**failure, **active, 'from_cache': True,
                                        'inherited_from': 'checkpoint',
-                                       'origin_run_id': failure['run_id'],
-                                       'origin_failure_index': index})
+                                       'origin_run_id': failure.get('origin_run_id',failure['run_id']),
+                                       'origin_failure_index': failure.get('origin_failure_index',index)})
                 parsed = parser.parse_conversation(sample["conversation"])
                 sessions = {
                     f"session_{key}": session
