@@ -33,6 +33,9 @@ verification evidence are in [T6 replay](t6-replay.md).
 This is not a population revision or T5 closure; T7/T8 and all additional paid phases remain gated.
 Subsequently the user explicitly authorized T7 engineering, offline regression/review, commits/push,
 PR and merge after acceptance. See [T7 action gates](t7-action-gates.md). T8 and paid phases remain gated.
+Latest: the user invoked implement-spec T8 and explicitly authorized paid main execution under the
+existing ceiling/contingency. See [T8 authority and execution order](t8-execution.md). Complete the two
+missing full-mode fallback baselines for T5 before T8 ablations; close neither ticket prematurely.
 
 ## Tracker and dependency map
 

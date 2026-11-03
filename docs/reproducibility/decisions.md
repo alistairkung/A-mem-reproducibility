@@ -403,3 +403,108 @@ and both run source fingerprints match current source. Original run/cache/ledger
 no paid calls or ablation experiments occurred. See [T7 evidence and commands](t7-action-gates.md).
 BLK-002 is Mitigated by operational reconstructions; unavailable historical ablation code and BLK-015's
 recording/runtime limits remain explicit. T8 and further paid collection still need separate approval.
+
+## Authorization — T8 implementation and paid main execution
+
+On 2 November 2026, after T7 merge `577a1e3`, the user invoked `implement-spec T8` and explicitly
+authorized paid execution. This authorizes T8 implementation/offline tests/reviews, the skill's
+integration branch/commits/push/draft PR workflow, and the frozen one-build-per-conversation/condition
+study within the existing USD50 total ceiling including USD8 contingency. It is not permission to
+increase the ceiling, add repetitions, change scientific settings or automatically recover paid failures.
+The skill ends with a PR ready for review; no new T8 merge authorization is inferred.
+
+D10a's predefined fallback is activated using the existing completed-pilot cost-only forecast:
+full scope USD127.391486 does not fit; fallback USD42.762234 including incurred spending/contingency
+does. Population remains exactly conv-49, conv-50, conv-44, all turns/questions, across four conditions.
+The archived full-mode conv-50 lineage is credited once. Complete full-mode conv-49/conv-44 (T5)
+before the remaining nine ablation cells (T8); do not duplicate the existing baseline or claim T5 closed
+before its remaining selected-scope collection verifies.
+
+At authorization, the read-only cumulative ledger verifies1610 settled attempts / USD3.025799,
+zero unknown charges, SHA256 `dcdb729c7f291da2d07949b374bdebc18952668548f691802f744da2ea1141c2`.
+Thus at most USD38.974201 additional is usable while preserving the USD8 contingency. Remaining
+nominal workload is16936 logical calls, at most50808 physical attempts, partitioned into eleven fresh
+complete-conversation phases. Each needs a fresh immutable approval bound to its exact condition,
+action flags, population partition, repetition0, current source/preflight and unchanged provider policy.
+Use the same durable study ledger; all earlier approvals remain consumed and historical artifacts immutable.
+
+Verify/review the main-phase controls and compatibility-source migration offline before transmission.
+Retain DeepSeek/D3a/D9a, original prompts/schemas/parsing/retrieval/scoring and T7 action implementation;
+financial/report support changes cannot redefine that scientific reference. Reconcile measured usage
+and cost-only affordability between phases. On a provider/contract, provenance or spending failure,
+preserve all evidence/charges and stop paid collection; recovery/reruns require a separate decision.
+No tuning, dropped questions, context truncation, silent repairs or quality-based retries are authorized.
+
+Issue #8 also authorizes saved-result local exports and Langfuse comparisons using the existing
+author metrics and pinned SDK5.1.0, without model/LLM-judge calls. Local artifacts remain authoritative
+if optional reporting fails. See [T8 execution record](t8-execution.md) for exact plans and outcomes.
+
+## Execution hold — T8 conv-49 cap exhaustion (BLK-013 reopened)
+
+On2 November2026 the authorized first T8 cell `t8-full-conv49-r0-20261102` stopped Incomplete at
+`D22:2`: HTTP200/`finish_reason=length` at the frozen D9a4,000-token shared-decision cap. Preserve
+413 notes, counter411, failed evolution, stale413-row index,270 audited D3a deviations/1,066 items
+and all raw evidence. The next metadata call was blocked without transmission. All826 actual attempts
+settled conservative USD1.413246; cumulative study cost is USD4.439045/2,436 attempts, zero unknown.
+The exact approval is consumed. Conv-44/ablations/recovery remain unexecuted.
+
+This is an observed hold under the existing protocol, **not** a new setting or execution approval.
+Offline saved-response replay confirms identical request/schema/raw response and correct terminal
+rejection, with zero network requests. Remaining scope must not continue automatically after failure.
+See [T8 evidence and proposed choices](t8-execution.md#paid-hold--blk-013-recurrence).
+Checkpoint continuation would need a new conv-49 lineage policy/approval, preserving this exact state
+and starting `D22:3` (96 turns/196 QA;584 logical calls, at most1,752 attempts). Raising the cap instead
+would require an explicit protocol amendment and treatment of existing4,000-token baseline evidence.
+Neither is authorized or implemented by this hold record. T5/T8 remain open and PR#17 remains draft.
+
+## Authorization — BLK-013 conv-49 checkpoint engineering only
+
+On3 November2026 the user approved implementing and offline-testing exact-state checkpoint recovery
+for `t8-full-conv49-r0-20261102`, keeping the frozen D9a4,000-token shared-decision cap. Preserve all
+413 notes, counter411, failed `D22:2` evolution, stale index, parent provenance, raw output and charges;
+resume at `D22:3` only under a future separately approved paid phase. Remaining scope is96 turns plus
+all196 original questions,584 logical calls and at most1,752 physical attempts.
+
+This authorizes narrow support code, deterministic offline tests, documentation and review on existing
+T8 PR#17. It grants no paid continuation/recovery, new main cell, cap/prompt/schema/parser/scoring/
+retrieval/model change or merge. Reuse existing checkpoint/phase/permit/runner/result-import seams;
+retain one-shot parent claims, cumulative ledger history, immutable evidence and inherited degradation.
+Keep BLK-013 Open: engineering verification cannot resolve the observed output-cap limitation.
+
+### Verified conv-49 checkpoint engineering outcome
+
+Implementation `1ffa184`, integrated as `a5695be`, passes545 offline tests/92 subtests and clear
+independent Standards/Spec reviews. Network-disabled current-source preflight and exact real-parent
+restoration pass, with unchanged parent artifacts and cumulative USD4.439045/2,436-attempt ledger.
+Unapproved execution rejects before client creation, phase claim or schema migration. Frozen author,
+provider, scoring, retrieval, model/settings and benchmark inputs remain unchanged.
+
+Prepared `artifacts/t8/conv49-checkpoint-plan.json` stays `approved:false`: proposed USD3 ceiling,
+584 logical calls and at most1,752 attempts, source
+`0b2287b19626da56d7bd567c6073ac15000a4f73c98e9b3510ca18d5ba6faaa9`.
+Its historical-cost estimate is USD1.566190, not an upper bound or spending grant. No approved child
+artifact exists and no paid recovery was executed. BLK-013 remains Open because truncation can recur;
+PR#17 remains draft and unmerged. Separate paid approval after review is still required.
+
+## Authorization — PR17 merge and one conv-49 recovery child
+
+On 3 November 2026 the user explicitly authorized merging PR#17 into main after fresh complete and
+focused offline tests, required checks and Standards/Spec reviews pass, then executing exactly one
+fresh checkpoint child for `t8-full-conv49-r0-20261102` under `blk013-conv49-checkpoint-v1`.
+Restore413 notes/outcomes, counter411, failed `D22:2` and the exact stale413×384 float32 index;
+resume `D22:3`, process96 remaining turns and all196 original QA in frozen order. Preserve D3a,
+D9a4,000, original algorithm/prompts/schemas/parsers/retrieval/scoring/model/settings and all evidence.
+
+The hard additional ceiling is USD3,584 logical calls and at most1,752 physical attempts under the
+existing SDK retry rules. Use the existing cumulative ledger, USD50 total/USD8 contingency and a new
+immutable parent/source/preflight-bound approval; do not reuse consumed approvals or reset history.
+No other experimental cell, child restart, second recovery chain or repetition is authorized.
+On any new provider/contract, provenance or financial failure, halt further paid transmission, retain
+all partial results/charges and investigate offline. Non-scientific engineering corrections may be
+made/reviewed autonomously, but no paid restart is implied.
+
+After successful completion, verify509 unique turns/196 ordered QA, complete cache/index, both
+scoring views, inherited Degraded classification and once-only parent/child accounting. Verify original
+conv-50 unchanged, reforecast the remaining balanced fallback using cost evidence and prepare the next
+phase for separate approval, prioritizing a paired Full/Neither comparison subject to the existing
+baseline dependencies. Stop after that preparation or a material blocker; do not execute another cell.

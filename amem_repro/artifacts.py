@@ -50,8 +50,8 @@ class CacheStore:
 
     def save(self, identity, state):
         _safe(identity)
-        _safe(state)
         _validate_state(state)
+        _safe_state(state)
         self.root.mkdir(parents=True, exist_ok=True)
         destination = self.path_for(identity)
         if destination.exists():
@@ -78,6 +78,7 @@ class CacheStore:
         return destination
 
     def load(self, identity):
+        _safe(identity)
         path = self.path_for(identity)
         try:
             marker = json.loads((path / "complete.json").read_bytes())
@@ -91,8 +92,8 @@ class CacheStore:
             if json.loads(identity_bytes) != identity:
                 raise CacheRejected("Cache provenance mismatch")
             state = json.loads(state_bytes)
-            _safe(state)
             _validate_state(state)
+            _safe_state(state)
             return state
         except (OSError, json.JSONDecodeError, KeyError) as error:
             raise CacheRejected("Missing, incomplete or malformed cache") from error
@@ -130,6 +131,25 @@ def _plain(value):
     if isinstance(value, (list, tuple)):
         return [_plain(item) for item in value]
     return value
+
+
+def _safe_state(state):
+    """Validate text-keyed index data before exempting its keys from field-name checks.
+
+    Corpus documents are values, even when used as index-map keys. Only a proven
+    document->integer-row map has this treatment; every other field stays checked.
+    The comparison view is temporary and never changes the saved state.
+    """
+    index = state['retriever']
+    documents = index['document_ids']
+    corpus = index['corpus']
+    if not isinstance(documents, dict) or not isinstance(corpus, list):
+        raise CacheRejected('Invalid document row mapping')
+    for document, position in documents.items():
+        if (not isinstance(document, str) or type(position) is not int
+                or not 0 <= position < len(corpus) or corpus[position] != document):
+            raise CacheRejected('Document row mapping does not match corpus')
+    _safe({**state, 'retriever': {**index, 'document_ids': list(documents.values())}})
 
 
 def _validate_state(state):
@@ -187,7 +207,7 @@ def snapshot_memory(system, outcomes=(), *, validate=True):
         "evo_threshold": system.evo_threshold,
         "outcomes": _plain(list(outcomes)),
     }
-    _safe(state)
+    _safe_state(state)
     if validate:
         _validate_state(state)
     return json.loads(_json_bytes(state))
@@ -259,7 +279,8 @@ class RunLedger:
 
     def preserve_partial_memory(self, identity, state):
         value = {"identity": identity, "state": state, "complete": False}
-        _safe(value)
+        _safe(identity)
+        _safe_state(state)
         _write(self.directory / "partial-memory.json", value)
 
     def status(self):

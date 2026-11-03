@@ -34,6 +34,10 @@ The user subsequently authorized T7 independent action gates, offline tests/revi
 both reference and actual full-mode candidate pass T6's fixed regression gate. See
 [T7 authorization](decisions.md#authorization--t7-independent-action-gates) and [action-gate instructions](t7-action-gates.md).
 This grants no T8 implementation, paid requests or additional collection.
+Subsequently the user invoked implement-spec T8 and authorized paid main execution within the existing
+ceiling/contingency. [Latest authority](decisions.md#authorization--t8-implementation-and-paid-main-execution)
+activates D10a's fallback using the saved cost-only forecast; [T8 record](t8-execution.md) binds the
+remaining eleven fresh cells, current provenance and phase controls. Recovery/repetitions remain separately gated.
 Keep all work inside this repository; the separate FTEC5660 HW3 repository is out of scope.
 Credentials stay in the environment and outside code, public records, logs and committed artifacts.
 

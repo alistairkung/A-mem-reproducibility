@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PHASES = {
     "compatibility": {"population": "smoke", "calls": 44, "cap": 2},
     "pilot": {"population": "pilot", "calls": 1544, "cap": 10},
+    "baseline": {"population": "fallback", "calls": 0, "cap": 42},
 }
 
 
@@ -52,6 +53,59 @@ def _replace_summary(output, summary):
     temporary = output / ".summary-updated.json"
     _save(temporary, summary)
     os.replace(temporary, output / "summary.json")
+
+
+def _publish_study_phase(output, value):
+    """A failed fsync must leave an unpublished temp, never a false final receipt."""
+    if (output/'phase.json').exists():
+        raise FileExistsError('Final study receipt already exists')
+    temporary=output/('.phase-final-'+uuid.uuid4().hex+'.json')
+    _save(temporary,value)
+    os.replace(temporary,output/'phase.json')
+
+
+def _finalize_study_phase(output, value, permit, summary, observer):
+    from .budget import BudgetStop
+    try:
+        if value['usable_for_next_phase']:
+            permit.complete_study_job(value,lambda:_publish_study_phase(output,value))
+        else:
+            _publish_study_phase(output,value)
+    except BaseException as error:
+        failure={'type':'failure','kind':'phase_finalization','error_type':type(error).__name__,
+                 'level':'run','question_id':None,'conversation_id':None,'build_id':None}
+        secondary={}
+        try:
+            permit.stop('study_finalization_failed_no_automatic_recovery')
+        except BaseException as halt_error:
+            secondary['halt_error_type']=type(halt_error).__name__
+        try:
+            if observer is not None:
+                observer(failure)
+                observer({'type':'run_abort','level':'run','question_id':None,'conversation_id':None,
+                          'build_id':None,'execution_stage':'study_finalization','error_type':type(error).__name__})
+            if summary is not None:
+                summary['status']='incomplete'
+                summary['failures']=[json.loads(line) for line in (output/'events.jsonl').read_text().splitlines()
+                                     if json.loads(line).get('type')=='failure']
+                _replace_summary(output,summary)
+        except BaseException as report_error:
+            secondary['report_error_type']=type(report_error).__name__
+        value.update(status='incomplete',usable_for_next_phase=False,
+                     error_type=value.get('error_type') or type(error).__name__,finalization_error_type=type(error).__name__)
+        try:
+            value['budget']=permit.summary()
+            _save(output/'finalization-error.json',{'error_type':type(error).__name__,'status':'incomplete',**secondary})
+            if (output/'phase.json').exists():
+                os.replace(output/'phase.json',output/'phase-unconfirmed.json')
+            value['artifact_sha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                                     for p in sorted(output.iterdir()) if p.is_file() and p.name!='phase.json'}
+            _publish_study_phase(output,value)
+        except BaseException:
+            # Missing final phase.json remains unusable; a halted/unfinished cell
+            # and retained raw events/charges prohibit paid continuation.
+            pass
+        raise BudgetStop('Study finalization failed; paid continuation is prohibited') from error
 
 
 @contextmanager
@@ -143,6 +197,8 @@ def _verified_phase(path, root):
     path = Path(path).resolve()
     if not path.is_relative_to((root / "artifacts/runs").resolve()):
         raise ValueError("Phase receipt must belong to this study's archived runs")
+    if (path.parent/'finalization-error.json').exists():
+        raise ValueError('Failed phase finalization cannot supply a completed phase')
     value = json.loads(path.read_text())
     required = {"approval.json", "preflight.json", "events.jsonl", "summary.json", "run.json", "scoring-views.json"}
     if not required.issubset(value.get("artifact_sha256", {})):
@@ -160,8 +216,16 @@ def _verified_phase(path, root):
 
 
 def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
-                  provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None):
+                  provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None,
+                  condition='full', conversation_id=None):
     validate_provider_policy(provider_contract_policy)
+    if phase == 'baseline':
+        if compatibility is not None:
+            raise ValueError('Main execution cannot reuse a fixture approval')
+        from .study import baseline_inputs
+        return baseline_inputs(receipt,asset_root,root,condition,conversation_id,provider_contract_policy,checkpoint=checkpoint)
+    if condition != 'full' or conversation_id is not None:
+        raise ValueError('Only baseline phases support complete-conversation partitions/action conditions')
     if phase not in PHASES:
         raise ValueError("Only separately approved compatibility and pilot phases are enabled")
     spec = PHASES[phase]
@@ -203,23 +267,34 @@ def _phase_inputs(phase, receipt, asset_root, root, compatibility=None, *,
 
 
 def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibility=None,
-               provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None):
+               provider_contract_policy=STRICT_PROVIDER_POLICY, checkpoint=None,
+               condition='full', conversation_id=None):
     root = Path(root)
     _, manifest, _, binding = _phase_inputs(
         phase, receipt, asset_root, root, compatibility,
         provider_contract_policy=provider_contract_policy,
         checkpoint=checkpoint,
+        condition=condition, conversation_id=conversation_id,
     )
     run_id = run_id or f"{phase}-{uuid.uuid4().hex[:12]}"
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run_id must be a safe, unique local artifact name")
     spec = PHASES[phase]
-    calls = binding.get('checkpoint', {}).get('remaining_logical_calls', spec['calls'])
+    calls = binding.get('checkpoint',{}).get('remaining_logical_calls',
+                binding.get('study_job',{}).get('expected_logical_calls',spec['calls']))
+    cap = spec['cap']
+    population = manifest['totals']
+    if phase == 'baseline':
+        from .budget import STUDY_JOB_CAPS, MICROS
+        from decimal import Decimal
+        cap = str(Decimal(STUDY_JOB_CAPS[(binding['condition'],binding['study_job']['conversation_id'])])/MICROS)
+        selected = next(c for c in manifest['conversations'] if c['original_id']==binding['study_job']['conversation_id'])
+        population = {'conversations':1,'turns':len(selected['turn_ids'])-binding.get('checkpoint',{}).get('completed_turns',0),'questions':len(selected['questions'])}
     return {
         "approval_id": str(uuid.uuid4()), "approved": False,
         "approved_by": None, "approved_at": None, "run_id": run_id, "phase": phase,
         "binding": binding,
-        "limits": {"phase_usd": spec["cap"], "max_logical_calls": calls,
+        "limits": {"phase_usd": cap, "max_logical_calls": calls,
                    "max_attempts": calls * 3},
         "pricing": {
             "pricing_id": "deepseek-flash-peak-2026-11-01",
@@ -227,7 +302,7 @@ def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibil
             "input_per_million": .30, "output_per_million": 1.20,
             "max_context_tokens": 1048576, "max_output_tokens": max(stage_output_limits().values()),
         },
-        "population": manifest["totals"],
+        "population": population,
         "stop_policy": "No subsequent request after provider/contract failure; no automatic recovery",
         "token_count_limitation": receipt["assets"]["tokenizer_limitation"],
     }
@@ -251,6 +326,8 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         approval["phase"], receipt, asset_root, root, compatibility,
         provider_contract_policy=provider_contract_policy,
         checkpoint=checkpoint,
+        condition=approval['binding'].get('condition','full'),
+        conversation_id=approval['binding'].get('study_job',{}).get('conversation_id'),
     )
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", approval["run_id"]):
         raise ValueError("Invalid run identity")
@@ -260,9 +337,11 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
     validate_approval(approval, binding)
     recovered = None
     if checkpoint is not None:
-        from .checkpoint import verify_checkpoint
-        recovered = verify_checkpoint(checkpoint, root, manifest, config, sources, receipt,
-                                      _verified_phase(compatibility, root))
+        from .checkpoint import verify_checkpoint,verify_study_checkpoint
+        recovered = (verify_study_checkpoint(checkpoint,root,manifest,config,sources,receipt)
+                     if approval['phase']=='baseline' else
+                     verify_checkpoint(checkpoint,root,manifest,config,sources,receipt,
+                                       _verified_phase(compatibility,root)))
         if (approval['limits']['max_logical_calls'] > binding['checkpoint']['remaining_logical_calls']
                 or approval['limits']['max_attempts'] > 3 * binding['checkpoint']['remaining_logical_calls']):
             raise ValueError('Recovery request limits exceed remaining workload')
@@ -280,6 +359,9 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         _save(output / 'checkpoint.json', recovered['lineage'])
     clients = []
     versions, fingerprints, schema_outcomes = set(), set(), {}
+    if approval['phase'] == 'baseline':
+        versions.update(binding['expected_returned_models'])
+        fingerprints.update(binding['expected_system_fingerprints'])
     deviations = {"completions": 0, "items": 0}
     inherited_deviations = [e for e in recovered['failures']
                            if e.get('kind') == 'provider_contract_deviation'] if recovered else []
@@ -289,7 +371,25 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         fingerprints.update(previous["system_fingerprints"])
 
     def controller(observer):
-        c = create_deepseek_controller(paid_authorized=True, observer=observer, phase_permit=permit,
+        def durable_journal(event):
+            from .budget import BudgetStop
+            try:
+                observer(event)
+            except BudgetStop:
+                raise
+            except BaseException as error:
+                try:
+                    permit.stop('critical_generation_journal_failed')
+                except BaseException:
+                    pass
+                try:
+                    _save(output/('generation-journal-failure-'+uuid.uuid4().hex+'.json'),
+                          {'error_type':type(error).__name__,'event':event})
+                except BaseException:
+                    pass
+                raise BudgetStop('Critical generation journal failed; no paid continuation') from error
+        c = create_deepseek_controller(paid_authorized=True,
+                                       observer=durable_journal if approval['phase']=='baseline' else observer, phase_permit=permit,
                                        provider_contract_policy=provider_contract_policy)
         clients.append(c.client)
         return c
@@ -309,6 +409,13 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         if event.get("compatibility_deviation"):
             deviations["completions"] += 1
             deviations["items"] += len(event["compatibility_deviation"]["transformations"])
+        if approval['phase']=='baseline':
+            for field,expected in (('returned_model',binding['expected_returned_models']),
+                                   ('system_fingerprint',binding['expected_system_fingerprints'])):
+                actual=event.get(field)
+                if type(actual) is not str or not actual or actual not in expected:
+                    permit.stop('provider_model_or_fingerprint_invalid_or_changed')
+                    return  # No set insertion or other potentially failing metadata work.
         if event.get("returned_model"):
             versions.add(event["returned_model"])
         if event.get("system_fingerprint"):
@@ -323,7 +430,11 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
         with _asset_environment(asset_root):
             counter = make_token_counter(asset_root, receipt["assets"], root / "config/assets.json")
             scorer = AuthorScorer(root)
-            factory = make_agent_factory(root, controller_factory=controller, token_counter=counter)
+            if approval['phase']=='baseline' and binding['condition']!='full':
+                from .actions import make_action_agent_factory
+                factory=make_action_agent_factory(root,condition=binding['condition'],controller_factory=controller,token_counter=counter)
+            else:
+                factory = make_agent_factory(root, controller_factory=controller, token_counter=counter)
             summary = run_manifest(
                 root / "data/locomo10.json", manifest, config,
                 output_dir=output, cache_root=root / "artifacts/cache", source_hashes=sources,
@@ -331,7 +442,12 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
                 provider_contract_policy=provider_contract_policy,
                 execution_type='checkpoint_recovery' if recovered else 'fresh_build',
                 checkpoint=recovered,
+                condition=binding['condition'],
+                conversation_ids=binding.get('conversation_ids'),
             )
+            if approval['phase']=='baseline' and (permit.summary().get('halted') or permit.summary()['unknown_attempts']):
+                from .budget import BudgetStop
+                raise BudgetStop('Halted study phase cannot be completed or continue to another cell')
             events = [json.loads(line) for line in (output / "events.jsonl").read_text().splitlines()]
             # The two views consume saved predictions and cannot make model calls.
             predictions = [e["result"] for e in events if e["type"] == "question_result"]
@@ -369,18 +485,23 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             scorer.observer({"type": "run_abort", "error_type": error_type,
                              "level": "run", "question_id": None,
                              "conversation_id": None, "build_id": None,
-                             "execution_stage": "postprocessing"})
+                             "execution_stage": "phase_validation" if permit.summary().get('halted') and approval['phase']=='baseline' else "postprocessing"})
             summary["status"] = "incomplete"
             _replace_summary(output, summary)
         raise
     finally:
         for client in clients:
             client.close()
+        if summary is None and (output/'summary.json').exists():
+            try:
+                summary=json.loads((output/'summary.json').read_text())
+            except (OSError,ValueError):
+                pass  # Unreadable partial accounting never becomes a completed phase.
         budget = permit.summary()
         phase_result = {
             "phase": approval["phase"], "run_id": approval["run_id"],
             "population": binding["population"],
-            "conversation_ids": [c["original_id"] for c in manifest["conversations"]],
+            "conversation_ids": binding.get('conversation_ids',[c["original_id"] for c in manifest["conversations"]]),
             "binding": binding, "status": summary["status"] if summary and error_type is None else "incomplete",
             "provider_contract_policy": provider_contract_policy,
             "provider_contract_deviation_count": deviations["completions"],
@@ -388,7 +509,7 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             'inherited_provider_contract_deviation_count': len(inherited_deviations),
             'inherited_validation_copy_transformed_item_count': sum(
                 len(e['compatibility_deviation']['transformations']) for e in inherited_deviations),
-            "expected_questions": manifest["totals"]["questions"],
+            "expected_questions": binding.get('expected_questions',manifest["totals"]["questions"]),
             "completed_questions": summary["completed_questions"] if summary else 0,
             "error_type": error_type, "budget": budget,
             "study_budget": ledger_summary(ledger_path),
@@ -396,15 +517,18 @@ def execute_phase(approval, receipt, asset_root, *, root=ROOT, compatibility=Non
             "usable_for_next_phase": bool(summary and not budget["halted"]
                 and budget["unknown_attempts"] == 0
                 and error_type is None and summary['status'] in ('complete', 'degraded')
-                and budget["logical_calls"] == binding.get('checkpoint', {}).get(
-                    'remaining_logical_calls', PHASES[approval["phase"]]["calls"])
+                and budget["logical_calls"] == binding.get('checkpoint',{}).get('remaining_logical_calls',
+                    binding.get('study_job',{}).get('expected_logical_calls',PHASES[approval["phase"]]["calls"]))
                 and set(schema_outcomes) == {"metadata", "shared_decision", "query_keywords", "answer"}),
             "returned_models": sorted(versions), "system_fingerprints": sorted(fingerprints),
             "completed_at": datetime.now(timezone.utc).isoformat(),
             "artifact_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                                 for p in sorted(output.iterdir()) if p.is_file()},
         }
-        _save(output / "phase.json", phase_result)
+        if approval['phase']=='baseline':
+            _finalize_study_phase(output,phase_result,permit,summary,getattr(locals().get('scorer'),'observer',None))
+        else:
+            _save(output / "phase.json", phase_result)
     return phase_result
 
 

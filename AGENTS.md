@@ -36,6 +36,11 @@ fixtures/oracles and original artifacts; inject the candidate full-mode implemen
 checks. T7's four action gates now pass the full-mode equivalence gate and offline reviews (PR #16).
 Before changing action gates or preparing T8, read
 `docs/reproducibility/t7-action-gates.md`. T8, paid requests and further collection require separate approval.
+The user has now separately authorized T8 implementation and paid main execution within the existing
+USD50 ceiling/USD8 contingency. Before T8 work or paid transmission, read the latest decision and
+`docs/reproducibility/t8-execution.md`; require reviewed, phase-bound immutable approvals. Finish the
+two missing full-mode fallback baselines before ablations. Recovery/repetitions still need separate
+approval; the T8 skill ends with a PR ready for review, without inferred merge authorization.
 Preserve the frozen author files; add support code separately. A consumed phase approval cannot be reused.
 Before any paid phase, read `docs/reproducibility/baseline-readiness.md` for the verified fixture,
 historical plans and consumed approvals. Additional paid execution requires a new decision.
