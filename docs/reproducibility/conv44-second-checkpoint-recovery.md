@@ -88,3 +88,20 @@ Degraded status. Generate both author scoring views from identical saved predict
 adversarial correctness separately. Count all three phases once in cost tables/forecasts. Optional
 Langfuse reporting must not block authoritative local evidence. Stop before every ablation or other
 paid phase; BLK-013 remains Open because successful continuation cannot prove output-cap adequacy.
+
+## Verified engineering checkpoint
+
+Feature `f49da9a`, provenance correction `acefbfa` (BLK-019) and terminal admission correction
+`59ab9ae` (BLK-020), integrated at `7211a4a`, pass189 focused tests/60 subtests. Both independent
+Standards/Spec reviews are clear and each passes62 focused tests. Exact real-parent restore/export,
+six-file migration metadata and all408 inherited records verify without encoding or model calls.
+The610-row embedding SHA256 is `6f0dd69aa882e4db824ea277679607ef7c67bee55274401621ec6560b87c8b04`.
+All51 protected files and the real USD8.407857 ledger remain unchanged; the new phase is unclaimed.
+
+Current-source runtime preflight passes with sockets disabled, source
+`0341a2a579842725c9ac6a18a110e2816a2896c32e07cf883fd36e2ef1ab681f`.
+`artifacts/t8/offline/conv44-second-checkpoint-verification.json` verifies restore and unapproved
+execution rejection before client/claim. The root admission-fault replay now halts with zero mock
+transmissions, preserving its separate failing proof. Full-suite completion, final PR/merge and the
+single immutable approved copy remain pending; the prepared plan is still unapproved. No paid phase
+has executed at this checkpoint, and BLK-013 remains Open.
