@@ -483,6 +483,18 @@ class PhasePermit:
                               (self.approval_id,stage)).lastrowid
 
     def reserve_attempt(self, logical_id, request):
+        try:
+            return self._reserve_attempt(logical_id, request)
+        except Exception as error:
+            # A local admission fault is not a retryable provider failure. The
+            # commit may already have succeeded: never delete uncertain rows.
+            try:
+                self.stop('attempt_admission_failed')
+            except BudgetStop:
+                pass  # stop() latches even when SQLite cannot persist the halt.
+            raise BudgetStop('Attempt admission failed; no transmission permitted') from error
+
+    def _reserve_attempt(self, logical_id, request):
         with self._transaction() as db:
             phase = self._phase(db)
             logical = db.execute('SELECT stage FROM logical_calls WHERE id=? AND approval_id=?',
