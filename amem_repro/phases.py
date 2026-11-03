@@ -288,6 +288,9 @@ def plan_phase(phase, receipt, asset_root, *, run_id=None, root=ROOT, compatibil
         from .budget import STUDY_JOB_CAPS, MICROS
         from decimal import Decimal
         cap = str(Decimal(STUDY_JOB_CAPS[(binding['condition'],binding['study_job']['conversation_id'])])/MICROS)
+        if 'checkpoint' in binding:
+            from .checkpoint import study_checkpoint_profile
+            cap=study_checkpoint_profile(binding['study_job']['conversation_id'])['phase_cap_usd']
         selected = next(c for c in manifest['conversations'] if c['original_id']==binding['study_job']['conversation_id'])
         population = {'conversations':1,'turns':len(selected['turn_ids'])-binding.get('checkpoint',{}).get('completed_turns',0),'questions':len(selected['questions'])}
     return {

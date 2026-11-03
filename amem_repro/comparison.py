@@ -169,7 +169,7 @@ def load_saved_run(phase_path, manifest, *, root=ROOT, archive_root=None):
     if checkpoint:
         parent_id = checkpoint.get('parent_run_id')
         if (not isinstance(parent_id,str) or Path(parent_id).name != parent_id or parent_id==phase['run_id']
-                or checkpoint.get('policy') not in ('blk014-checkpoint-v1','blk013-conv49-checkpoint-v1') or condition != 'full'):
+                or checkpoint.get('policy') not in ('blk014-checkpoint-v1','blk013-conv49-checkpoint-v1','blk013-conv44-checkpoint-v1') or condition != 'full'):
             raise ValueError('Checkpoint parent identity/policy mismatch')
         parent_path = archive_root/'artifacts/runs'/parent_id/'phase.json'
         parent, _ = _archive(parent_path, archive_root)
@@ -177,14 +177,18 @@ def load_saved_run(phase_path, manifest, *, root=ROOT, archive_root=None):
                 or parent['status'] != 'incomplete' or 'checkpoint' in parent['binding']
                 or parent['conversation_ids'] != selected):
             raise ValueError('Checkpoint parent receipt mismatch')
-        if checkpoint['policy']=='blk013-conv49-checkpoint-v1':
-            from .checkpoint import STUDY_PARENT_SHA256
-            if (fingerprint(parent)!=STUDY_PARENT_SHA256 or selected!=['conv-49']
-                    or checkpoint.get('completed_turns')!=413 or checkpoint.get('remaining_logical_calls')!=584
+        if checkpoint['policy'] in ('blk013-conv49-checkpoint-v1','blk013-conv44-checkpoint-v1'):
+            from .checkpoint import study_checkpoint_profile
+            if len(selected)!=1:
+                raise ValueError('Checkpoint must contain exactly one frozen conversation')
+            profile=study_checkpoint_profile(selected[0])
+            if (fingerprint(parent)!=profile['parent_phase_sha256'] or checkpoint['policy']!=profile['policy']
+                    or checkpoint.get('completed_turns')!=profile['completed_turns']
+                    or checkpoint.get('remaining_logical_calls')!=profile['remaining_logical_calls']
                     or checkpoint.get('parent_snapshot_sha256')!=parent['artifact_sha256'].get('partial-memory.json')
                     or checkpoint.get('parent_events_sha256')!=parent['artifact_sha256']['events.jsonl']
                     or checkpoint.get('parent_source_sha256')!=parent['binding']['source_sha256']):
-                raise ValueError('Conv-49 checkpoint identity differs from the pinned parent')
+                raise ValueError('Checkpoint identity differs from its pinned parent')
         prior = load_saved_run(parent_path, manifest, root=root, archive_root=archive_root)
         if prior['results'] or prior['condition'] != condition:
             raise ValueError('Checkpoint parent cannot contain regenerated QA')

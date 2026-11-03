@@ -23,7 +23,10 @@ This checklist records preparation, not submission or a completed recording.
 Current status: conv-49/conv-50 completed Degraded and are unchanged. Full conv-44 stopped
 Incomplete at424 notes/zero QA: BLK-013 recurred at the unchanged4,000-token output cap.
 Its single approval is consumed. Cumulative USD7.705436/3,868 requests, zero unknown charges;
-no recovery, restart or ablation is authorized. First-ablation readiness is blocked; no balanced-study
+one checkpoint child is now separately authorized after engineering/review/merge and safeguards,
+under USD3/818 logical/2,454 physical limits. No restart, second recovery or ablation is authorized.
+See the [latest grant](docs/reproducibility/decisions.md#authorization--exact-conv-44-checkpoint-engineering-merge-and-one-child).
+First-ablation readiness is blocked; no balanced-study
 or submission completion is claimed. See [the verified failure](docs/reproducibility/t8-conv44-incomplete-20261103.md).
 
 ## Presentation outline — target14 minutes30 seconds

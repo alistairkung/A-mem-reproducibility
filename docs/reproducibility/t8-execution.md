@@ -2,10 +2,15 @@
 
 Status: conv-49/conv-50 completed Degraded and remain unchanged. The single authorized Full conv-44
 phase stopped Incomplete at424 notes/zero QA after BLK-013 output exhaustion at `D18:21`.
-Its grant is consumed; no recovery, restart, ablation or other paid phase is authorized.
+Its fresh-run grant is consumed; only the bounded checkpoint child below is subsequently authorized.
+No restart, ablation or other paid phase is authorized.
 Cumulative USD7.705436/3,868 settled attempts, zero unknown charges. See the
 [verified conv-44 failure and forecast](t8-conv44-incomplete-20261103.md) and
 [consumed authority](decisions.md#authorization--pr18-merge-and-one-full-conv-44-phase).
+The user subsequently authorized exact-state conv-44 checkpoint engineering/review/merge and one
+USD3/818-logical/2,454-attempt child after safeguards; no child exists at this engineering checkpoint.
+See the [latest bounded grant](decisions.md#authorization--exact-conv-44-checkpoint-engineering-merge-and-one-child).
+No ablation, second recovery or scientific-setting change is authorized.
 Authority: [latest decision](decisions.md#authorization--t8-implementation-and-paid-main-execution),
 [issue #8](https://github.com/alistairkung/A-mem-reproducibility/issues/8).
 Integration branch: `codex/t8-study-execution`, based on T7 merge `577a1e3`.

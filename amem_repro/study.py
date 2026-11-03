@@ -194,8 +194,8 @@ def baseline_inputs(receipt, asset_root, root, condition, conversation_id, provi
     root=Path(root)
     if (condition,conversation_id) not in STUDY_JOB_CAPS or provider_policy!=INDEX_STRING_POLICY:
         raise ValueError('Only the eleven fresh approved fallback cells and D3a are enabled')
-    if checkpoint is not None and (condition,conversation_id)!=('full','conv-49'):
-        raise ValueError('Only the pinned full conv-49 checkpoint is enabled')
+    if checkpoint is not None and (condition!='full' or conversation_id not in ('conv-49','conv-44')):
+        raise ValueError('Only the pinned full conv-49/conv-44 checkpoints are enabled')
     sources=_verified_receipt(receipt,asset_root,root)
     config=load_config(root/'config/study.json')
     manifest=expand_manifest(root/'data/locomo10.json',_read(root/'manifests/fallback.json'))
@@ -248,6 +248,8 @@ def baseline_inputs(receipt, asset_root, root, condition, conversation_id, provi
     if checkpoint is not None:
         from .checkpoint import verify_study_checkpoint
         recovered=verify_study_checkpoint(checkpoint,root,manifest,config,sources,receipt)
+        if recovered['phase']['conversation_ids']!=[conversation_id]:
+            raise ValueError('Checkpoint conversation differs from the selected whole conversation')
         if (recovered['phase']['returned_models']!=binding['expected_returned_models']
                 or recovered['phase']['system_fingerprints']!=binding['expected_system_fingerprints']):
             raise ValueError('Checkpoint provider identity differs')
@@ -263,7 +265,7 @@ def main():
         p=sub.add_parser(name)
         p.add_argument('--receipt',required=True)
         p.add_argument('--assets',required=True)
-        p.add_argument('--checkpoint',help='Exact immutable incomplete conv-49 parent phase.json')
+        p.add_argument('--checkpoint',help='Exact immutable incomplete conv-49 or conv-44 parent phase.json')
         if name=='plan':
             p.add_argument('--condition',required=True,choices=('full','neither','linking_only','evolution_only'))
             p.add_argument('--conversation',required=True,choices=('conv-49','conv-50','conv-44'))
