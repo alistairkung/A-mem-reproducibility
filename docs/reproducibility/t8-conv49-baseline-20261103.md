@@ -1,5 +1,10 @@
 # T8 conv-49 full-mode baseline — verified degraded lineage
 
+This outcome snapshot predates the user's subsequent one-phase Full conv-44 grant. The
+[latest decision](decisions.md#authorization--pr18-merge-and-one-full-conv-44-phase) permits that
+USD5 phase after fresh gates; the proposal below remains an unapproved artifact until a fresh
+immutable approval is materialized. No ablation or recovery is authorized.
+
 Verified 3 November 2026, Hong Kong time. PR #17 merged normally as
 `78ac46b57fd3b89bbf75a315565c945fbb9713be`; local main was synchronized before execution.
 Author revision remains `f9a173d`. Source fingerprint:

@@ -1,7 +1,9 @@
 # T8 execution and comparative evidence
 
-Status: conv-49 checkpoint lineage completed Degraded on3 November2026; its single approval is
-consumed. No further paid cell is authorized. [Verified baseline and next proposal](t8-conv49-baseline-20261103.md).
+Status: conv-49 completed Degraded; its approval is consumed. The user subsequently authorized
+one Full conv-44 phase (USD5/1,666 logical/4,998 attempts) after pre-execution gates. See the
+[current authority](decisions.md#authorization--pr18-merge-and-one-full-conv-44-phase).
+No ablation, recovery or other paid phase is authorized. [Verified conv-49 baseline](t8-conv49-baseline-20261103.md).
 Authority: [latest decision](decisions.md#authorization--t8-implementation-and-paid-main-execution),
 [issue #8](https://github.com/alistairkung/A-mem-reproducibility/issues/8).
 Integration branch: `codex/t8-study-execution`, based on T7 merge `577a1e3`.

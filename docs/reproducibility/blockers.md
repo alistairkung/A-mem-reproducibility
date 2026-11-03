@@ -28,7 +28,9 @@ This tracker records evidence and investigation history; it grants no execution 
 **Current status (3 November 2026):** the separately authorized child completed conv-49:509 turns,
 196 ordered QA, counter507, Degraded. Parent evidence and original conv-50 remain unchanged.
 The child spent USD1.850853/584 requests; cumulative study USD6.289898/3,020 settled attempts,
-zero unknown charges. Its single approval is consumed; no further paid cell/recovery is authorized.
+zero unknown charges. Its single approval is consumed. The user subsequently authorized one fresh
+Full conv-44 phase after gates (USD5/1,666 logical/4,998 attempts); no ablation/recovery is authorized.
+See the [current authority](decisions.md#authorization--pr18-merge-and-one-full-conv-44-phase).
 BLK-013 stays Open: the maximum new decision was3,982/4,000 tokens, not proof of a safe bound.
 The next unapproved full-conv44 proposal and paired-comparison dependency are in the
 [baseline report](t8-conv49-baseline-20261103.md).

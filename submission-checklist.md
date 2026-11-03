@@ -21,7 +21,8 @@ This checklist records preparation, not submission or a completed recording.
 - [ ] Upload report/repository link/presentation according to the course submission instructions.
 
 Current status: full conv-49 completed a verified Degraded checkpoint lineage,509 notes/196 QA.
-Its single paid approval is consumed; no further paid cell is authorized. BLK-013 stays Open because
+Its paid approval is consumed. One Full conv-44 phase is now separately authorized after gates;
+no ablation/recovery is authorized. BLK-013 stays Open because
 the4,000-token output bound can recur. Full conv-44 and ablations remain pending; no balanced-study
 or submission completion is claimed. See [the verified outcome](docs/reproducibility/t8-conv49-baseline-20261103.md).
 
