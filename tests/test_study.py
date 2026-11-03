@@ -347,7 +347,15 @@ def saved_history(tmp_path):
     original=main/'artifacts/checkpoint-child-ledger-after.sqlite'
     if not original.exists(): pytest.skip('Preserved private T5/T7 evidence is not present in this clone')
     (tmp_path/'artifacts').mkdir()
-    for name in ('runs','replays','cache'):
+    # This fixture deliberately pairs the frozen T5 ledger with its historical
+    # run inventory. Later paid main cells belong to a later ledger snapshot.
+    historical_runs=tmp_path/'historical-runs';historical_runs.mkdir()
+    for directory in (main/'artifacts/runs').iterdir():
+        authority=directory/'approval.json'
+        if authority.exists() and json.loads(authority.read_text()).get('phase')!='baseline':
+            shutil.copytree(directory,historical_runs/directory.name)
+    (tmp_path/'artifacts/runs').symlink_to(historical_runs,target_is_directory=True)
+    for name in ('replays','cache'):
         (tmp_path/'artifacts'/name).symlink_to(main/'artifacts'/name,target_is_directory=True)
     shutil.copy2(original,tmp_path/'artifacts/study-budget.sqlite')
     for name in ('data','config','manifests'):
