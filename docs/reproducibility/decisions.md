@@ -980,3 +980,34 @@ protected reserve remain; unknown454 retainsUSD0.324404 and existing exposureUSD
 reset. Require all offline/cloud/review/merge/preflight and conservative affordability gates before
 transmission. No further actual recovery, later cell, additional budget or contingency use is granted.
 See [verified design and execution boundary](run2-author-fallback-recovery.md).
+
+
+### Outcome — exact566-note p2 consumed; local collection complete, Experiment release blocked
+
+PR#31 merged as `66d3ffa6af82560d50658a9077439becc01681ba` after784 tests/92 subtests,
+exact original/full-candidate archive replays, source-bound real-runner cloud GateB, network-disabled
+preflight and clear independent Standards/Spec reviews. `run2-original-evolution-fallback-v1`
+keeps strict rejection and the unchanged author catch, then verifies state/settlement/tracing before
+further transmission; provider malformed-output reliability is not repaired.
+
+Fresh approval `94021561-b115-4e79-83db-de93e3464c4f` is consumed. Sole p2 restores566 notes/counter564,
+resumesD24:13 and collects109 new turns plus158 QA: final675 notes/counter673. All534 logical/physical
+requests settle once, zero retries/new malformed outputs/new unknown;80 new D3a deviations retain
+original argument strings. Inherited failures/unknown charges and all historical artifacts persist.
+P2USD1.796479 is withinUSD2.629990. Total Run2USD3.842085 known +USD0.324404 retained unknown
+=USD4.166489; originalUSD5 cell remainderUSD0.833511. Run1 remains separateUSD8.530133.
+
+All1,771 runtime observations/623 traces verify, but the sole saved-result Experiment export drops
+two serialized155.6MB batches above64MiB. Both scoring views/readbacks fail visibility; partial
+remote writes are unknown. The sealed phase is Incomplete (`run2_experiments_not_verified`),
+not completedDegraded; do not change its receipt/halt/claim or silently release another cell.
+BLK-014 is Mitigated at the tested fallback boundary; BLK-024 is Open for reporting-only recovery.
+Offline SDK batching16 spans preserves all316 result roots/4,494 score callbacks and metadata,
+with max9.06MB/zero oversized batches; it is a proposal, not implemented/live-verified recovery.
+
+Measured Full-stage cost sensitivity projectsUSD48.235144 provider total (remaining11USD44.068655),
+exceedingUSD42 execution allowance byUSD6.235144 before service fees. BLK-009 is reopened Open;
+no population/design/settings/budget decision is inferred from quality. USD8 contingency is protected.
+No further paid phase, additional import or frontier release is authorized. A separate explicit
+reporting-only recovery/partial-write/acceptance decision and later cost-only budget decision are
+needed. Read [complete evidence and local scores](run2-conv44-collected-export-blocked-20261103.md).
