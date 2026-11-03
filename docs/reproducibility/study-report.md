@@ -131,6 +131,12 @@ this grants no recovery authority and does not credit the incomplete build as a 
 After the separately approved child, cumulative cost is USD6.289898/3,020 settled attempts, zero
 unknown charges. Combined conv-49 cost is USD3.264099 once. The remaining balanced point forecast
 is now USD45.978600 including incurred spending and USD8 reserve; further paid cells are unapproved.
+The subsequently authorized full conv-44 phase stopped Incomplete at424 notes/zero QA, adding
+USD1.415538/848 calls after another4,000-token shared-decision truncation (BLK-013).
+Current cumulative cost is USD7.705436/3,868 settled requests, zero unknown charges. Completed
+conv-49/conv-50 evidence is unchanged; conv-44 F1/BLEU-1 are unavailable. The whole-fresh-cell
+scenario now totals USD47.394138 including reserve, but grants no restart/recovery authority.
+First-ablation readiness remains blocked; [verified failure](t8-conv44-incomplete-20261103.md).
 The original token-based forecast puts all ten conversations/four conditions at USD127.391486 and
 the frozen fallback at USD42.762234 including incurred spending and contingency. Its2× cost sensitivity
 exceeds USD50: the estimate is not a spending guarantee. T8 will reconcile actual stage costs and

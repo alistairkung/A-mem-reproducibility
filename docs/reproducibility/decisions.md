@@ -545,3 +545,28 @@ provider, provenance or financial failure, preserve partial evidence/charges, in
 stop before any paid recovery. No ablation, repeat, restart, second recovery or other paid phase is
 authorized. Stop after all three full-mode baselines verify, or a material blocker prevents continuation;
 report conv-44 quality/status/cost, cumulative budget/forecast and readiness for the first ablation.
+
+## Outcome — Full conv-44 stopped; BLK-013 remains Open
+
+PR#18 merged as `f78215e3a6e127d19001df73011b27c273b1f65d` after clear reviews/checks;
+production fingerprint remains `0b2287b19626da56d7bd567c6073ac15000a4f73c98e9b3510ca18d5ba6faaa9`.
+Fresh preflight/provenance/cache/spending gates passed. Immutable approval
+`295e4e88-5bd8-479f-951a-fbb4d4ef56e6` funded only `t8-full-conv44-r0-20261103` under USD5,
+1,666 logical/4,998 physical ceilings. That single approval is consumed.
+
+The424th shared decision (`D18:21`) exhausted unchanged D9a4,000 output tokens, HTTP200/`length`.
+The original failure fallback,424 notes/counter422 and exact stale index are preserved. Zero of158
+questions completed; F1/BLEU-1/c5 correctness are unavailable. All848 actual requests settled
+USD1.415538 with zero retries/unknown charges. Cumulative study cost is USD7.705436/3,868 attempts;
+USD34.294564 remains usable while preserving USD8. Prior baselines, historical ledger rows and raw
+response evidence remain unchanged. Offline exact-request MockTransport replay reproduces rejection;
+the subsequent metadata transmission and the Neither-conv49 planner are blocked.
+
+The whole-fresh-cell cost-only scenario totals USD47.394138 including incurred costs and USD8 reserve;
+it is neither an upper bound nor authority to restart. A non-executable exact-state checkpoint suffix
+would require251 turns/158 QA,818 logical calls/2,454 maximum attempts; its conditional estimate is
+USD1.936945 (balanced total USD46.075868). Conv-44 checkpoint support and paid continuation require
+separate decisions/review. No output repair, cap/prompt/schema change, recovery or ablation was
+implemented or executed. BLK-013 remains Open; T5/T8 and first-ablation readiness remain blocked.
+See [verified outcome and evidence](t8-conv44-incomplete-20261103.md). Stop at the authorized failure
+boundary; unused budget is not permission for another phase.

@@ -1,9 +1,11 @@
 # T8 execution and comparative evidence
 
-Status: conv-49 completed Degraded; its approval is consumed. The user subsequently authorized
-one Full conv-44 phase (USD5/1,666 logical/4,998 attempts) after pre-execution gates. See the
-[current authority](decisions.md#authorization--pr18-merge-and-one-full-conv-44-phase).
-No ablation, recovery or other paid phase is authorized. [Verified conv-49 baseline](t8-conv49-baseline-20261103.md).
+Status: conv-49/conv-50 completed Degraded and remain unchanged. The single authorized Full conv-44
+phase stopped Incomplete at424 notes/zero QA after BLK-013 output exhaustion at `D18:21`.
+Its grant is consumed; no recovery, restart, ablation or other paid phase is authorized.
+Cumulative USD7.705436/3,868 settled attempts, zero unknown charges. See the
+[verified conv-44 failure and forecast](t8-conv44-incomplete-20261103.md) and
+[consumed authority](decisions.md#authorization--pr18-merge-and-one-full-conv-44-phase).
 Authority: [latest decision](decisions.md#authorization--t8-implementation-and-paid-main-execution),
 [issue #8](https://github.com/alistairkung/A-mem-reproducibility/issues/8).
 Integration branch: `codex/t8-study-execution`, based on T7 merge `577a1e3`.
