@@ -4,12 +4,7 @@ Last reviewed: 4 November 2026. Scope: the FTEC5660 controlled reproduction defi
 [protocol](experimental-protocol.md), [decisions](decisions.md) and [tickets](implementation-tickets.md).
 This tracker records evidence and investigation history; it grants no execution or protocol-change approval.
 
-**Current GPT-4o-mini state.** BLK-025 is mitigated for all four native contracts
-on the dated OpenAI route. The user accepted the three old denied attempts at
-their full permanent upper bound of US$0.058950. Five generations have settled
-individually, with exactly one upstream OpenAI response per generation. A delayed
-query readback succeeded before the remaining probes. Conservative smoke exposure
-is US$0.064702. This first release covers Full / conv-44. The three-cell grant requires verified completion and affordability before conv-49 and conv-50. [Release evidence](gpt4omini-conv44-release.md)
+**Current GPT-4o-mini state.** All three Full baselines are accepted. BLK-025 remains mitigated on the dated OpenAI route, with three historical HTTP 403 attempts permanently reserved at US$0.058950. BLK-024 bounded reporting verified six Experiments and 558 original QA associations. No baseline provider failures or new unknown charges occurred. [Three-cell outcomes and debug diary](gpt4omini-three-full-results.md)
 
 **Current Run2 state:** Full conv-44 is fully verified as a **Degraded completed lineage** via a
 separate reporting acceptance supplement. PR#33 merged `513b44e`; one fresh16-span import and
@@ -1020,3 +1015,7 @@ The replay directory guard now resolves protected directory roots before compari
 paths. Both the unchanged test and the fixed archive replay pass in the isolated
 worktree. Earlier failed suites, replay oracles, author code and campaign receipts
 are preserved. [Release record](gpt4omini-conv44-release.md)
+
+### BLK-024 and BLK-025 — three Full acceptances, 4 November 2026
+
+Native structured output, provider identity and single upstream routing were verified for all 4,620 baseline requests. All six bounded scoring Experiments passed readback. The conv-44 readback needed an additional GET for score visibility. Its inherited compatibility reservations remain open at the accepted upper bound. Earlier experiments and blocker entries retain their original status and evidence. [Results and debugging record](gpt4omini-three-full-results.md)

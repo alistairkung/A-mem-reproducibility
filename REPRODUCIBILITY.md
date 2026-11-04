@@ -5,7 +5,10 @@ The approved study is defined in [the frozen protocol](docs/reproducibility/expe
 This foundation adds isolated support code around the author release `f9a173d`. The original Python,
 shell, dataset, requirements and README files remain unchanged.
 
-The current, separately accounted campaign is [Run2](docs/reproducibility/run2-protocol.md),
+The three GPT-4o-mini Full baselines are complete across 1,752 turns and 558 questions.
+[Verified results, six Experiments and campaign accounting](docs/reproducibility/gpt4omini-three-full-results.md)
+
+The earlier exploratory campaign is [Run2](docs/reproducibility/run2-protocol.md),
 with a [verified output policy](docs/reproducibility/run2-output-limit-investigation.md) and
 [actual-runner Langfuse evidence](docs/reproducibility/run2-observability-verification.md).
 Its mandatory cloud-verification and recovery gates supplement the foundation below. Run1 results,
