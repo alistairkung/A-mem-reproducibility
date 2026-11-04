@@ -1,6 +1,7 @@
 """Copied actual ancestry; every generation is an offline MockTransport response."""
 import copy
 import json
+import os
 import shutil
 import sqlite3
 from pathlib import Path
@@ -20,7 +21,8 @@ ROOT=Path(__file__).resolve().parents[1]
 
 @pytest.fixture
 def sequential(short_runner,monkeypatch):
-    f=short_runner;root=f['root'];origin=ROOT/'artifacts/run2'
+    f=short_runner;root=f['root']
+    origin=Path(os.environ.get('AMEM_RUN2_SEQUENTIAL_EVIDENCE_ROOT',ROOT))/'artifacts/run2'
     if not (origin/'runs/run2-full-conv-44-r0-p1/phase.json').exists():
         pytest.skip('Optional immutable p0/p1 incident archive')
     target=root/'artifacts/run2';target.mkdir(parents=True)

@@ -1011,3 +1011,17 @@ no population/design/settings/budget decision is inferred from quality. USD8 con
 No further paid phase, additional import or frontier release is authorized. A separate explicit
 reporting-only recovery/partial-write/acceptance decision and later cost-only budget decision are
 needed. Read [complete evidence and local scores](run2-conv44-collected-export-blocked-20261103.md).
+
+### Authorization — BLK-024 reporting-only recovery and cost reforecast
+
+On4 November2026 the user authorized the smallest bounded Experiment exporter fix, offline tests,
+independent Standards/Spec reviews, implementation PR/normal merge, one reporting-only import and
+actual readback, followed by an outcome-documentation PR/merge. No DeepSeek request, regenerated
+prediction/scoring, scientific change, additional cell, contingency or Langfuse overage is authorized.
+The fresh import is `run2-full-conv-44-reporting-recovery-20261104-v1`; consumed original Experiment
+IDs, all phase claims/receipts/halt, authoritative results/checkpoints/caches/source and ledgers remain
+immutable. Preserve and explicitly isolate old cloud writes; stop on unresolved ambiguity, provenance
+or new service charges. A separate verified supplement may classify the completed lineage Degraded;
+it cannot rewrite the original Incomplete receipt or release a paid frontier. Reforecast all nine
+ablations plus the two missing Full baselines, with scope alternatives requiring a new user decision.
+See [recovery specification and evidence](run2-reporting-recovery.md).
