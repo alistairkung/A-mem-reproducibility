@@ -168,7 +168,8 @@ class CampaignLedger:
                 or attempt[9] is not None or attempt[10] is not None
                 or halts[0][0] != previous[0]
                 or not isinstance(grant.get('request_sha256'),str)
-                or len(grant['request_sha256']) != 64):
+                or len(grant['request_sha256']) != 64
+                or grant['request_sha256'] != attempt[3]):
             raise BudgetStop('Retained denial lineage changed')
 
     def claim(self, approval):

@@ -256,7 +256,7 @@ def test_explicit_updated_key_probe_retains_denied_history_and_cannot_release_ba
     with other.transaction() as db:assert other.access_snapshot(db,phase)==before
 
 
-@pytest.mark.parametrize('change',['snapshot','seal','kind','calls','request','new-halt'])
+@pytest.mark.parametrize('change',['snapshot','seal','kind','calls','grant-and-request','request','new-halt'])
 def test_access_retest_rejects_changed_scope_or_history_before_second_post(tmp_path,change):
     c,l,requests,events,original=setup(tmp_path,handler=lambda _:httpx.Response(403,json={'error':{'code':403}}))
     with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
@@ -265,6 +265,7 @@ def test_access_retest_rejects_changed_scope_or_history_before_second_post(tmp_p
     if change=='seal':approval['parent_seal']='changed'
     if change=='kind':approval['kind']='baseline'
     if change=='calls':approval['limits']['max_physical_calls']=2
+    if change=='grant-and-request':approval['access_retest']['request_sha256']='b'*64
     reopened=CampaignLedger(l.path,campaign_root=tmp_path,binding=l.binding)
     if change not in ('request','new-halt'):
         with pytest.raises(BudgetStop):reopened.claim(approval)
