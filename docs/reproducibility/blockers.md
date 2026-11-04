@@ -1037,7 +1037,7 @@ schemas, scoring, native model policy or author file changes are proposed.
 Pre-change 199 action/replay regressions and 62 native financial/control checks
 pass. Fresh OpenRouter account/key reads match the final Full reconciliation exactly;
 campaign exposure remains US$1.147803. The existing Core allocation conservatively
-counts 56,864 units. Three 14,000-unit phase allocations and a 1,000-unit verification
+counts 56,864 units. Three 13,500-unit phase allocations and a 2,500-unit verification
 allowance fit 100,000 included units, without overage permission. These are prospective
 controls, not completed ablation results. Full-size executor/cloud/offline checks
 and independent reviews remain mandatory before paid execution. Preserve all prior

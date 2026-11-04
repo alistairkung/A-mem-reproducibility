@@ -150,7 +150,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         'reviewed_commit':reviewed_commit,'merge_commit':merge_commit,
         'limits':{'cell_microusd':5000000,'usable_campaign_microusd':42000000,
                   'protected_microusd':8000000,'max_baseline_calls':2*sum(FULL_CELLS[CELL]),
-                  'max_new_langfuse_units':14000 if CONDITION!='full' else 30000},
+                  'max_new_langfuse_units':13500 if CONDITION!='full' else 30000},
         'gate_path':str(Path(gate_path).relative_to(ROOT)),
         'forecast':read(FIRST_VERIFY/'forecast.json') if KEY=='conv-44' else frontier['forecast']}
     if CONDITION!='full':release['ablation_policy']=ABLATION_POLICY
@@ -319,7 +319,7 @@ if __name__=='__main__':
     parser.add_argument('--condition',choices=('full',*ABLATION_CONDITIONS),default='full')
     args=parser.parse_args()
     CELL=args.cell;CONDITION=args.condition;KEY=cell_key(CELL,CONDITION);STORE=cell_store(DIRECTORY,KEY)
-    VERIFICATION=(DIRECTORY/'verification/conv49-ablation' if CONDITION!='full' else
+    VERIFICATION=(DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
                   FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release')
     try:
         if args.execute:execute()

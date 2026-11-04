@@ -57,7 +57,7 @@ def seal(campaign,cell,org_units,*,ablation=False):
     future=sum(costs[cell_parts(c)[0]] for c in next_cells)+(0 if ablation else 3*sum(costs.values()))
     spent=Decimal(finance['accounting']['conservative_microusd'])/1000000
     # Plan up to 16K units per remaining cell, with marginal Core pricing.
-    service_units=org_units+(14000*len(next_cells)+1000 if ablation else 16000*(len(next_cells)+9))
+    service_units=org_units+(13500*len(next_cells)+2500 if ablation else 16000*(len(next_cells)+9))
     service_fee=max(Decimal(0),Decimal(service_units-100000)*8/100000)
     affordable=(spent+2*future+service_fee<=42 and all(2*costs[cell_parts(c)[0]]<=5 for c in next_cells)
                 and (service_units<=100000 if ablation else (not next_cells or org_units+32500<=100000)))
