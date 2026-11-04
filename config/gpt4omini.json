@@ -1,0 +1,75 @@
+{
+  "budget": {
+    "ceiling_usd": 50,
+    "cell_allocation_usd": 5,
+    "compatibility_allocation_usd": 0.25,
+    "contingency_usd": 8
+  },
+  "build_repetitions": 1,
+  "conditions": {
+    "evolution_only": {
+      "strengthen": false,
+      "update_neighbor": true
+    },
+    "full": {
+      "strengthen": true,
+      "update_neighbor": true
+    },
+    "linking_only": {
+      "strengthen": true,
+      "update_neighbor": false
+    },
+    "neither": {
+      "strengthen": false,
+      "update_neighbor": false
+    }
+  },
+  "generation": {
+    "concurrency": 1,
+    "max_tokens": 1000,
+    "output_token_policy": "gpt4omini-shared-decision-4096-v1",
+    "shared_decision_max_tokens": 4096,
+    "stream": false,
+    "temperature": 0.7,
+    "temperature_c5": 0.5
+  },
+  "memory": {
+    "counter_policy": "positive-decision",
+    "evo_threshold": 100,
+    "initial_metadata": true
+  },
+  "model": {
+    "base_url": "https://openrouter.ai/api/v1",
+    "documented_version": "gpt-4o-mini-2024-07-18",
+    "id": "openai/gpt-4o-mini-2024-07-18",
+    "immutable_weights_pin": false,
+    "provider": {
+      "allow_fallbacks": false,
+      "only": [
+        "openai"
+      ],
+      "order": [
+        "openai"
+      ],
+      "require_parameters": true
+    },
+    "route": "/chat/completions"
+  },
+  "option_order_seed": 42,
+  "protocol_id": "amem-gpt4omini-openrouter-20261104-v1",
+  "retrieval": {
+    "answer_k": 10,
+    "construction_k": 5,
+    "refresh_index": false
+  },
+  "scoring_policies": [
+    "author-corrected-v1",
+    "author-legacy-c5-v1"
+  ],
+  "selection_seed": 42,
+  "transport": {
+    "max_retries": 0,
+    "semantic_retries": 0,
+    "timeout_seconds": 120
+  }
+}

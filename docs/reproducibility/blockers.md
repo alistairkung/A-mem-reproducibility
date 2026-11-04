@@ -781,3 +781,27 @@ scope isUSD31.819960 provider point, normal serviceUSD0 forecast; combined growt
 checkpoint stressUSD49.330258 including protectedUSD8. One-conversation four-arm and narrower
 published three-arm alternatives are documented. Per-cellUSD5 still binds. No scope/order/budget or
 paid-phase authorization is inferred. See [analysis](run2-ablation-affordability-20261104.md).
+
+### BLK-017 / BLK-021 — 4 November2026 separate GPT-4o-mini transport review
+
+Before any OpenRouter model transmission, independent Spec/Standards reviews of
+`1ba4757` reproduce two existing control classes using synthetic ledgers only:
+a settled invalid-provider response did not durably forbid a later caller, and a
+symlinked ancestor/regular foreign SQLite destination could receive new tables.
+Correction `4fe1733` adds terminal halts, process-owned exact approval checks,
+read-only existing-ledger ownership validation before DDL, all-ancestor alias
+rejection and per-transaction root/file identity checks. Review fault injection
+verifies no second transmission even when halt persistence fails, no acceptance
+of changed SQL approval/kind, and unchanged foreign-ledger bytes. The focused
+85-test suite passes; independent Standards review passes. Preserve initial and
+final review receipts under `artifacts/gpt4omini/verification/`. These are new
+support-code defects in the same blocker classes, not changes to historical
+Run1/Run2 evidence or their verified control status. Full baseline orchestration
+and final campaign release remain separately subject to all handover gates.
+
+The same review finds a financial anomaly edge: a provider-reported charge above
+its original reservation must be retained in full, then stop. The correction
+records the full known liability, rather than understating exposure as the lower
+reservation; the trace also uses this known campaign amount rather than historical
+DeepSeek rates. Synthetic faults and rejected alternatives remain preserved; no
+live overcharge, financial exception or additional paid authority is asserted.

@@ -1057,3 +1057,32 @@ and narrower published three-arm alternatives are also recorded. No smaller popu
 budget revision, later paid cell, extra recovery or contingency use is authorized here. The outcome
 PR/normal merge is within the existing explicit user grant. See [completion](run2-conv44-reporting-complete-20261104.md)
 and [affordability](run2-ablation-affordability-20261104.md).
+
+### Authorization — independent GPT-4o-mini OpenRouter Full / conv-44 baseline
+
+On4 November2026 the user separately authorized engineering, complete offline tests,
+independent Standards/Spec reviews, focused PRs/normal merges and autonomous paid
+execution of exactly one fresh GPT-4o-mini Full / conv-44 baseline lineage. This is
+a new campaign; all DeepSeek campaigns/results/ledgers/reservations remain unchanged
+exploratory evidence. Keep the three preselected conversations/four conditions, but
+do not execute the other eleven cells. See [campaign specification](gpt4omini-baseline.md).
+
+Use OpenRouter's exact dated `openai/gpt-4o-mini-2024-07-18`, OpenAI-only routing,
+fallbacks disabled/required parameters, original native strict JSON schemas, prompts,
+algorithm, stale index and scoring. Verify authentication/actual route/limits/pricing;
+investigate and freeze stage caps prospectively. The private existing credential must
+never be printed, regenerated or committed. All compatibility/equivalence/checkpoint/
+accounting/real-runner observation/Experiments gates and independent reviews precede
+baseline execution. Preserve every original artifact and failed attempt.
+
+New campaign ceilingUSD50 including protectedUSD8; this cell including compatibility
+and any permitted recovery has a hardUSD5 allocation. A compatibility phase may spend
+at mostUSD0.25. Durable per-transmission reservation/usage accounting and a fresh
+documented cost forecast are mandatory; stop before transmission if unaffordable.
+Bounded exact-state sequential recovery is authorized only for verified supported
+failures within the same original allocation, without repair/semantic retry/repeated
+processed work. Unknown exposure, unsupported transport, scientific inconsistency,
+broken provenance or budget exhaustion stop. Complete observed lineages containing
+provider failures are Degraded. No top-up, later cell or contingency use is granted.
+Use the verified small-batch Langfuse policy and actual readback; merge outcome
+documentation and report metrics/links/spending/remaining-cell forecast afterwards.
