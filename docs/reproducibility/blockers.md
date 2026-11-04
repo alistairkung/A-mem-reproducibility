@@ -871,7 +871,7 @@ stays preserved/ineligible; a new reviewed source-bound plan is required.
 <a id="blk-025"></a>
 ## BLK-025 — OpenRouter prohibits the first dated GPT-4o-mini compatibility request
 
-- **Status:** Open.
+- **Status:** Mitigated for one third-key metadata request; original causes/charges and baseline release remain unresolved.
 - **Observed4 November2026,06:22:08 UTC:** the sole admitted metadata compatibility
   POST to `https://openrouter.ai/api/v1/chat/completions` returns HTTP403:
   “The request is prohibited due to a violation of provider Terms Of Service.”

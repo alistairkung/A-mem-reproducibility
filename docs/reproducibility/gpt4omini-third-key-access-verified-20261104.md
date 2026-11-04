@@ -22,8 +22,8 @@ semantic retry, tools translation, D3a exception or prompt/schema change occurs.
 - Billed native usage:299 input/38 output tokens, zero cached tokens. USD0.15/M
   input plus USD0.60/M output equals **USD0.00006765**, matching response and readback.
 - The API's alternate token estimates351/54 are retained separately; they are not
-  substituted for billed native tokens. Native readback latency592ms and generation
-  time892ms are retained, with original client timing in the local event.
+  substituted for billed native tokens. Original timing fields are retained in the
+  provider readback and local client event.
 
 This mitigates BLK-025 at the single-request access boundary. The reason the earlier
 keys/requests returned403 remains unconfirmed. One success does not establish broad
