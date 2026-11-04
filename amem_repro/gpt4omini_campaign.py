@@ -133,7 +133,7 @@ class FallbackGuard:
             metadata=[e for e in generations if e['stage']=='metadata' and not e.get('error_type')]
             if (len(generations)!=2 or len(errors)!=1 or len(metadata)!=1
                     or errors[0]['budget_logical_id']!=pending['event']['budget_logical_id']
-                    or self.controller.ledger.totals()['unknown_attempts']):
+                    or self.controller.ledger.unaccepted_unknowns(self.controller.ledger.claimed[self.controller.phase])):
                 raise BudgetStop('Fallback does not match exactly one settled original decision')
             self.healthy()
             proof=verify_fallback_state(before,snapshot_memory(agent.memory_system),outcome,
@@ -182,7 +182,7 @@ def checkpoint_from(parent_path, ledger, binding, *, root=ROOT):
     if (not prefix or prefix!=conversation['turn_ids'][:len(prefix)]
             or len(prefix)!=len(state['notes']) or len(prefix)!=parent['notes']
             or len(prefix)>675 or parent['questions']!=0
-            or ledger.totals()['unknown_attempts']):
+            or ledger.unaccepted_unknowns(read(leaf_path.parent/'approval.json'))):
         raise BudgetStop('Checkpoint is not an exact advancing original turn prefix')
     failures=[]
     for line in (leaf_path.parent/'events.jsonl').read_text().splitlines():
@@ -229,7 +229,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                         lambda note:memory.note_document(SimpleNamespace(**note)))
     def boundary():
         observer.assert_healthy()
-        if ledger.totals()['unknown_attempts']:raise BudgetStop('Unknown financial exposure')
+        if ledger.unaccepted_unknowns(approval):raise BudgetStop('Unknown financial exposure')
     agent_factory=make_agent_factory(root,controller_factory=factory,memory_module=memory,
                                      token_counter=token_counter)
     agents=[]
@@ -308,9 +308,17 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         if not error:
             if receipt['notes']!=675 or receipt['questions']!=158:
                 raise BudgetStop('Original turn/question coverage incomplete')
+            if approval.get('retained_access_prefix'):
+                if [o['turn_id'] for o in outcomes]!=conversation['turn_ids']:
+                    raise BudgetStop('Ordered original turn coverage differs')
+                if [r['question_id'] for r in results]!=[q['question_id'] for q in conversation['questions']]:
+                    raise BudgetStop('Ordered benchmark questions differ')
+                with ledger.transaction() as db:
+                    count=db.execute("SELECT COUNT(*) FROM attempts a JOIN phases p ON a.phase=p.id WHERE json_extract(p.approval,'$.kind')='baseline' AND a.state='settled'").fetchone()[0]
+                if count!=1666:raise BudgetStop('Full baseline original request count differs')
             receipt['experiments']=import_results(views,context,client=observer.client,
                                                 traces=original_qa_traces(capture))
-            receipt['status']='degraded' if post_scoring_failures else summary['status']
+            receipt['status']='degraded' if post_scoring_failures or approval.get('retained_access_prefix') else summary['status']
             save_new(output/'final-memory.json',state)
             # Cloud work must not conceal a changed cache/source after initial validation.
             if CacheStore(ledger.root/'cache').load(identity)!=state:
@@ -323,7 +331,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         elif (type(failure) is RecoverableLength and guard.recoverable
                 and (output/'summary.json').exists() and (output/'partial-memory.json').exists()
                 and not any(e.get('kind') in ('partial_artifact','reporting','token_measurement') for e in events)
-                and not ledger.totals()['unknown_attempts']):
+                and not ledger.unaccepted_unknowns(approval)):
             receipt['recoverable_length_failure']=True
     except BaseException as exc:
         receipt['error_type']=type(exc).__name__

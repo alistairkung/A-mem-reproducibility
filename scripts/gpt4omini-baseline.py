@@ -15,6 +15,9 @@ sys.path.insert(0,str(ROOT))
 DIRECTORY=(ROOT/'artifacts/gpt4omini').resolve()
 
 
+VERIFICATION = DIRECTORY/'verification/renewed'
+PREFIX = '3b3bb2e36098b84f5881e65079a23943427ea3276216f731adb0d590a37a32f1'
+
 def read(path):return json.loads(Path(path).read_bytes())
 
 
@@ -31,7 +34,7 @@ def verify_release(release):
     for commit in (release['reviewed_commit'],release['merge_commit']):
         subprocess.run(['git','merge-base','--is-ancestor',commit,'HEAD'],cwd=ROOT,check=True,capture_output=True)
     for axis in ('standards','spec'):
-        review=read(DIRECTORY/f'verification/baseline-{axis}-review.json')
+        review=read(VERIFICATION/f'baseline-{axis}-review.json')
         if review.get('verdict')!='pass' or review.get('reviewed_commit')!=release['reviewed_commit']:
             raise RuntimeError('Baseline independent review is not bound to this release')
     verify_prior()
@@ -55,28 +58,34 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     for name,digest in gate.get('fixture_files',{}).items():
         if hashlib.sha256((ROOT/name).read_bytes()).hexdigest()!=digest:
             raise RuntimeError('Executed native gate fixture changed')
-    compatibility=read(DIRECTORY/'compatibility-v2/receipt.json')
-    if compatibility['status']!='complete' or compatibility['calls']!=6:
-        raise RuntimeError('Six-call native compatibility not complete')
+    compatibility=read(DIRECTORY/'compatibility-release-tail/receipt.json')
+    metadata=read(DIRECTORY/'compatibility-v5/final-access-acceptance.json')
+    if (compatibility['status']!='complete' or compatibility['calls']!=3
+            or compatibility['stages']!=['answer','shared_decision','shared_decision']
+            or metadata['native_contracts_verified']!=['metadata']):
+        raise RuntimeError('Native compatibility coverage incomplete')
     files=dict(sources['files'])
-    paths=[Path(gate_path),DIRECTORY/'compatibility-v2/receipt.json',DIRECTORY/'compatibility-v2/plan-v2.json',
+    paths=[Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
+        *[p for name in ('compatibility-release','compatibility-release-tail') for p in (DIRECTORY/name).rglob('*') if p.is_file()],
+        DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
         DIRECTORY/'verification/preservation-reconciliation.json',
-        DIRECTORY/'verification/baseline-preflight.json',DIRECTORY/'verification/baseline-full-suite.txt',
-        DIRECTORY/'verification/baseline-standards-review.json',DIRECTORY/'verification/baseline-spec-review.json',
-        DIRECTORY/'verification/archive-equivalence.json',
+        VERIFICATION/'baseline-preflight.json',VERIFICATION/'baseline-full-suite.txt',
+        VERIFICATION/'baseline-standards-review.json',VERIFICATION/'baseline-spec-review.json',
+        VERIFICATION/'archive-equivalence.json',
         ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',
         ROOT/'tests/gpt4omini_fixture.py',ROOT/'tests/gpt4omini_executor_fixture.py',
         ROOT/'tests/test_gpt4omini_executor.py',ROOT/'tests/test_gpt4omini_full_executor.py']
     for path in paths:files[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
-    suite=(DIRECTORY/'verification/baseline-full-suite.txt').read_text()
+    suite=(VERIFICATION/'baseline-full-suite.txt').read_text()
     if not re.search(r'(?m)^\d+ passed.*$',suite) or re.search(r'\b\d+ (failed|errors)\b',suite):
         raise RuntimeError('Whole frozen-source offline suite did not pass')
-    replay=read(DIRECTORY/'verification/archive-equivalence.json')
+    replay=read(VERIFICATION/'archive-equivalence.json')
     if replay.get('verified') is not True:raise RuntimeError('Fixed full archive equivalence gate failed')
     binding={**SCIENTIFIC_BINDING,'source_sha256':fingerprint(sources),
         'manifest_sha256':fingerprint(read(ROOT/'manifests/fallback.json')),
         'condition':'full','conversation_id':'conv-44','population':'fallback','repetition':0,
+        'initial_checkpoint':'fresh-empty','accepted_financial_prefix':PREFIX,
         'provider_contract_policy':'strict-original-v1',
         'max_output_tokens_by_stage':stage_output_limits(OPENROUTER_CONFIG),
         'observability_policy':'run2-audit-essential-v1'}
@@ -113,7 +122,7 @@ def reconcile(client, ledger, output):
     from amem_repro.openrouter import BASE_URL,MODEL,save_new
     details=[]
     with ledger.transaction() as db:
-        rows=db.execute('SELECT provider_id,reported_cost FROM attempts ORDER BY id').fetchall()
+        rows=db.execute('SELECT provider_id,reported_cost FROM attempts WHERE state='settled' ORDER BY id').fetchall()
     for request_id,cost in rows:
         response=client.get(BASE_URL+'/generation',params={'id':request_id})
         response.raise_for_status();data=response.json()['data']
@@ -123,7 +132,7 @@ def reconcile(client, ledger, output):
         details.append(data)
     response=client.get(BASE_URL+'/credits');response.raise_for_status();credits=response.json()['data']
     reported=Decimal(ledger.totals()['reported_cost_usd'])
-    if abs(Decimal(str(credits['total_usage']))-reported)>Decimal('0.000000001'):
+    if abs(Decimal(str(credits['total_usage']))-Decimal('0.011651')-reported)>Decimal('0.000000001'):
         raise RuntimeError('OpenRouter aggregate spending differs from admitted generations')
     result={'verified':True,'generation_count':len(details),'generations':details,'credits':credits,
             'accounting':ledger.totals(),'rounding_tolerance_usd':'0.000000001'}
@@ -140,7 +149,7 @@ def execute():
     from amem_repro.phases import _verified_receipt
     environment()
     release=read(DIRECTORY/'frozen/campaign-approval.json');verify_release(release)
-    preflight=read(DIRECTORY/'verification/baseline-preflight.json')
+    preflight=read(VERIFICATION/'baseline-preflight.json')
     _verified_receipt(preflight,ROOT/'artifacts/assets',ROOT)
     from scripts.safe_service_audit import check_langfuse_project_auth
     auth=check_langfuse_project_auth(ROOT/'.env','cmvxd2aby005wad0ei7wt2d5o')
@@ -153,11 +162,24 @@ def execute():
     encoding=tiktoken.get_encoding('o200k_base')
     counter=TokenCounter(lambda text:encoding.encode(text,disallowed_special=()),
                          'tiktoken o200k_base; hosted prompt overhead unverified; API usage authoritative',version('tiktoken'))
+    if (DIRECTORY/'cache').exists() or (DIRECTORY/'runs').exists():
+        raise RuntimeError('Fresh baseline requires an unused primary cache and run namespace')
     ledger=CampaignLedger(DIRECTORY/'budget.sqlite',campaign_root=DIRECTORY,binding=release['binding'])
     key=os.environ['OPENROUTER_API_KEY']
+    if hashlib.sha256(key.encode()).hexdigest()!=read(DIRECTORY/'compatibility-v5/private-credential-binding.json')['sha256']:
+        raise RuntimeError('Verified provider credential changed')
     with httpx.Client(headers={'Authorization':'Bearer '+key},timeout=120,
                       transport=httpx.HTTPTransport(retries=0),follow_redirects=False) as client:
         client._amem_credential=key
+        credits=client.get(BASE_URL+'/credits');credits.raise_for_status()
+        balance=credits.json()['data']
+        funds=Decimal(str(balance['total_credits']))-Decimal(str(balance['total_usage']))
+        auth=client.get(BASE_URL+'/key');auth.raise_for_status()
+        known=Decimal(ledger.totals()['reported_cost_usd'])
+        if (abs(Decimal(str(balance['total_usage']))-Decimal('0.011651')-known)>Decimal('.000000001')
+                or abs(Decimal(str(auth.json()['data']['usage']))-known)>Decimal('.000000001')
+                or funds<13 or Decimal(str(auth.json()['data']['limit_remaining']))<5):
+            raise RuntimeError('Prepaid funds, key limit, or external offset changed')
         endpoint=client.get(BASE_URL+'/models/openai/gpt-4o-mini-2024-07-18/endpoints')
         endpoint.raise_for_status();data=endpoint.json()['data']
         provider=next(e for e in data['endpoints'] if e['tag']=='openai')
@@ -170,12 +192,12 @@ def execute():
         parent=None;prior_runtime_units=0
         for sequence in range(676):
             verify_release(release)
-            if ledger.totals()['unknown_attempts']:raise RuntimeError('Unknown exposure forbids continuation')
+            if ledger.unaccepted_unknowns({'retained_access_prefix':PREFIX}):raise RuntimeError('Unknown exposure forbids continuation')
             phase=f'gpt4omini-full-conv44-r0-p{sequence}'
             approval={'approved':True,'approved_by':release['approved_by'],
                 'approved_at':datetime.now(timezone.utc).isoformat(),'binding':release['binding'],
                 'kind':'baseline','condition':'full','conversation':'conv-44','phase':phase,
-                'release_sha256':fingerprint(release)}
+                'release_sha256':fingerprint(release),'retained_access_prefix':PREFIX}
             if parent:
                 approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
                     parent_path=str(DIRECTORY/'runs'/parent['phase']/'phase.json'))

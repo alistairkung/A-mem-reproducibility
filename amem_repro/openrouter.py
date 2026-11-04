@@ -328,6 +328,12 @@ class CampaignLedger:
                 raise BudgetStop('Phase has already been sealed')
         return seal
 
+    def unaccepted_unknowns(self, approval):
+        with self.transaction() as db:
+            retained = self.retained_prefix(db, approval)
+            return sum(phase not in retained for (phase,) in
+                       db.execute("SELECT phase FROM attempts WHERE state!='settled'"))
+
     def totals(self):
         with self.transaction() as db:
             rows = db.execute('SELECT charge,state,reported_cost FROM attempts').fetchall()
