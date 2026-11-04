@@ -84,7 +84,8 @@ def execute():
         raise RuntimeError('Reviewed compatibility plan/source/script/affordability changed')
     for axis in ('spec','standards'):
         review=read(ROOT/f'artifacts/gpt4omini/verification/compatibility-{axis}-review.json')
-        if review.get('verdict')!='pass' or review.get('reviewed_commit')!=approval['reviewed_commit']:
+        if (review.get('verdict')!='pass' or review.get('reviewed_commit')!=approval['reviewed_commit']
+                or fingerprint(review)!=approval.get('review_receipts',{}).get(axis)):
             raise RuntimeError('Independent reviewed-source proof missing')
     for name,digest in source_fingerprint(ROOT)['files'].items():
         blob=subprocess.check_output(['git','show',approval['reviewed_commit']+':'+name],cwd=ROOT)
