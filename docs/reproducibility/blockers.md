@@ -9,8 +9,7 @@ on the dated OpenAI route. The user accepted the three old denied attempts at
 their full permanent upper bound of US$0.058950. Five generations have settled
 individually, with exactly one upstream OpenAI response per generation. A delayed
 query readback succeeded before the remaining probes. Conservative smoke exposure
-is US$0.064702. The renewed grant covers only Full / conv-44 after the release
-checks. [Release evidence](gpt4omini-conv44-release.md)
+is US$0.064702. This first release covers Full / conv-44. The three-cell grant requires verified completion and affordability before conv-49 and conv-50. [Release evidence](gpt4omini-conv44-release.md)
 
 **Current Run2 state:** Full conv-44 is fully verified as a **Degraded completed lineage** via a
 separate reporting acceptance supplement. PR#33 merged `513b44e`; one fresh16-span import and

@@ -32,3 +32,18 @@ settled generation ID. The opening comparison is anchored to the verified fourth
 request and contemporaneous account readings. Differences in account usage, key
 usage and credit adjustments are recorded separately. Unexplained movement
 stops acceptance while every individually verified cost and reservation is retained.
+
+Full-size SDK serialization used the complete historical 158-question fixture
+solely as a payload engineering test. Both scoring views produced 316 items and
+4,494 exact metric values with 158 original QA associations. The SDK serialized
+632 spans in 40 bounded OTLP batches. The largest measured 9,064,485 bytes against
+the 33,554,432-byte guard. Read-only verification of a completed import added zero
+scores or spans. An interrupted export retained its claim and rejected a duplicate
+write. Current strict readback checks also passed against saved full-size remote
+records and the separately verified current-source native Langfuse gate.
+
+The third-key generation anchor and its contemporaneous account snapshot are pinned
+to their original sealed acceptance. Individual generation, credits and key GET
+responses are journaled before validation. Settlement faults, missing usage,
+unexpected account/key movements, credit adjustments, duplicate/mismatched
+generation IDs and multiple upstream attempts have focused regression coverage.
