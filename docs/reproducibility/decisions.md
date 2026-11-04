@@ -1251,3 +1251,7 @@ cost-only gate passes on measured Full stage rates. The sequential extension
 keeps actual cell spend and cache separate, pins prior evidence and SQL history,
 and requires independent acceptance before each new cell. The same scientific
 configuration applies. [Full baseline record](gpt4omini-full-baselines.md)
+
+### 4 November 2026 — three Full GPT-4o-mini cells accepted
+
+The three-cell grant is consumed. Independent Standards and Spec reviews accepted conv-44 as Degraded through its compatibility history, conv-49 as Clean and conv-50 as Clean. All 558 predictions are reported under both scoring policies. The final ledger records US$1.08658530 in identified model charges and US$1.147803 in conservative exposure. US$8 remains protected. The nine remaining ablation cells require separate authorization. [Combined results and accepted financial record](gpt4omini-three-full-results.md)
