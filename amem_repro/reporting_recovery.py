@@ -5,7 +5,6 @@ The original failed phase is evidence, never an output directory.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from collections import Counter
 import hashlib
 import json
@@ -113,6 +112,7 @@ def isolate_original_scores(views, original, output, query):
 
 def _check_associations(views, plan, items, scores, original_trace_ids):
     """Exact score cardinality, unique subjects and the original QA trace association."""
+    from langfuse._client.attributes import _serialize
     all_scores = _indexed(scores, 'id', [s['id'] for i in items for s in i['scores']])
     traces = set()
     for policy, view in views.items():
@@ -121,6 +121,8 @@ def _check_associations(views, plan, items, scores, original_trace_ids):
             inp = item['input']
             if isinstance(inp, str): inp = json.loads(inp)
             row = by_question[inp['question_id']]
+            expected_item_id = hashlib.sha256(_serialize(inp).encode()).hexdigest()[:16]
+            _equal(expected_item_id, item.get('experimentItemId'), 'recovery/experimentItemId')
             trace = item.get('traceId')
             if not trace or trace in traces:
                 raise VerificationError('Recovery item trace association is missing or duplicated')
@@ -129,18 +131,19 @@ def _check_associations(views, plan, items, scores, original_trace_ids):
                 score = all_scores[local_score['id']]
                 _equal(local_score['name'], score['name'], 'score/name')
                 _equal(local_score['value'], score['value'], 'score/value')
-                subject = score.get('subject', {})
-                if subject.get('traceId', subject.get('id') if subject.get('kind') == 'trace' else None) != trace:
-                    raise VerificationError('Score is attached to a foreign trace')
+                _equal({'kind': 'observation', 'id': item['id'], 'traceId': trace},
+                       score.get('subject'), 'recovery/score/subject')
             expected = {**plan['identity'], 'scoring_policy': policy,
                         'recovery_import_id': RECOVERY_ID, 'original_record': row,
-                        'original_trace_id': original_trace_ids[row['question_id']]}
+                        'original_trace_id': original_trace_ids[row['question_id']],
+                        **plan['original_binding']}
             _metadata(expected, item.get('experimentItemMetadata'), 'recovery/item')
-            _metadata({'recovery_import_id': RECOVERY_ID}, item.get('experimentMetadata'), 'recovery/experiment')
+            _metadata({'recovery_import_id': RECOVERY_ID, **plan['original_binding']},
+                      item.get('experimentMetadata'), 'recovery/experiment')
     return len(all_scores), len(traces)
 
 
-def recover(views, original, output, *, original_trace_ids, client=None, query=None,
+def recover(views, original, output, *, original_trace_ids, original_binding, client=None, query=None,
             attempts=6, delay_seconds=6):
     """Write at most once. After a claim, only readback is allowed, even on failure."""
     output = Path(output)
@@ -149,6 +152,8 @@ def recover(views, original, output, *, original_trace_ids, client=None, query=N
     output.mkdir(parents=True, exist_ok=True)
     plan = recovery_plan(views, original, original_trace_ids)
     plan['original_trace_ids'] = original_trace_ids
+    plan['original_binding'] = {k: original_binding[k] for k in
+        ('config_sha256', 'source_sha256', 'max_output_tokens_by_stage')}
     query = query or _query_cli
     claim = output / 'recovery-claim.json'
     if claim.exists():
@@ -171,7 +176,7 @@ def recover(views, original, output, *, original_trace_ids, client=None, query=N
             raise VerificationError('An explicitly bounded reporting client is required')
         isolation = isolate_original_scores(views, original, output, query)
         _save(claim, plan)  # exclusive durable one-shot admission, before any write
-        metadata = {**plan['identity'], 'recovery_import_id': RECOVERY_ID,
+        metadata = {**plan['identity'], **plan['original_binding'], 'recovery_import_id': RECOVERY_ID,
                     'observability_policy': 'run2-audit-essential-v1',
                     'supersedes_failed_import': {p: v['id'] for p, v in original['experiments'].items()}}
         results = export_experiments(views, client=client, export_authorized=True,
@@ -187,6 +192,8 @@ def recover(views, original, output, *, original_trace_ids, client=None, query=N
         experiments, items, scores, readbacks = inspect_import(plan, output, query)
         paths.extend(readbacks)
         _check_experiments(views, plan, plan['identity'], experiments, items)
+        for experiment in experiments:
+            _metadata(plan['original_binding'], experiment.get('metadata'), 'recovery/binding')
         if set(isolation['trace_ids']) & {i.get('traceId') for i in items}:
             raise VerificationError('Recovery overlaps original partial-write traces')
         score_count, traces = _check_associations(views, plan, items, scores, original_trace_ids)

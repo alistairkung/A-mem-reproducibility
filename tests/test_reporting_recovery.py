@@ -1,5 +1,6 @@
 """Reporting failures cannot regenerate models or overwrite scientific evidence."""
 import copy
+import hashlib
 import json
 from pathlib import Path
 from types import SimpleNamespace as NS
@@ -43,9 +44,10 @@ def fixture(tmp_path, monkeypatch):
                     value = evaluator(metadata=item['metadata'])
                     if value is not None:
                         score={'id': f'{trace}/{j}', 'name':value.name, 'value':value.value,
-                               'subject': {'kind':'trace', 'id':trace}}
+                               'subject': {'kind':'observation', 'id':f'{trace}/item', 'traceId':trace}}
                         scores.append(score);self.scores.append(score)
                 self.items.append({'id': f'{trace}/item', 'experimentId': kw['experiment_id'],
+                    'experimentItemId': hashlib.sha256(__import__('langfuse')._client.attributes._serialize(item['input']).encode()).hexdigest()[:16],
                     'traceId':trace, 'input':item['input'], 'output':kw['task'](item=item),
                     'expectedOutput':item['expected_output'], 'experimentItemMetadata':item['metadata'],
                     'experimentMetadata':kw['metadata'], 'scores':scores})
@@ -63,7 +65,9 @@ def fixture(tmp_path, monkeypatch):
             return {'status':200,'body':{'data':data, 'meta':{'truncated':False}}}
     cloud=Cloud()
     def run():
-        return recover(views, original, output, original_trace_ids=traces, client=cloud,
+        return recover(views, original, output, original_trace_ids=traces,
+                       original_binding={'config_sha256':'b'*64, 'source_sha256':'c'*64,
+                         'max_output_tokens_by_stage':{'shared_decision':8192}}, client=cloud,
                        query=cloud.query, attempts=1, delay_seconds=0)
     return views, original, traces, output, cloud, run
 
@@ -90,7 +94,7 @@ def test_partial_write_never_reingests_on_resume(tmp_path,monkeypatch):
 
 
 @pytest.mark.parametrize('mode',['foreign_campaign','foreign_run','missing_question','score_change',
-                                'duplicate_item','duplicate_score','foreign_trace','missing_original_trace'])
+                                'duplicate_item','duplicate_score','foreign_item_id','foreign_trace','wrong_observation','missing_binding','missing_original_trace'])
 def test_readback_mismatch_blocks_acceptance(tmp_path,monkeypatch,mode):
     *_,cloud,run=fixture(tmp_path,monkeypatch)
     assert run()['verified']
@@ -101,10 +105,13 @@ def test_readback_mismatch_blocks_acceptance(tmp_path,monkeypatch,mode):
             if mode=='missing_question':data.pop()
             if mode=='score_change':data[0]['scores'][0]['value']=0
             if mode=='duplicate_item':data.append(data[0])
+            if mode=='foreign_item_id':data[0]['experimentItemId']='foreign-item'
+            if mode=='missing_binding':data[0]['experimentItemMetadata'].pop('source_sha256')
             if mode=='missing_original_trace':data[0]['experimentItemMetadata'].pop('original_trace_id')
         if resource=='scores':
             if mode=='duplicate_score':data.append(data[0])
-            if mode=='foreign_trace':data[0]['subject']['id']='wrong'
+            if mode=='foreign_trace':data[0]['subject']['traceId']='wrong'
+            if mode=='wrong_observation':data[0]['subject']['id']='wrong'
     cloud.mutation=mutate
     with pytest.raises(VerificationError):run()
     assert len(cloud.calls)==2
@@ -153,3 +160,32 @@ def test_reporting_process_removes_provider_credentials_and_denies_provider_impo
     with pytest.raises(PermissionError):sys.meta_path[0].find_spec('openai')
     with pytest.raises(PermissionError):sys.meta_path[0].find_spec('amem_repro.run2')
     assert socket.getaddrinfo('cloud.langfuse.com',443)==[]
+
+
+@pytest.mark.parametrize('mode',['missing_all','missing_launcher','changed_source','failed_review','wrong_revision'])
+def test_reporting_release_requires_complete_current_source_and_independent_reviews(tmp_path,monkeypatch,mode):
+    import hashlib
+    import importlib.util
+    script=Path(__file__).resolve().parents[1]/'scripts/recover-run2-reporting.py'
+    spec=importlib.util.spec_from_file_location('approval_launcher',script)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    monkeypatch.setattr(module,'ROOT',tmp_path)
+    approval={'authorized':True,'model_calls':0,'max_imports':1,'max_incremental_langfuse_usd':0,
+              'recovery_import_id':RECOVERY_ID,'merge_commit':'a'*40,'reviewed_commit':'b'*40,'files':{}}
+    for name in module.APPROVAL_FILES:
+        path=tmp_path/name;path.parent.mkdir(parents=True,exist_ok=True)
+        if name.endswith('-review.json'):
+            path.write_text(json.dumps({'verdict':'pass','reviewed_commit':'b'*40}))
+        else:path.write_text('bound original content')
+        approval['files'][name]=hashlib.sha256(path.read_bytes()).hexdigest()
+    monkeypatch.setattr(module.subprocess,'run',lambda *a,**kw:None)
+    if mode=='missing_all':approval['files']={}
+    if mode=='missing_launcher':approval['files'].pop('scripts/recover-run2-reporting.py')
+    if mode=='changed_source':(tmp_path/'amem_repro/reporting.py').write_text('changed after review')
+    if mode in ('failed_review','wrong_revision'):
+        p=tmp_path/'artifacts/run2/reporting-recovery/spec-review.json'
+        p.write_text(json.dumps({'verdict':'changes_requested' if mode=='failed_review' else 'pass',
+                                'reviewed_commit':'c'*40 if mode=='wrong_revision' else 'b'*40}))
+        approval['files'][str(p.relative_to(tmp_path))]=hashlib.sha256(p.read_bytes()).hexdigest()
+    p=tmp_path/'artifacts/run2/reporting-recovery/approved-reporting.json';p.write_text(json.dumps(approval))
+    with pytest.raises(ValueError):module.verify_approval()

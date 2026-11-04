@@ -1,5 +1,4 @@
 """Reproduce BLK-024 and verify the exact bounded recovery payload offline."""
-import hashlib
 import json
 from pathlib import Path
 import sys
@@ -46,6 +45,9 @@ def main():
         metadata = {**plan['identity'], 'recovery_import_id': RECOVERY_ID,
                     'observability_policy': POLICY_ID,
                     'supersedes_failed_import': {p:r['id'] for p,r in original['experiments'].items()}}
+        binding = json.loads((phase / 'approval.json').read_text())['binding']
+        metadata.update({k: binding[k] for k in
+                         ('config_sha256', 'source_sha256', 'max_output_tokens_by_stage')})
         with _deny_network(), patch.object(client, '_get_project_id', return_value='offline'), patch.object(
                 client, 'create_score', side_effect=lambda **kw: scores.append(kw)):
             export_experiments(views, client=client, export_authorized=True, metadata=metadata,

@@ -5,10 +5,24 @@ import hashlib
 import json
 import os
 import socket
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+APPROVAL_FILES = frozenset({
+    'amem_repro/reporting.py', 'amem_repro/reporting_recovery.py',
+    'amem_repro/langfuse_verify.py', 'amem_repro/observation_policy.py',
+    'amem_repro/config.py', 'amem_repro/phases.py', 'amem_repro/preflight.py',
+    'amem_repro/manifests.py', 'pyproject.toml', 'uv.lock',
+    'scripts/recover-run2-reporting.py', 'scripts/verify-run2-reporting-offline.py',
+    'tests/test_reporting_recovery.py',
+    'artifacts/run2/reporting-recovery/preservation-before.json',
+    'artifacts/run2/reporting-recovery/offline-payload-proof.json',
+    'artifacts/run2/reporting-recovery/full-offline-suite.log',
+    'artifacts/run2/reporting-recovery/standards-review.json',
+    'artifacts/run2/reporting-recovery/spec-review.json',
+})
 
 
 def reporting_environment():
@@ -57,9 +71,21 @@ def verify_approval():
             or approval.get('authorized') is not True or approval.get('model_calls') != 0
             or approval.get('max_imports') != 1 or approval.get('max_incremental_langfuse_usd') != 0):
         raise ValueError('Reporting-only approval is missing or differs')
+    if set(approval.get('files', {})) != APPROVAL_FILES:
+        raise ValueError('Approval must pin the complete reporting source, tests and review evidence')
     for name, digest in approval['files'].items():
         if hashlib.sha256((ROOT / name).read_bytes()).hexdigest() != digest:
             raise ValueError('Reviewed reporting source/evidence changed')
+    for axis in ('standards', 'spec'):
+        review = json.loads((ROOT / f'artifacts/run2/reporting-recovery/{axis}-review.json').read_text())
+        if review.get('verdict') != 'pass' or review.get('reviewed_commit') != approval.get('reviewed_commit'):
+            raise ValueError('Independent review is not bound to the release')
+    merged = approval.get('merge_commit', '')
+    if len(merged) != 40 or not approval.get('reviewed_commit'):
+        raise ValueError('Merged/reviewed source commits are required')
+    for commit in (merged, approval['reviewed_commit']):
+        subprocess.run(['git', 'merge-base', '--is-ancestor', commit, 'HEAD'],
+                       cwd=ROOT, check=True, capture_output=True)
 
 
 def main(read_only):
@@ -92,7 +118,9 @@ def main(read_only):
             secret_key=os.environ['LANGFUSE_SECRET_KEY'], base_url='https://cloud.langfuse.com',
             environment='amem-run2', flush_at=BATCH_SPANS, should_export_span=should_export_span)
     try:
-        proof = recover(views, original, output, original_trace_ids=traces, client=client)
+        binding = json.loads((phase / 'approval.json').read_text())['binding']
+        proof = recover(views, original, output, original_trace_ids=traces,
+                        original_binding=binding, client=client)
     finally:
         if client is not None: client.shutdown()
         verify_preservation()
