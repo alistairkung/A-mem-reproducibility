@@ -288,6 +288,8 @@ class OpenRouterController:
                 'request_body':body,'response_body':response,'usage':response.get('usage'),
                 'budget_attempt_id':attempt,'reservation_microusd':reserve}]
             raw.raise_for_status()
+            # Keep known price evidence even when anomalous liability forces a stop.
+            event['conservative_cost_usd']=usage_charge(response.get('usage'),limit)/1000000
             charge = self.ledger.settle(attempt,response,limit)
             event['attempts'][0]['charged_cost_usd'] = charge/1000000
             event.update(usage=response['usage'],request_id=response.get('id'),

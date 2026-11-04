@@ -210,6 +210,7 @@ def test_known_charge_anomaly_retains_full_reported_liability(tmp_path):
     assert l.totals()['conservative_microusd']==30000
     assert l.totals()['reported_cost_usd']=='0.03'
     assert len(requests)==1
+    assert events[0]['conservative_cost_usd']==.03
 
 
 def test_fresh_ledger_cannot_attach_to_another_process_claim(tmp_path):
