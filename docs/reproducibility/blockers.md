@@ -4,14 +4,15 @@ Last reviewed: 4 November 2026. Scope: the FTEC5660 controlled reproduction defi
 [protocol](experimental-protocol.md), [decisions](decisions.md) and [tickets](implementation-tickets.md).
 This tracker records evidence and investigation history; it grants no execution or protocol-change approval.
 
-**Current GPT-4o-mini state:** BLK-025 is Open. The sole compatibility completion returned
-HTTP403 with a provider Terms Of Service prohibition, no generation ID/output/usage and no
-actual serving identity. The separately authorized updated-key access check also returned the same403.
-A separately authorized third attempt also returned the same403.
-Execution stopped after three requests across three consumed approvals, zero automatic
-retries; Full conv-44 has not started. Account reads show USD50 credits/zero usage,
-but all three full reservations (USD0.058950 total) remain unknown and held. No baseline, later cell or new paid probe may proceed.
-See [the independently audited stop](gpt4omini-openrouter-blocked-20261104.md).
+**Current GPT-4o-mini state:** BLK-025 is Mitigated for one native metadata request
+using the third user-supplied key. The fourth actual POST returns HTTP200; local
+validation of its raw output passes the unchanged original strict metadata schema.
+Independent OpenRouter generation readback confirms the exact dated model/OpenAI
+provider and USD0.00006765 charge. All three earlier403 phases/halts and full
+USD0.058950 unknown reservation remain unchanged. Conservative campaign exposure is
+USD0.059018. No baseline, fifth request or old-charge settlement is released; remaining
+compatibility and scientific release gates are outstanding. See
+[verified access](gpt4omini-third-key-access-verified-20261104.md).
 
 **Current Run2 state:** Full conv-44 is fully verified as a **Degraded completed lineage** via a
 separate reporting acceptance supplement. PR#33 merged `513b44e`; one fresh16-span import and
@@ -72,7 +73,7 @@ Read [the current observation/recovery release](run2-observation-policy.md).
 | [BLK-022](#blk-022) | HTTP200 body-read failure leaves an unknown charge after a successful SDK retry | Mitigated | Run2 Full conv-44 lineage | [Full reservation retained through p2](run2-conv44-collected-export-blocked-20261103.md) |
 | [BLK-023](#blk-023) | Langfuse project credential exposed in a tool snapshot | Resolved | Secure Run2 observability/continuation | Replacement authentication/readback; original pair absent |
 | [BLK-024](#blk-024) | Full-cell Experiment export exceeds local OTLP batch size | Resolved | Run2 Full conv-44 reporting | [Exact recovered readback and acceptance](run2-conv44-reporting-complete-20261104.md) |
-| [BLK-025](#blk-025) | OpenRouter rejects first dated GPT-4o-mini compatibility request with HTTP403 | Open | New GPT-4o-mini campaign; baseline not started | [Denied request, retained reservation and independent audits](gpt4omini-openrouter-blocked-20261104.md) |
+| [BLK-025](#blk-025) | OpenRouter rejects first dated GPT-4o-mini compatibility request with HTTP403 | Mitigated | Third-key metadata access only; baseline not started | [One actual native success; all previous failures retained](gpt4omini-third-key-access-verified-20261104.md) |
 
 **Run1 final status (3 November 2026):** PR#22 merged as `5ddc96e` after613 offline tests/92 subtests
 and clear independent Standards/Spec reviews. The single authorized second conv-44 continuation
@@ -871,7 +872,7 @@ stays preserved/ineligible; a new reviewed source-bound plan is required.
 <a id="blk-025"></a>
 ## BLK-025 — OpenRouter prohibits the first dated GPT-4o-mini compatibility request
 
-- **Status:** Open.
+- **Status:** Mitigated for one third-key metadata request; original causes/charges and baseline release remain unresolved.
 - **Observed4 November2026,06:22:08 UTC:** the sole admitted metadata compatibility
   POST to `https://openrouter.ai/api/v1/chat/completions` returns HTTP403:
   “The request is prohibited due to a violation of provider Terms Of Service.”
@@ -980,3 +981,29 @@ errors, raw responses and reservations. Maximum campaign reservation after this
 request is USD0.078600 (USD0.090251 including the external opening offset). This
 single-use grant authorizes no fifth request, financial settlement, baseline release,
 provider/model workaround, additional cell or contingency use.
+
+
+### Third-key access verified — 4 November2026,15:26 HKT (07:26 UTC)
+
+The single fourth metadata POST succeeds at07:26:23 UTC: HTTP200, unchanged strict
+native author schema valid, exact model `openai/gpt-4o-mini-2024-07-18`, provider
+`OpenAI`, generation `gen-1793777183-1zYHckobPRQEm0FCPCbe`. Independent read-only
+`/generation` confirms identity,299 native input/38 output tokens and USD0.00006765
+cost; key usage and account aggregate reconcile with the USD0.011651 opening offset.
+No semantic or transport retry, model/provider/route/schema change or JSON repair.
+
+The phase is consumed/Complete for access only. All three previous terminal phases,
+halts, raw errors and unknown reservations remain unchanged. The ledger records
+four attempts: three unknown/full USD0.019650 each, one settled conservatively at
+USD0.000068. Campaign conservative exposure USD0.059018, known reported cost
+USD0.00006765, unknown USD0.058950. Account available credit USD49.98828135 includes
+separate user testing; none of that external evidence is a study result or charge.
+BLK-025 is Mitigated at this single successful access boundary; original denial
+cause and old charges remain unresolved. Do not rewrite any earlier receipt.
+
+This proves metadata access and serving identity for one request. It does not pass
+all four contracts, validate shared-decision caps, fix the whole-suite source-context
+failure or release a baseline. Original memory/question processing remains0/675 and
+0/158; no baseline metric or Langfuse Experiment exists. The final one-request grant
+is consumed; no fifth POST, baseline, ablation or old-charge settlement is inferred.
+Read [the verified access supplement](gpt4omini-third-key-access-verified-20261104.md).
