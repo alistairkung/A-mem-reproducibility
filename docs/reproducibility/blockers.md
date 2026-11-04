@@ -5,9 +5,10 @@ Last reviewed: 4 November 2026. Scope: the FTEC5660 controlled reproduction defi
 This tracker records evidence and investigation history; it grants no execution or protocol-change approval.
 
 **Current GPT-4o-mini state:** BLK-025 is Mitigated for one native metadata request
-using the third user-supplied key. The fourth actual POST returns HTTP200; independent
-OpenRouter generation readback confirms the exact dated model/OpenAI provider, strict
-metadata schema and USD0.00006765 charge. All three earlier403 phases/halts and full
+using the third user-supplied key. The fourth actual POST returns HTTP200; local
+validation of its raw output passes the unchanged original strict metadata schema.
+Independent OpenRouter generation readback confirms the exact dated model/OpenAI
+provider and USD0.00006765 charge. All three earlier403 phases/halts and full
 USD0.058950 unknown reservation remain unchanged. Conservative campaign exposure is
 USD0.059018. No baseline, fifth request or old-charge settlement is released; remaining
 compatibility and scientific release gates are outstanding. See
