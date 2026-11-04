@@ -17,7 +17,7 @@ def test_preserved_opening_balance_distinguishes_movements(closing,expected):
     assert result['verified']==expected
 
 @pytest.mark.parametrize('fault',['missing','foreign-id','wrong-charge','extra-hop'])
-def test_request_specific_proof_required(fault):
+def test_request_specific_proof_required(fault,tmp_path):
     data={'id':'gen-test','provider_name':'OpenAI','model':MODEL,'total_cost':'.1',
           'provider_responses':[{'provider_name':'OpenAI','status':200,'model_permaslug':MODEL}]}
     if fault=='foreign-id':data['id']='gen-other'
@@ -25,7 +25,8 @@ def test_request_specific_proof_required(fault):
     if fault=='extra-hop':data['provider_responses']*=2
     client=httpx.Client(transport=httpx.MockTransport(lambda r:httpx.Response(200,json={'data':data})))
     with pytest.raises(ValueError):
-        verify_generations(client,[(None if fault=='missing' else 'gen-test','.1')])
+        verify_generations(client,[(None if fault=='missing' else 'gen-test','.1')],tmp_path)
+    assert len(list(tmp_path.glob('*.json')))==1
 
 def test_new_unknown_blocks_reconciliation_before_any_remote_lookup(tmp_path):
     from contextlib import contextmanager

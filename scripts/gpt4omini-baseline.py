@@ -75,19 +75,19 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     if hashlib.sha256(original_finance.read_bytes()).hexdigest()!=evidence['files'][str(original_finance.relative_to(DIRECTORY))]:
         raise RuntimeError('Original reconciled account snapshot changed')
     files=dict(sources['files'])
-    paths=[VERIFICATION/'forecast.json',VERIFICATION/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
+    paths=[VERIFICATION/'full-size-export.json',VERIFICATION/'capacity-refresh.json',VERIFICATION/'forecast.json',VERIFICATION/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
         *[p for name in ('compatibility-release','compatibility-release-tail') for p in (DIRECTORY/name).rglob('*') if p.is_file()],
         DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
         DIRECTORY/'verification/preservation-reconciliation.json',
-        VERIFICATION/'baseline-preflight.json',VERIFICATION/'baseline-full-suite.txt',
+        VERIFICATION/'baseline-preflight.json',VERIFICATION/'baseline-finance-full-suite.txt',
         VERIFICATION/'baseline-standards-review.json',VERIFICATION/'baseline-spec-review.json',
         VERIFICATION/'archive-equivalence.json',
         ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',
         ROOT/'tests/gpt4omini_fixture.py',ROOT/'tests/gpt4omini_executor_fixture.py',
         ROOT/'tests/test_gpt4omini_executor.py',ROOT/'tests/test_gpt4omini_full_executor.py']
     for path in paths:files[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
-    suite=(VERIFICATION/'baseline-full-suite.txt').read_text()
+    suite=(VERIFICATION/'baseline-finance-full-suite.txt').read_text()
     if not re.search(r'(?m)^\d+ passed.*$',suite) or re.search(r'\b\d+ (failed|errors)\b',suite):
         raise RuntimeError('Whole frozen-source offline suite did not pass')
     replay=read(VERIFICATION/'archive-equivalence.json')
