@@ -152,25 +152,34 @@ class CampaignLedger:
         grant = approval.get('access_retest', {})
         snapshot = self.access_snapshot(db, exclude_phase)
         phases, attempts, halts = (snapshot[k] for k in ('phases','attempts','halts'))
-        if (grant.get('policy') != 'updated-key-one-probe-20261104-v1'
+        expected = {'updated-key-one-probe-20261104-v1': 1,
+                    'third-access-one-probe-20261104-v1': 2}.get(grant.get('policy'))
+        if (expected is None
                 or approval.get('kind') != 'compatibility'
                 or approval.get('limits',{}).get('max_physical_calls') != 1
                 or grant.get('retained_snapshot') != snapshot
-                or len(phases) != 1 or len(attempts) != 1 or len(halts) != 1):
+                or len(phases) != expected or len(attempts) != expected or len(halts) != expected):
             raise BudgetStop('Exact one-probe updated-key authorization required')
-        previous, attempt = phases[0], attempts[0]
-        if (previous[3] != 'terminal' or not previous[4]
-                or approval.get('parent') != previous[0]
-                or approval.get('parent_seal') != previous[4]
-                or json.loads(previous[1]).get('kind') != 'compatibility'
-                or attempt[1] != previous[0] or attempt[2] != 'metadata'
-                or attempt[4:7] != [19650,19650,'reserved']
-                or attempt[9] is not None or attempt[10] is not None
-                or halts[0][0] != previous[0]
+        if (approval.get('parent') != phases[-1][0]
+                or approval.get('parent_seal') != phases[-1][4]
                 or not isinstance(grant.get('request_sha256'),str)
-                or len(grant['request_sha256']) != 64
-                or grant['request_sha256'] != attempt[3]):
-            raise BudgetStop('Retained denial lineage changed')
+                or len(grant['request_sha256']) != 64):
+            raise BudgetStop('Retained denial parent or exact request changed')
+        for index, (previous, attempt) in enumerate(zip(phases, attempts)):
+            prior_approval = json.loads(previous[1])
+            if (previous[3] != 'terminal' or not previous[4]
+                    or prior_approval.get('kind') != 'compatibility'
+                    or any(prior_approval.get('binding',{}).get(k) != v
+                           for k,v in SCIENTIFIC_BINDING.items())
+                    or attempt[0] != index+1
+                    or attempt[1] != previous[0] or attempt[2] != 'metadata'
+                    or attempt[4:7] != [19650,19650,'reserved']
+                    or attempt[9] is not None or attempt[10] is not None
+                    or previous[0] not in {h[0] for h in halts}
+                    or grant['request_sha256'] != attempt[3]
+                    or previous[2] != (phases[index-1][0] if index else None)
+                    or (index and prior_approval.get('parent_seal') != phases[index-1][4])):
+                raise BudgetStop('Retained denial lineage changed')
 
     def claim(self, approval):
         if (approval.get('approved') is not True or approval.get('binding') != self.binding

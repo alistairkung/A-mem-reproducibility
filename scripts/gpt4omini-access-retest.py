@@ -1,6 +1,7 @@
 """One new-user-authorized exact metadata access probe, retaining the original403."""
 from pathlib import Path
 import hashlib
+import argparse
 import importlib.util
 import json
 import subprocess
@@ -16,10 +17,12 @@ from amem_repro.openrouter import BASE_URL,CampaignLedger,OpenRouterController,s
 def read(p): return json.loads(p.read_bytes())
 
 
-def execute():
+def execute(directory="compatibility-v3"):
     import httpx
     from dotenv import dotenv_values
-    out=ROOT/'artifacts/gpt4omini/compatibility-v3'
+    if directory not in ('compatibility-v3','compatibility-v4'):
+        raise RuntimeError('Only explicitly prepared single-request access phases are supported')
+    out=ROOT/'artifacts/gpt4omini'/directory
     approval=read(out/'approval.json')
     source=fingerprint(source_fingerprint(ROOT))
     if (approval['binding']['source_sha256']!=source
@@ -40,10 +43,15 @@ def execute():
             raise RuntimeError('Retained access/provenance evidence differs')
     prior=ROOT/'artifacts/gpt4omini/compatibility-v2'
     request=read(prior/'raw/000001-request.json')
-    raw=read(prior/'raw/000001-response.bin')
-    if (raw.get('error',{}).get('code')!=403
-            or raw['error'].get('message')!='The request is prohibited due to a violation of provider Terms Of Service.'
-            or fingerprint(request)!=approval['access_retest']['request_sha256']):
+    denials=[prior/'raw/000001-response.bin']
+    if directory=='compatibility-v4':
+        denials.append(out.parent/'compatibility-v3/raw/000002-response.bin')
+    for path in denials:
+        raw=read(path)
+        if (raw.get('error',{}).get('code')!=403
+                or raw['error'].get('message')!='The request is prohibited due to a violation of provider Terms Of Service.'):
+            raise RuntimeError('Retained attempt is not the exact original access prohibition')
+    if fingerprint(request)!=approval['access_retest']['request_sha256']:
         raise RuntimeError('Not the exact original denied metadata request')
     spec=importlib.util.spec_from_file_location('compatibility_preservation',ROOT/'scripts/gpt4omini-compatibility.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
@@ -74,4 +82,7 @@ def execute():
     if error:raise SystemExit('Access probe stopped; all original evidence/reservations retained')
 
 
-if __name__=='__main__':execute()
+if __name__=='__main__':
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--directory',choices=('compatibility-v3','compatibility-v4'),default='compatibility-v3')
+    execute(parser.parse_args().directory)

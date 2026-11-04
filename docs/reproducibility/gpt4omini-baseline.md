@@ -187,3 +187,17 @@ charges remain unreconciled. Cell remainder USD4.960700 and usable campaign
 remainder USD41.960700 are arithmetic ceilings, not execution authority; protected
 USD8 remains untouched. BLK-025 stays Open. Read the
 [complete outcome](gpt4omini-openrouter-blocked-20261104.md).
+
+
+### One further explicit access check — 4 November2026
+
+After both403 responses and USD0.039300 retained unknown exposure were reported,
+the user explicitly requested one more attempt. Authorize exactly one original
+metadata payload with the current private key and a fresh source-bound approval,
+retaining both terminal phases/halts, original errors/raw responses and unknown
+reservations. No key regeneration, model/provider/route/schema change or automatic
+retry. Keep cumulative USD0.25 compatibility/USD5 cell caps and USD8 protected.
+Maximum cumulative reservation is USD0.058950. Require exact two-phase ancestry,
+prior raw403 evidence, private authentication and independent scoped reviews before
+transmission. Either outcome leaves baseline release and charge adjudication closed.
+This new grant is single-use and does not authorize a fourth request or another cell.

@@ -924,3 +924,17 @@ the frozen pre-retest snapshot exactly. Both full USD0.019650 reservations remai
 unknown, total USD0.039300. At06:50 UTC account/key readbacks still show USD50/zero
 usage; no reservation is released or individual charge declared zero. BLK-025 stays
 Open. The source is preserved in draft PR#36; baseline release remains blocked.
+
+
+### One further explicit access check — 4 November2026
+
+After both403 responses and USD0.039300 retained unknown exposure were reported,
+the user explicitly requested one more attempt. Authorize exactly one original
+metadata payload with the current private key and a fresh source-bound approval,
+retaining both terminal phases/halts, original errors/raw responses and unknown
+reservations. No key regeneration, model/provider/route/schema change or automatic
+retry. Keep cumulative USD0.25 compatibility/USD5 cell caps and USD8 protected.
+Maximum cumulative reservation is USD0.058950. Require exact two-phase ancestry,
+prior raw403 evidence, private authentication and independent scoped reviews before
+transmission. Either outcome leaves baseline release and charge adjudication closed.
+This new grant is single-use and does not authorize a fourth request or another cell.

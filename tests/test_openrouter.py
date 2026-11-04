@@ -277,3 +277,50 @@ def test_access_retest_rejects_changed_scope_or_history_before_second_post(tmp_p
         if change=='request':request['messages'][1]['content']='different'
         with pytest.raises(BudgetStop):reopened.reserve(phase,'metadata',request)
     assert reopened.totals()['attempts']==1 and len(requests)==1
+
+
+def third_access_approval(tmp_path):
+    c,l,requests,events,original=setup(tmp_path,handler=lambda _:httpx.Response(403,json={'error':{'code':403}}))
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    second=access_retest_approval(l,original,requests[0])
+    ledger=CampaignLedger(l.path,campaign_root=tmp_path,binding=l.binding)
+    phase=ledger.claim(second);ledger.reserve(phase,'metadata',requests[0])
+    ledger.stop(phase,'HTTPStatusError');ledger.finish(phase,{'status':'incomplete'},'terminal')
+    with ledger.transaction() as db:snapshot=ledger.access_snapshot(db)
+    third={**second,'phase':'explicit-third-access','parent':phase,'parent_seal':snapshot['phases'][-1][4],
+           'access_retest':{'policy':'third-access-one-probe-20261104-v1',
+                           'request_sha256':fingerprint(requests[0]),'retained_snapshot':snapshot}}
+    return ledger,third,requests[0],snapshot
+
+
+def test_separate_third_access_grant_retains_both_unknowns_and_is_single_use(tmp_path):
+    old,approval,request,before=third_access_approval(tmp_path)
+    ledger=CampaignLedger(old.path,campaign_root=tmp_path,binding=old.binding)
+    phase=ledger.claim(approval);attempt,_=ledger.reserve(phase,'metadata',request)
+    assert attempt==3 and ledger.totals()['conservative_microusd']==58950
+    with ledger.transaction() as db:assert ledger.access_snapshot(db,phase)==before
+    with pytest.raises(BudgetStop):ledger.reserve(phase,'metadata',request)
+    ledger.stop(phase,'HTTPStatusError');ledger.finish(phase,{'status':'incomplete'},'terminal')
+    reopened=CampaignLedger(old.path,campaign_root=tmp_path,binding=old.binding)
+    with pytest.raises(BudgetStop):reopened.claim({**approval,'phase':'fourth'})
+    with pytest.raises(BudgetStop):reopened.claim({**approval,'kind':'baseline','phase':'baseline'})
+
+
+@pytest.mark.parametrize('change',['old-policy','first-request','parent-seal','prior-charge','prior-parent','prior-seal'])
+def test_third_access_rejects_wrong_grant_or_changed_ancestry(tmp_path,change):
+    old,approval,request,before=third_access_approval(tmp_path)
+    if change=='old-policy':approval['access_retest']['policy']='updated-key-one-probe-20261104-v1'
+    if change=='first-request':
+        with old.transaction() as db:db.execute("UPDATE attempts SET request_hash='different' WHERE id=1")
+    if change=='parent-seal':approval['parent_seal']='different'
+    if change=='prior-charge':
+        with old.transaction() as db:db.execute('UPDATE attempts SET charge=0 WHERE id=1')
+    if change=='prior-parent':
+        with old.transaction() as db:db.execute("UPDATE phases SET parent='different' WHERE id='access-retest'")
+    if change=='prior-seal':
+        with old.transaction() as db:db.execute("UPDATE phases SET seal='different' WHERE id='smoke'")
+    if change not in ('old-policy','parent-seal'):
+        with old.transaction() as db:approval['access_retest']['retained_snapshot']=old.access_snapshot(db)
+    ledger=CampaignLedger(old.path,campaign_root=tmp_path,binding=old.binding)
+    with pytest.raises(BudgetStop):ledger.claim(approval)
+    assert ledger.totals()['attempts']==2
