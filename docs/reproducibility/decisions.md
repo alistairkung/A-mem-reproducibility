@@ -1153,3 +1153,24 @@ Maximum cumulative reservation is USD0.058950. Require exact two-phase ancestry,
 prior raw403 evidence, private authentication and independent scoped reviews before
 transmission. Either outcome leaves baseline release and charge adjudication closed.
 This new grant is single-use and does not authorize a fourth request or another cell.
+
+
+### Third access outcome — 4 November2026,15:08 HKT (07:08 UTC)
+
+The freshly approved third metadata request at07:08:42 UTC returns the sameHTTP403
+provider Terms Of Service prohibition, null provider name and no generation ID,
+model/output/usage. Preserve `compatibility-v4/` approval/reviews/raw000003/error/
+receipt/seal and halt. Exactly one new POST; three campaign POSTs total, no automatic
+retry, no fourth request and no baseline. Source `56a1464` has scoped independent
+Standards/Spec PASS,47 passing tests and actual-launcher success/denial mocks;
+source fingerprint `a0ae8a73909ee5e7e8d6df0312893dd42ec356ccc76d8cb124fbd464d36abcbd`.
+Both prior SQL histories match the frozen pre-third snapshot exactly.
+
+All three phases are consumed/terminal. Three unknown full USD0.019650 reservations
+remain held, USD0.058950 total. Final read-only account/key reads show USD50/zero
+recorded usage; no individual charge is settled or released. Cell remainder
+USD4.941050 and usable campaign remainder USD41.941050 are arithmetic ceilings,
+not paid authority; USD8 remains protected. BLK-025 stays Open. No baseline freeze,
+full-mode metrics, actual serving identity or paired-ablation readiness is claimed.
+Provider/account clarification and request-level financial evidence remain needed;
+no route/model/key workaround or further transmission is authorized by this grant.
