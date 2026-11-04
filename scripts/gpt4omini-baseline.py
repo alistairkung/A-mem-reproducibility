@@ -31,6 +31,12 @@ def verify_release(release):
     if fingerprint(source_fingerprint(ROOT))!=release['binding']['source_sha256']:
         raise RuntimeError('Frozen campaign source changed')
     verify_inventory(ROOT,release['files'])
+    for name,digest in release['files'].items():
+        if name.startswith('artifacts/'):
+            continue
+        blob=subprocess.check_output(['git','show',release['reviewed_commit']+':'+name],cwd=ROOT)
+        if hashlib.sha256(blob).hexdigest()!=digest:
+            raise RuntimeError('Frozen runtime file differs from reviewed Git bytes')
     for commit in (release['reviewed_commit'],release['merge_commit']):
         subprocess.run(['git','merge-base','--is-ancestor',commit,'HEAD'],cwd=ROOT,check=True,capture_output=True)
     for axis in ('standards','spec'):
