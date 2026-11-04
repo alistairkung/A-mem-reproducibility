@@ -186,13 +186,18 @@ class CampaignLedger:
         """Recognize only the four sealed access phases covered by the user's decision."""
         if 'retained_access_prefix' not in approval:
             return set()
-        digest = '5383b7402a3bf9a59837312a80e14d67cbcd2033ca88175f0b345cbcb68229c6'
-        phases = [list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid LIMIT 4')]
+        digest = approval['retained_access_prefix']
+        counts = {'5383b7402a3bf9a59837312a80e14d67cbcd2033ca88175f0b345cbcb68229c6':4,
+                  '3b3bb2e36098b84f5881e65079a23943427ea3276216f731adb0d590a37a32f1':5}
+        if digest not in counts:
+            raise BudgetStop('Unknown financial decision')
+        count = counts[digest]
+        phases = [list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid LIMIT ?', (count,))]
         ids = [p[0] for p in phases]
         prefix = {
             'phases': phases,
             'attempts': [list(r) for r in db.execute(
-                'SELECT * FROM attempts WHERE phase IN (?,?,?,?) ORDER BY id', ids)] if len(ids)==4 else [],
+                "SELECT * FROM attempts WHERE phase IN (" + ",".join("?" for _ in ids) + ") ORDER BY id", ids)],
             'halts': [list(r) for r in db.execute('SELECT * FROM halts ORDER BY phase') if r[0] in ids],
         }
         if approval['retained_access_prefix'] != digest or fingerprint(prefix) != digest:

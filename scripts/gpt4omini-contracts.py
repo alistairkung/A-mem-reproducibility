@@ -14,7 +14,7 @@ from amem_repro.gpt4omini_campaign import read, verify_prior
 from amem_repro.openrouter import BASE_URL, MODEL, CampaignLedger, OpenRouterController, save_new
 
 CAMPAIGN = ROOT / 'artifacts/gpt4omini'
-OUT = CAMPAIGN / 'compatibility-release'
+OUT = CAMPAIGN / 'compatibility-release-tail'
 PLAN = CAMPAIGN / 'compatibility-v2/plan-v2.json'
 
 
@@ -49,12 +49,20 @@ def execute():
         review = read(OUT / f'{axis}-review.json')
         if review['verdict'] != 'pass' or review['reviewed_commit'] != head or fingerprint(review) != approval['reviews'][axis]:
             raise RuntimeError('Source-bound independent review missing')
+    prior_output = CAMPAIGN/'compatibility-release'
+    query = read(prior_output/'generation-1.json')
+    detail = read(prior_output/'audit-generation.json')
+    if (not query['raw_schema_valid'] or query['stage']!='query_keywords'
+            or detail['status']!=200 or detail['data']['id']!=query['request_id']
+            or detail['data']['model']!=MODEL or detail['data']['provider_name']!='OpenAI'
+            or Decimal(str(detail['data']['total_cost']))!=Decimal(str(query['usage']['cost']))):
+        raise RuntimeError('Query generation reconciliation failed')
     verify_prior()
     key = dotenv_values(ROOT / '.env')['OPENROUTER_API_KEY']
     if hashlib.sha256(key.encode()).hexdigest() != read(CAMPAIGN/'compatibility-v5/private-credential-binding.json')['sha256']:
         raise RuntimeError('Verified credential differs')
     ledger = CampaignLedger(CAMPAIGN/'budget.sqlite', campaign_root=CAMPAIGN, binding=approval['binding'])
-    probes = [read(PLAN)['probes'][i] for i in (2,3,4,5)]
+    probes = [read(PLAN)['probes'][i] for i in (3,4,5)]
     events = []
     def record(event):
         save_new(OUT/f'generation-{len(events)+1}.json',event)
@@ -70,11 +78,11 @@ def execute():
             for i,probe in enumerate(probes):
                 controller.get_completion(probe['prompt'],probe['response_format'],probe['temperature'])
                 event = events[-1]
-                for poll in range(4):
+                for poll in range(9):
                     r = client.get(BASE_URL+'/generation', params={'id':event['request_id']})
                     save_new(OUT/f'provider-{i+1}-{poll}.json',{'status':r.status_code,'body':r.json()})
-                    if r.status_code != 404 or poll==3: break
-                    time.sleep(2**poll)
+                    if r.status_code != 404 or poll==8: break
+                    time.sleep(min(30,2**poll))
                 r.raise_for_status()
                 d = r.json()['data']
                 if (d['id']!=event['request_id'] or d['provider_name']!='OpenAI' or d['model']!=MODEL
