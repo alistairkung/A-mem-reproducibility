@@ -110,6 +110,8 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         from amem_repro.gpt4omini_campaign import verify_accepted_cell
         for c in prior_cells:
             verify_accepted_cell(DIRECTORY,c)
+            from scripts.gpt4omini_finance import verify_accepted_finances
+            verify_accepted_finances(DIRECTORY,c)
             prior_store=cell_store(DIRECTORY,c)
             audits=[read(DIRECTORY/'outcomes'/c/f'acceptance-{axis}.json') for axis in ('standards','spec')]
             if not all(audit.get('accepted') is True and audit.get('verdict')=='pass' for audit in audits):

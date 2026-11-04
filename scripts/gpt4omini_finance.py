@@ -80,3 +80,29 @@ def reconcile(client,ledger,output,opening):
     save_new(output,record)
     if not change['verified']: raise ValueError('Unreconciled account or key movement')
     return record
+
+def verify_accepted_finances(campaign,cell):
+    """Compare the attributed SQL history and exact GET journal against the independent acceptance."""
+    import json
+    import hashlib
+    import sqlite3
+    from amem_repro.config import fingerprint
+    from amem_repro.openrouter import FULL_CELLS,cell_store
+    store=cell_store(campaign,cell)
+    accepted=set(list(FULL_CELLS)[:list(FULL_CELLS).index(cell)+1])
+    review=json.loads((campaign/'outcomes'/cell/'acceptance-standards.json').read_bytes())
+    with sqlite3.connect((campaign/'budget.sqlite').resolve().as_uri()+'?mode=ro',uri=True) as db:
+        phases=[list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid') if json.loads(r[1])['conversation'] in accepted]
+        ids={r[0] for r in phases}
+        snapshot={'phases':phases,'attempts':[list(r) for r in db.execute('SELECT * FROM attempts ORDER BY id') if r[1] in ids],
+                  'halts':[list(r) for r in db.execute('SELECT * FROM halts ORDER BY phase') if r[0] in ids]}
+    if fingerprint(snapshot)!=review['financial']['snapshot_sha256']:
+        raise ValueError('Previously accepted SQL rows differ from independent financial audit')
+    financial=json.loads((store/'reconciliation.json').read_bytes())
+    journal=Path(financial['generation_journal'])
+    if journal.resolve()!=journal or not journal.is_relative_to(store):
+        raise ValueError('Foreign predecessor journal')
+    actual={p.relative_to(journal).as_posix():hashlib.file_digest(p.open('rb'),'sha256').hexdigest()
+            for p in journal.rglob('*') if p.is_file() and p.resolve()==p}
+    if actual!=review['financial_readback_journal']['files']:
+        raise ValueError('Previously accepted raw billing GET journal changed')

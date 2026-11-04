@@ -16,7 +16,9 @@ def read(p):return json.loads(p.read_bytes())
 
 def seal(campaign,cell,org_units):
     from amem_repro.gpt4omini_campaign import verify_accepted_cell
+    from scripts.gpt4omini_finance import verify_accepted_finances
     verify_accepted_cell(campaign,cell)
+    verify_accepted_finances(campaign,cell)
     order=list(FULL_CELLS)
     accepted=order[:order.index(cell)+1]
     out=campaign/'outcomes'/cell
