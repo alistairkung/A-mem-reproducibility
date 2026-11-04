@@ -303,7 +303,7 @@ if __name__=='__main__':
     parser.add_argument('--cell',choices=FULL_CELLS,default='conv-44')
     args=parser.parse_args()
     CELL=args.cell;STORE=cell_store(DIRECTORY,CELL)
-    VERIFICATION=FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full'
+    VERIFICATION=FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-final'
     try:
         if args.execute:execute()
         else:freeze(args.gate,args.reviewed_commit,args.merge_commit)
