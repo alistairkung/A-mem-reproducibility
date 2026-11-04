@@ -231,6 +231,8 @@ class LangfuseObserver:
             int((Decimal('.30') * u.get('prompt_tokens', 0)
                  + Decimal('1.20') * u.get('completion_tokens', 0))
                 .to_integral_value(rounding=ROUND_CEILING)) for u in usage) / 1000000}
+        if event.get('campaign_cost_policy') == 'openrouter-ledger-v1':
+            cost = None  # Never apply the historical DeepSeek fallback to this gateway.
         if 'conservative_cost_usd' in event and not unknown and usage:
             # New providers supply their independently settled local-ledger cost.
             # Historical DeepSeek observations retain the original default rates.
@@ -253,6 +255,8 @@ class LangfuseObserver:
             'validation_copy_schema_valid', 'compatibility_deviation', 'error_type')}
         if 'actual_provider' in event:
             metadata['actual_provider'] = event['actual_provider']
+        if 'campaign_cost_policy' in event:
+            metadata['campaign_cost_policy'] = event['campaign_cost_policy']
         attempts = event.get('attempts', [])
         if attempts and isinstance(attempts[0].get('request_body'), dict):
             # Already sanitized by the recording transport; no headers or credentials.
@@ -273,7 +277,7 @@ class LangfuseObserver:
                         transmitted=bool(event.get('attempts')),
                         unknown_usage_attempts=unknown,
                         usage_complete=unknown == 0 and bool(usage),
-                        cost_complete=unknown == 0 and bool(usage),
+                        cost_complete=cost is not None,
                         ledger_reservations_authoritative=True,
                         accounting_notice='Known source usage only; unknown attempts retain durable ledger reservations. Reconcile the phase ledger for incurred spending.',
                         cost_basis='conservative-per-attempt-ceiling-not-invoice',
