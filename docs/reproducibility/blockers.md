@@ -1042,3 +1042,23 @@ allowance fit 100,000 included units, without overage permission. These are pros
 controls, not completed ablation results. Full-size executor/cloud/offline checks
 and independent reviews remain mandatory before paid execution. Preserve all prior
 blocker histories; the separate DeepSeek affordability limitation is unchanged.
+
+
+### BLK-014 — native fallback eligibility correction, 5 November 2026
+
+Independent Spec review of `b731c3e` reproduced an inherited native classifier gap
+using synthetic responses only. A valid positive shared decision prefixed with
+U+001C fails strict raw JSON parsing but succeeds after the unchanged author
+`strip()`. The wrapper incorrectly classified it as a supported author failure
+and admitted a further turn. No accepted Full response or paid ablation used this
+counterexample. Preserve the independent red proof under
+`artifacts/gpt4omini/verification/conv49-ablation/spec-fallback-cleanup-counterexample-b731c3e.json`.
+
+The narrow correction additionally requires object-delimited stripped text to
+remain JSON-invalid before allowing malformed fallback, matching the already
+reviewed Run2 boundary. Cleanup-parseable raw text remains rejected and terminal;
+no repaired output is returned, accepted or retried. The original raw response and
+charge persist. Add all-four-condition actual-executor regressions; independent
+re-review and refreshed source-bound suite/replay/cloud evidence precede payment.
+Earlier preliminary verification files remain preserved and cannot release the
+corrected source. Provider reliability remains a mitigated limitation.

@@ -101,6 +101,8 @@ def run_actual_phase(directory, *, root, phase='p0', ledger=None, parent=None,
             decisions+=1;kind=(fail_decisions or {}).get(decisions)
             if kind:
                 response['choices'][0]['message']['content']='{"should_evolve":true,"actions"["strengthen"]}'
+                if kind=='cleanup_parseable':
+                    response['choices'][0]['message']['content']='\x1c'+content
                 if kind=='length':
                     response['choices'][0]['finish_reason']='length'
                     response['usage'].update(completion_tokens=4096,cost=.0024726)

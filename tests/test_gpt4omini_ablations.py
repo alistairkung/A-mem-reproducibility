@@ -85,3 +85,18 @@ def test_ablation_namespace_cannot_alias_full(tmp_path):
     full=cell_store(tmp_path,'conv-49');full.mkdir(parents=True)
     (tmp_path/'cells/evolution_only-conv-49').symlink_to(full)
     with pytest.raises(BudgetStop):cell_store(tmp_path,'evolution_only-conv-49')
+
+
+@pytest.mark.parametrize('condition', ('full', *ABLATION_CONDITIONS))
+def test_author_cleanup_parseable_decision_is_terminal_not_fallback(tmp_path, condition):
+    result=run_actual_phase(tmp_path,root=ROOT,conversation='conv-49',condition=condition,
+                            fail_decisions={1:'cleanup_parseable',2:'length'})
+    receipt=result['receipt']
+    assert receipt['status']=='incomplete' and not receipt['recoverable_length_failure']
+    assert len(result['requests'])==2 and receipt['notes']==0
+    output=cell_store(tmp_path,cell_key('conv-49',condition))/'runs/p0'
+    events=[json.loads(line) for line in (output/'events.jsonl').read_text().splitlines()]
+    assert not any(e.get('kind')=='original_evolution_fallback' for e in events)
+    raw=next(e['output'] for e in events if e['type']=='generation' and e['stage']=='shared_decision')
+    assert json.loads(raw.strip())['should_evolve'] is True
+    with pytest.raises(json.JSONDecodeError):json.loads(raw)

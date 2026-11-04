@@ -493,8 +493,15 @@ class OpenRouterController:
                 value = json.loads(content,parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Nonfinite JSON')))
             except json.JSONDecodeError as error:
                 if stage=='shared_decision' and content.strip().startswith('{') and content.strip().endswith('}'):
-                    self.pending = {'kind':'malformed','event':event}
-                    raise AdapterError('Malformed shared decision; unchanged original fallback') from error
+                    # The author strips whitespace before parsing. Some control
+                    # characters fail strict raw parsing but disappear under strip.
+                    # Those are unsupported strict-contract failures, not evidence
+                    # that the unchanged author would have taken its fallback.
+                    try:
+                        json.loads(content.strip())
+                    except json.JSONDecodeError:
+                        self.pending = {'kind':'malformed','event':event}
+                        raise AdapterError('Malformed shared decision; unchanged original fallback') from error
                 raise BudgetStop('Unsupported malformed output') from None
             validate_arguments(value,response_format['json_schema']['schema'])
             event.update(raw_schema_valid=True,validation_copy_schema_valid=True)
