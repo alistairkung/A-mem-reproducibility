@@ -150,7 +150,8 @@ def load_lineage(root=ROOT, *, support_reference=None):
 def replay_baseline(asset_root, output, *, root=ROOT, factory_builder=None, oracle_path=None,
                     support_reference=None):
     root, output = Path(root).resolve(), Path(output).resolve()
-    if output.exists() or any(output.is_relative_to(root / p) for p in ('artifacts/runs', 'artifacts/cache')):
+    protected_roots = [(root / p).resolve() for p in ('artifacts/runs', 'artifacts/cache')]
+    if output.exists() or any(output.is_relative_to(directory) for directory in protected_roots):
         raise ValueError('Use a fresh separate replay output directory')
     baseline = load_lineage(root, support_reference=support_reference)
     oracle_path = Path(oracle_path) if oracle_path is not None else root / 'tests/fixtures/conv50-replay-state-hashes.json'

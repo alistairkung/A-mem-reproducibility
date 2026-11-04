@@ -182,6 +182,23 @@ class CampaignLedger:
                     or (index and prior_approval.get('parent_seal') != phases[index-1][4])):
                 raise BudgetStop('Retained denial lineage changed')
 
+    def retained_prefix(self, db, approval):
+        """Recognize only the four sealed access phases covered by the user's decision."""
+        if 'retained_access_prefix' not in approval:
+            return set()
+        digest = '5383b7402a3bf9a59837312a80e14d67cbcd2033ca88175f0b345cbcb68229c6'
+        phases = [list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid LIMIT 4')]
+        ids = [p[0] for p in phases]
+        prefix = {
+            'phases': phases,
+            'attempts': [list(r) for r in db.execute(
+                'SELECT * FROM attempts WHERE phase IN (?,?,?,?) ORDER BY id', ids)] if len(ids)==4 else [],
+            'halts': [list(r) for r in db.execute('SELECT * FROM halts ORDER BY phase') if r[0] in ids],
+        }
+        if approval['retained_access_prefix'] != digest or fingerprint(prefix) != digest:
+            raise BudgetStop('Accepted financial history changed')
+        return {p[0] for p in prefix['phases']}
+
     def claim(self, approval):
         if (approval.get('approved') is not True or approval.get('binding') != self.binding
                 or approval.get('kind') not in ('compatibility', 'baseline')
@@ -194,6 +211,8 @@ class CampaignLedger:
             retest = bool(approval.get('access_retest'))
             if retest:
                 self._access_retest(db, approval)
+            retained = self.retained_prefix(db, approval)
+            rows = [row for row in rows if row[0] not in retained]
             if not retest and any(row[2] not in ('complete','recoverable') for row in rows):
                 raise BudgetStop('An earlier phase is unfinished or terminal')
             same = [r for r in rows if json.loads(r[1])['kind'] == approval['kind']]
@@ -224,6 +243,7 @@ class CampaignLedger:
                     raise BudgetStop('Phase is not an active one-shot owner')
                 approval = json.loads(row[0])
                 retest = bool(approval.get('access_retest'))
+                retained = self.retained_prefix(db, approval)
                 if retest:
                     self._access_retest(db, approval, exclude_phase=phase)
                     if (db.execute('SELECT COUNT(*) FROM halts WHERE phase=?',(phase,)).fetchone()[0]
@@ -231,12 +251,12 @@ class CampaignLedger:
                             or fingerprint(request) != approval['access_retest']['request_sha256']
                             or db.execute('SELECT COUNT(*) FROM attempts WHERE phase=?',(phase,)).fetchone()[0]):
                         raise BudgetStop('Updated-key access grant permits one exact metadata request')
-                elif db.execute('SELECT COUNT(*) FROM halts').fetchone()[0]:
+                elif any(r[0] not in retained for r in db.execute('SELECT phase FROM halts')):
                     raise BudgetStop('A terminal campaign failure forbids further transmissions')
                 if phase in self.guards:self.guards[phase](db)
                 if approval['binding'] != self.binding:
                     raise BudgetStop('Immutable approval changed')
-                if not retest and db.execute("SELECT COUNT(*) FROM attempts WHERE state!='settled'").fetchone()[0]:
+                if not retest and any(r[0] not in retained for r in db.execute("SELECT phase FROM attempts WHERE state!='settled'")):
                     raise BudgetStop('Unknown financial exposure; no further transmission')
                 spent, count = db.execute('SELECT COALESCE(SUM(charge),0),COUNT(*) FROM attempts').fetchone()
                 kind = approval['kind']
