@@ -102,12 +102,13 @@ readiness is a report, not paid authority.
 
 ## Status
 
-**Stopped on BLK-025.** The first actual compatibility completion returned HTTP403
-on4 November2026. The separately authorized updated-key check also returned403. A separately authorized third request also returned403. Three physical
-requests across three consumed approvals, no automatic retry, no baseline started.
-Retain all three unknown reservations, USD0.058950 total, despite account usage showing zero. All operational policies
-above remain candidates; no baseline freeze or release exists. Read the
-[verified stopping outcome](gpt4omini-openrouter-blocked-20261104.md).
+**Metadata access verified with the third key.** The fourth, separately approved
+POST succeeds with exact dated model/OpenAI provider and original strict schema.
+BLK-025 is Mitigated only at this access boundary. Preserve all three earlier403
+receipts and USD0.058950 unknown reservations. This one request costs USD0.00006765;
+campaign conservative exposure is USD0.059018. No baseline freeze/release exists.
+The remaining live contracts/caps, financial boundary and full test/review gates are
+outstanding. Read the [verified supplement](gpt4omini-third-key-access-verified-20261104.md).
 
 ## Historical regression fixture isolation
 
@@ -222,3 +223,49 @@ not paid authority; USD8 remains protected. BLK-025 stays Open. No baseline free
 full-mode metrics, actual serving identity or paired-ablation readiness is claimed.
 Provider/account clarification and request-level financial evidence remain needed;
 no route/model/key workaround or further transmission is authorized by this grant.
+
+
+### Final third-key access grant — 4 November2026
+
+The user supplied a third private API key and explicitly requested one last attempt
+after the three403 outcomes and USD0.058950 retained exposure were reported. Fresh
+private authentication verifies a changed key, HTTP200 and zero key usage. Account
+aggregate usage is now USD0.011651; the user confirms separate testing. Preserve
+that evidence as an opening reconciliation offset, without assigning or settling any
+earlier individual campaign charge or importing any external result/request.
+Available prepaid credits are USD49.988349; USD8 remains protected.
+
+Authorize exactly one fourth physical metadata POST, the identical original payload,
+dated model/OpenAI-only routing/native schema and cumulative USD0.25 smoke/USD5 cell
+caps. A distinct fresh approval must verify all three terminal parents, exact original
+request,22 evidence hashes and independent scoped reviews. Retain all old phases,
+errors, raw responses and reservations. Maximum campaign reservation after this
+request is USD0.078600 (USD0.090251 including the external opening offset). This
+single-use grant authorizes no fifth request, financial settlement, baseline release,
+provider/model workaround, additional cell or contingency use.
+
+
+### Third-key access verified — 4 November2026,15:26 HKT (07:26 UTC)
+
+The single fourth metadata POST succeeds at07:26:23 UTC: HTTP200, unchanged strict
+native author schema valid, exact model `openai/gpt-4o-mini-2024-07-18`, provider
+`OpenAI`, generation `gen-1793777183-1zYHckobPRQEm0FCPCbe`. Independent read-only
+`/generation` confirms identity,299 native input/38 output tokens and USD0.00006765
+cost; key usage and account aggregate reconcile with the USD0.011651 opening offset.
+No semantic or transport retry, model/provider/route/schema change or JSON repair.
+
+The phase is consumed/Complete for access only. All three previous terminal phases,
+halts, raw errors and unknown reservations remain unchanged. The ledger records
+four attempts: three unknown/full USD0.019650 each, one settled conservatively at
+USD0.000068. Campaign conservative exposure USD0.059018, known reported cost
+USD0.00006765, unknown USD0.058950. Account available credit USD49.98828135 includes
+separate user testing; none of that external evidence is a study result or charge.
+BLK-025 is Mitigated at this single successful access boundary; original denial
+cause and old charges remain unresolved. Do not rewrite any earlier receipt.
+
+This proves metadata access and serving identity for one request. It does not pass
+all four contracts, validate shared-decision caps, fix the whole-suite source-context
+failure or release a baseline. Original memory/question processing remains0/675 and
+0/158; no baseline metric or Langfuse Experiment exists. The final one-request grant
+is consumed; no fifth POST, baseline, ablation or old-charge settlement is inferred.
+Read [the verified access supplement](gpt4omini-third-key-access-verified-20261104.md).

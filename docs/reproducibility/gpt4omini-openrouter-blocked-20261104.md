@@ -2,11 +2,12 @@
 
 ## Outcome and scope
 
-**Latest:** the user separately requested one more attempt. The third request at
-15:08 HKT (07:08 UTC) also returned the same403. Three consumed phases retain
-USD0.058950 unknown exposure; final account reads still show USD50/zero usage.
-The baseline remains unstarted. Earlier sections retain the first two attempts
-as dated history; the third-attempt details below are the latest state.
+**Latest:** the third user-supplied key succeeds in one fourth metadata access
+request, with actual dated model/OpenAI provider and charge verified by readback.
+BLK-025 is Mitigated only for that access boundary. All three old403 receipts and
+USD0.058950 unknown reservations remain unchanged. Earlier sections retain the
+stopping history. Read the [success supplement](gpt4omini-third-key-access-verified-20261104.md)
+for current accounting and outstanding baseline gates.
 
 The first live compatibility completion was rejected with HTTP403. **No GPT-4o-mini
 Full/conv-44 baseline has started:0/675 turns and0/158 questions.** Corrected and
