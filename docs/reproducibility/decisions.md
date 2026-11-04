@@ -1041,7 +1041,7 @@ trace IDs, with no ingestion client or modified consumed approval. Actual comple
 316 items/4,494 scores/316 reporting traces, all identities/values/subjects and original158 QA traces.
 Runtime5,097 observations/1,336 traces and original strict proofs also verify. A separately sealed
 lineage supplement classifies675 notes/158 QA **Degraded**, preserving original p0/p1/p2 Incomplete
-receipts/halt and ledger frontier. No model request, evaluator rerun or scientific change occurred.
+receipts/halt and ledger frontier. No model request, regrading or scientific change occurred; import callbacks only returned saved metric values.
 Corrected overallF1/BLEU-1 are54.06%/48.37%; historical42.05%/36.24%; adversarial correctness27/35.
 
 BLK-024 is Resolved. All1,741 historical files, Run1USD8.530133 and Run2 ledger are unchanged. Run2

@@ -27,7 +27,7 @@ Fresh runtime readback verifies p0:1,278 observations/230 traces; p1:2,048/483; 
 
 ## Verified unchanged collection and metrics
 
-All675 original turn identities/content/order, including the original image-caption loader,158 original raw QA records/indices, both views and all saved outputs verify. Final675-note/counter673 memory and675×384 finite float32 stale index/cache completion hashes match. Original malformed decision/fallback,429 cumulative D3a deviations and all inherited failure records remain retained; no prediction, grader or model execution is repeated.
+All675 original turn identities/content/order, including the original image-caption loader,158 original raw QA records/indices, both views and all saved outputs verify. Final675-note/counter673 memory and675×384 finite float32 stale index/cache completion hashes match. Original malformed decision/fallback,429 cumulative D3a deviations and all inherited failure records remain retained; no prediction generation, metric computation or model execution is repeated.
 
 Percentages, using unchanged author aggregation. Categories1–4 have identical corrected/historical values.
 
