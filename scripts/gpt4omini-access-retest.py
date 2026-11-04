@@ -20,7 +20,7 @@ def read(p): return json.loads(p.read_bytes())
 def execute(directory="compatibility-v3"):
     import httpx
     from dotenv import dotenv_values
-    if directory not in ('compatibility-v3','compatibility-v4'):
+    if directory not in ('compatibility-v3','compatibility-v4','compatibility-v5'):
         raise RuntimeError('Only explicitly prepared single-request access phases are supported')
     out=ROOT/'artifacts/gpt4omini'/directory
     approval=read(out/'approval.json')
@@ -44,8 +44,10 @@ def execute(directory="compatibility-v3"):
     prior=ROOT/'artifacts/gpt4omini/compatibility-v2'
     request=read(prior/'raw/000001-request.json')
     denials=[prior/'raw/000001-response.bin']
-    if directory=='compatibility-v4':
+    if directory in ('compatibility-v4','compatibility-v5'):
         denials.append(out.parent/'compatibility-v3/raw/000002-response.bin')
+    if directory=='compatibility-v5':
+        denials.append(out.parent/'compatibility-v4/raw/000003-response.bin')
     for path in denials:
         raw=read(path)
         if (raw.get('error',{}).get('code')!=403
@@ -84,5 +86,5 @@ def execute(directory="compatibility-v3"):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--directory',choices=('compatibility-v3','compatibility-v4'),default='compatibility-v3')
+    parser.add_argument('--directory',choices=('compatibility-v3','compatibility-v4','compatibility-v5'),default='compatibility-v3')
     execute(parser.parse_args().directory)

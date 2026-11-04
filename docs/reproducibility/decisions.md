@@ -1174,3 +1174,23 @@ not paid authority; USD8 remains protected. BLK-025 stays Open. No baseline free
 full-mode metrics, actual serving identity or paired-ablation readiness is claimed.
 Provider/account clarification and request-level financial evidence remain needed;
 no route/model/key workaround or further transmission is authorized by this grant.
+
+
+### Final third-key access grant — 4 November2026
+
+The user supplied a third private API key and explicitly requested one last attempt
+after the three403 outcomes and USD0.058950 retained exposure were reported. Fresh
+private authentication verifies a changed key, HTTP200 and zero key usage. Account
+aggregate usage is now USD0.011651; the user confirms separate testing. Preserve
+that evidence as an opening reconciliation offset, without assigning or settling any
+earlier individual campaign charge or importing any external result/request.
+Available prepaid credits are USD49.988349; USD8 remains protected.
+
+Authorize exactly one fourth physical metadata POST, the identical original payload,
+dated model/OpenAI-only routing/native schema and cumulative USD0.25 smoke/USD5 cell
+caps. A distinct fresh approval must verify all three terminal parents, exact original
+request,22 evidence hashes and independent scoped reviews. Retain all old phases,
+errors, raw responses and reservations. Maximum campaign reservation after this
+request is USD0.078600 (USD0.090251 including the external opening offset). This
+single-use grant authorizes no fifth request, financial settlement, baseline release,
+provider/model workaround, additional cell or contingency use.

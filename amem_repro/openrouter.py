@@ -153,7 +153,8 @@ class CampaignLedger:
         snapshot = self.access_snapshot(db, exclude_phase)
         phases, attempts, halts = (snapshot[k] for k in ('phases','attempts','halts'))
         expected = {'updated-key-one-probe-20261104-v1': 1,
-                    'third-access-one-probe-20261104-v1': 2}.get(grant.get('policy'))
+                    'third-access-one-probe-20261104-v1': 2,
+                    'final-third-key-one-probe-20261104-v1': 3}.get(grant.get('policy'))
         if (expected is None
                 or approval.get('kind') != 'compatibility'
                 or approval.get('limits',{}).get('max_physical_calls') != 1
