@@ -10,13 +10,13 @@ import hashlib
 import json
 from pathlib import Path
 
-from .config import fingerprint
-from .langfuse_verify import (
+from amem_repro.config import fingerprint
+from amem_repro.langfuse_verify import (
     VerificationError, _read, _retry, _proof, _check_experiments, _equal,
     _metadata, _indexed, _query_cli,
 )
-from .phases import _save
-from .reporting import export_experiments
+from amem_repro.phases import _save
+from amem_repro.reporting import export_experiments
 
 RECOVERY_ID = 'run2-full-conv-44-reporting-recovery-20261104-v1'
 ORIGINAL_RUN = 'run2-full-conv-44-r0-p2'
@@ -25,6 +25,30 @@ BATCH_SPANS = 16
 TRANSPORT_LIMIT = 64 * 1024 * 1024
 # Fail before transmission, with at least 50% headroom under the existing guard.
 PAYLOAD_CEILING = TRANSPORT_LIMIT // 2
+
+
+def export_saved_recovery(views, *, client, metadata, plan, original_trace_ids):
+    """Adapt reporting identities without changing the historically pinned exporter.
+
+    Tasks/evaluators and their saved values pass through untouched. This seam keeps
+    the consumed scientific source migrations byte-identical and fail-closed.
+    """
+    class RecoveryClient:
+        def run_experiment(self, **kwargs):
+            policy = kwargs['metadata']['scoring_policy']
+            kwargs['experiment_id'] = plan['experiments'][policy]['id']
+            kwargs['run_name'] = plan['experiments'][policy]['run_name']
+            kwargs['metadata']['experiment_identity'] = {
+                **kwargs['metadata']['experiment_identity'], 'recovery_import_id': RECOVERY_ID}
+            for item in kwargs['data']:
+                item['metadata']['experiment_identity'] = kwargs['metadata']['experiment_identity']
+                item['metadata']['original_trace_id'] = original_trace_ids[item['metadata']['question_id']]
+            return client.run_experiment(**kwargs)
+
+        def flush(self):
+            client.flush()
+
+    return export_experiments(views, client=RecoveryClient(), export_authorized=True, metadata=metadata)
 
 
 def recovery_plan(views, original, original_trace_ids):
@@ -179,9 +203,8 @@ def recover(views, original, output, *, original_trace_ids, original_binding, cl
         metadata = {**plan['identity'], **plan['original_binding'], 'recovery_import_id': RECOVERY_ID,
                     'observability_policy': 'run2-audit-essential-v1',
                     'supersedes_failed_import': {p: v['id'] for p, v in original['experiments'].items()}}
-        results = export_experiments(views, client=client, export_authorized=True,
-            metadata=metadata, experiment_ids={p: r['id'] for p, r in plan['experiments'].items()},
-            original_trace_ids=original_trace_ids)
+        results = export_saved_recovery(views, client=client, metadata=metadata,
+                                       plan=plan, original_trace_ids=original_trace_ids)
         for policy, result in results.items():
             _equal(plan['experiments'][policy]['id'], result.experiment_id, 'SDK/experiment_id')
             _equal(plan['experiments'][policy]['run_name'], result.run_name, 'SDK/run_name')

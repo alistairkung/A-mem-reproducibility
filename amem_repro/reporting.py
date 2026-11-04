@@ -113,8 +113,6 @@ def export_experiments(
     export_authorized=False,
     evaluation_factory=None,
     metadata=None,
-    experiment_ids=None,
-    original_trace_ids=None,
 ):
     """Export immutable saved results, explicitly marked as an import.
 
@@ -144,8 +142,6 @@ def export_experiments(
             if view["scoring_policy"] != policy:
                 raise ValueError("Scoring policy identity mismatch")
             export_identity = {**identity, "scoring_policy": policy}
-            if metadata.get('recovery_import_id'):
-                export_identity['recovery_import_id'] = metadata['recovery_import_id']
             by_id = {r["question_id"]: r for r in view["individual_results"]}
             if len(by_id) != len(view["individual_results"]) or not by_id:
                 raise ValueError("Expected nonempty unique question IDs")
@@ -194,8 +190,6 @@ def export_experiments(
                         "question_id": r["question_id"],
                         "category": r["qa"]["category"],
                         "original_record": r,
-                        **({'original_trace_id': original_trace_ids[r['question_id']]}
-                           if original_trace_ids else {}),
                     },
                 }
                 for r in by_id.values()
@@ -209,7 +203,6 @@ def export_experiments(
                 evaluators=evaluators,
                 max_concurrency=1,
                 metadata=run_metadata,
-                **({'experiment_id': experiment_ids[policy]} if experiment_ids else {}),
             )
     finally:
         client.flush()

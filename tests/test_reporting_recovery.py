@@ -9,7 +9,7 @@ import pytest
 
 from amem_repro.config import fingerprint
 from amem_repro.langfuse_verify import VerificationError
-from amem_repro.reporting_recovery import recover, recovery_plan, RECOVERY_ID, POLICIES
+from scripts.run2_reporting_recovery import recover, recovery_plan, RECOVERY_ID, POLICIES
 
 
 def fixture(tmp_path, monkeypatch):

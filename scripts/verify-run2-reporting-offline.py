@@ -9,8 +9,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from amem_repro.config import fingerprint
-from amem_repro.reporting import export_experiments
-from amem_repro.reporting_recovery import recovery_plan, RECOVERY_ID, PAYLOAD_CEILING
+from scripts.run2_reporting_recovery import recovery_plan, export_saved_recovery, RECOVERY_ID, PAYLOAD_CEILING
 from amem_repro.observation_policy import should_export_span, POLICY_ID
 from amem_repro.phases import _deny_network, _save
 from langfuse import Langfuse, LangfuseOtelSpanAttributes as A
@@ -51,8 +50,8 @@ def main():
                          ('config_sha256', 'source_sha256', 'max_output_tokens_by_stage')})
         with _deny_network(), patch.object(client, '_get_project_id', return_value='offline'), patch.object(
                 client, 'create_score', side_effect=lambda **kw: scores.append(kw)):
-            export_experiments(views, client=client, export_authorized=True, metadata=metadata,
-                experiment_ids={p:r['id'] for p,r in plan['experiments'].items()}, original_trace_ids=traces)
+            export_saved_recovery(views, client=client, metadata=metadata, plan=plan,
+                                  original_trace_ids=traces)
             client.flush()
         client.shutdown()
         for span in exporter.roots:

@@ -8,8 +8,8 @@ BLK-024 remains Open until actual recovery readback passes. No model execution i
 Use pinned Langfuse5.1.0, `flush_at=16`, serial saved-result callbacks and the frozen essential
 observation filter. A stricter32MiB serialized batch ceiling leaves50% headroom under the original
 64MiB limit. No evaluator, name, score value, reference-selection or original-record change.
-The reporting exporter accepts explicit Experiment IDs and original QA trace associations; all
-existing callers retain their prior identities and behavior.
+A separate reporting wrapper supplies explicit Experiment IDs and original QA trace associations.
+The historical exporter and every scientific source fingerprint remain byte-identical.
 
 Recovery ID: `run2-full-conv-44-reporting-recovery-20261104-v1`. Keep original inference run ID
 `run2-full-conv-44-r0-p2`, campaign, condition, population/scorer/provider-policy and manifest pins.
@@ -39,7 +39,7 @@ files before/after, and never opens a budget for writing. Output is isolated und
   observation/trace subjects. These explain why empty Experiment reads did not prove no writes.
   Preserve them as original failed-import evidence, excluded from canonical recovery.
 - Actual saved-data SDK serialization, network blocked: default632 spans/316 items/4,494 scores,
-  two batches, max155,613,589B (both above64MiB). Sixteen-span batching:40 batches, max9,059,941B,
+  two batches, max155,912,209B (both above64MiB). Sixteen-span batching:40 batches, max9,075,061B,
   all records and original trace mappings exact, no oversized batch, zero network/model calls.
 - Regression tests cover exact import/read-only resume, partial/interrupted writes, unclaimed
   duplicates, foreign Run1 identities, altered values/counts/trace subjects and model/DNS exclusion.
@@ -74,3 +74,15 @@ Successful readback must verify316 question/view items,4,494 exact scores, disti
 all158 original QA trace associations and both full scoring views. Reconcile immutable local
 collection/accounting and runtime proofs before a separately verified Degraded lineage supplement.
 BLK-009 remains Open and all future paid cells remain blocked pending a cost-only scope decision.
+
+Debug diary addendum: the default historical BLK-022 tests read the current multi-phase ledger but
+copy only p0, causing missing-p1 evidence failures. Preserve those failed suite logs. Run the complete
+suite using the tests’ existing `AMEM_BLK022_EVIDENCE_ROOT` option, pointing to an isolated fixture
+whose ledger is copied exactly from immutable `budget-at-transport-stop.sqlite`; other incident
+evidence/assets are read-only links. No test expectation, production provenance gate or ledger is
+weakened. The new support module lives in `scripts/run2_reporting_recovery.py`, outside the frozen
+scientific source inventory; original `amem_repro/reporting.py` remains byte-identical.
+
+```sh
+AMEM_BLK022_EVIDENCE_ROOT="$PWD/artifacts/run2/reporting-recovery/historical-fixture" .venv/bin/pytest -q
+```

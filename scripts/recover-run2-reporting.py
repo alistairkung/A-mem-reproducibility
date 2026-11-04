@@ -11,7 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 APPROVAL_FILES = frozenset({
-    'amem_repro/reporting.py', 'amem_repro/reporting_recovery.py',
+    'amem_repro/reporting.py', 'scripts/run2_reporting_recovery.py',
     'amem_repro/langfuse_verify.py', 'amem_repro/observation_policy.py',
     'amem_repro/config.py', 'amem_repro/phases.py', 'amem_repro/preflight.py',
     'amem_repro/manifests.py', 'pyproject.toml', 'uv.lock',
@@ -94,7 +94,7 @@ def main(read_only):
     verify_approval()
     verify_preservation()
     reporting_environment()
-    from amem_repro.reporting_recovery import recover, RECOVERY_ID, BATCH_SPANS
+    from scripts.run2_reporting_recovery import recover, RECOVERY_ID, BATCH_SPANS
     from amem_repro.observation_policy import should_export_span
     from amem_repro.langfuse_verify import _query_cli, VerificationError
     from langfuse import Langfuse
