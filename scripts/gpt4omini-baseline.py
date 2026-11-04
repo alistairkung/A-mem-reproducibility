@@ -70,8 +70,12 @@ def freeze(gate_path, reviewed_commit, merge_commit):
             or compatibility['stages']!=['answer','shared_decision','shared_decision']
             or metadata['native_contracts_verified']!=['metadata']):
         raise RuntimeError('Native compatibility coverage incomplete')
+    original_finance=DIRECTORY/'compatibility-v5/financial-readback-after-success.json'
+    evidence=read(DIRECTORY/'compatibility-v5/final-access-acceptance.json')
+    if hashlib.sha256(original_finance.read_bytes()).hexdigest()!=evidence['files'][str(original_finance.relative_to(DIRECTORY))]:
+        raise RuntimeError('Original reconciled account snapshot changed')
     files=dict(sources['files'])
-    paths=[VERIFICATION/'forecast.json',VERIFICATION/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
+    paths=[VERIFICATION/'forecast.json',VERIFICATION/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
         *[p for name in ('compatibility-release','compatibility-release-tail') for p in (DIRECTORY/name).rglob('*') if p.is_file()],
         DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
