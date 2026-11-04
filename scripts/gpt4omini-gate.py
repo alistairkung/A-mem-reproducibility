@@ -56,12 +56,12 @@ def main(output):
     metadata={**SCIENTIFIC_BINDING,'source_sha256':source,'condition':'full','population':'smoke',
         'manifest_sha256':fingerprint(json.loads((ROOT/'manifests/smoke.json').read_text())),
         'repetition':0,'conversation_id':'conv-26','provider_contract_policy':'strict-original-v1',
-        'run_id':'native-real-runner-gate','observability_policy':'run2-audit-essential-v1',
+        'run_id':output.name+'-real-runner','observability_policy':'run2-audit-essential-v1',
         'execution_mode':'offline-saved-response-gate'}
     try:
         reference=run_fixture(output/'reference',use_runtime_assets=True,token_counter=counter)
         observer=LangfuseObserver(client,metadata)
-        traced=run_fixture(output/'native-real-runner-gate',observer=observer,
+        traced=run_fixture(output/metadata['run_id'],observer=observer,
             records=reference['generations'],use_runtime_assets=True,token_counter=counter)
         candidate=run_fixture(output/'candidate',records=reference['generations'],candidate=True,
                               use_runtime_assets=True,token_counter=counter)
@@ -77,7 +77,7 @@ def main(output):
         save_new(output/'scoring-views.json',traced['views'])
         phases=[];ledger=None;parent=None
         for seq in range(3):
-            phase=run_actual_phase(output/'executor',root=ROOT,phase=f'native-gate-p{seq}',
+            phase=run_actual_phase(output/'executor',root=ROOT,phase=f'{output.name}-p{seq}',
                 ledger=ledger,parent=parent,fail_decisions={2:'length'},cloud_client=client,
                 real_cloud=True,runtime_assets=True)
             parent=phase['receipt'];ledger=phase['ledger'];phases.append(parent)

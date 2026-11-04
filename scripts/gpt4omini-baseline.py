@@ -21,6 +21,8 @@ def read(path):return json.loads(Path(path).read_bytes())
 def verify_release(release):
     from amem_repro.config import fingerprint,source_fingerprint
     from amem_repro.gpt4omini_campaign import verify_inventory,verify_prior
+    if (ROOT/'artifacts/gpt4omini').absolute()!=(ROOT/'artifacts/gpt4omini').resolve():
+        raise RuntimeError('Paid campaign namespace cannot alias another artifact directory')
     if release.get('approved') is not True or release['binding']['campaign_id']!='amem-gpt4omini-openrouter-20261104-v1':
         raise RuntimeError('Explicit reviewed one-cell campaign approval required')
     if fingerprint(source_fingerprint(ROOT))!=release['binding']['source_sha256']:
@@ -48,6 +50,11 @@ def freeze(gate_path, reviewed_commit, merge_commit):
             or any(gate.get(k) is not True for k in required)):
         raise RuntimeError('Source-bound real-runner native/cloud gate incomplete')
     verify_inventory(Path(gate_path).parent,gate['files'])
+    if gate.get('gate_script_sha256')!=hashlib.sha256((ROOT/'scripts/gpt4omini-gate.py').read_bytes()).hexdigest():
+        raise RuntimeError('Executed cloud-gate script differs from this release')
+    for name,digest in gate.get('fixture_files',{}).items():
+        if hashlib.sha256((ROOT/name).read_bytes()).hexdigest()!=digest:
+            raise RuntimeError('Executed native gate fixture changed')
     compatibility=read(DIRECTORY/'compatibility/receipt.json')
     if compatibility['status']!='complete' or compatibility['calls']!=6:
         raise RuntimeError('Six-call native compatibility not complete')
@@ -178,6 +185,7 @@ def execute():
             try:
                 result=execute_phase(approval,ledger,observer=observer,client=client,token_counter=counter,root=ROOT)
             finally:cloud.shutdown()
+            verify_release(release)
             verify_prior()
             print(json.dumps({k:result[k] for k in ('phase','status','notes','questions','evolution_counter',
                 'error_type','recoverable_length_failure','budget')}),flush=True)

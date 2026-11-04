@@ -49,7 +49,7 @@ def import_results(views, context, *, client, traces, query=None):
         if len(item_traces)!=len(items):raise VerificationError('Experiment trace identities overlap')
         for start in range(0,len(item_traces),50):
             scores+=_read(query,'scores',{'trace-id':','.join(item_traces[start:start+50]),
-                'fields':'details,subject','limit':1000,'all':True,'max-items':10000},output,paths)
+                'fields':'details,subject','limit':100,'all':True,'max-items':1000},output,paths)
         indexed=_indexed(scores,'id',[s['id'] for item in items for s in item['scores']])
         for item in items:
             question=item['input']['question_id']
