@@ -194,6 +194,8 @@ def execute():
             for name in legacy_manifest['files']:
                 target=(legacy/name).resolve();legacy_signatures[target]=file_signature(target)
             legacy_signatures[legacy/'.git/HEAD']=file_signature(legacy/'.git/HEAD')
+            legacy_signatures[DIRECTORY/'verification/prior-preservation-authoritative.json']=file_signature(
+                DIRECTORY/'verification/prior-preservation-authoritative.json')
             def service_healthy():
                 original_healthy()
                 if any(file_signature(path)!=signature for path,signature in legacy_signatures.items()):
