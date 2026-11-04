@@ -44,3 +44,17 @@ def test_prior_unused_budget_does_not_increase_next_cell_cap(tmp_path):
     with ledger.transaction() as db:
         db.execute("INSERT INTO attempts(phase,stage,request_hash,reservation,charge,state) VALUES ('B','metadata','other',4999000,4999000,'settled')")
     with pytest.raises(BudgetStop):ledger.reserve(phase,'metadata',{'max_tokens':1000})
+
+def test_frontier_includes_sealed_audit_dependencies(tmp_path):
+    from amem_repro.gpt4omini_campaign import predecessor_files
+    outcome=tmp_path/'outcomes/conv-44'
+    files={}
+    for axis in ('standards','spec'):
+        receipt=outcome/f'acceptance-{axis}.json'
+        save_new(receipt,{'evidence_files':{'proof.json':'original'}})
+        files[str(receipt.relative_to(tmp_path))]=hashlib.sha256(receipt.read_bytes()).hexdigest()
+    save_new(outcome/'frontier.json',{'files':files})
+    assert predecessor_files(tmp_path,'conv-44')['proof.json']=='original'
+    receipt.write_text('{"evidence_files":{"proof.json":"replacement"}}')
+    with pytest.raises(BudgetStop):
+        predecessor_files(tmp_path,'conv-44')

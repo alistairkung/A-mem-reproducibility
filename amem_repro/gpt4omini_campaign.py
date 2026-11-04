@@ -33,6 +33,24 @@ def file_signature(path):
     return stat.st_dev,stat.st_ino,stat.st_size,stat.st_mtime_ns,stat.st_ctime_ns
 
 
+def predecessor_files(campaign, cell):
+    """Include audit dependencies omitted by the first immutable frontier."""
+    outcome=campaign/'outcomes'/cell
+    files=dict(read(outcome/'frontier.json')['files'])
+    for axis in ('spec','standards'):
+        receipt=outcome/f'acceptance-{axis}.json'
+        raw=receipt.read_bytes()
+        if hashlib.sha256(raw).hexdigest()!=files[str(receipt.relative_to(campaign))]:
+            raise BudgetStop('Predecessor acceptance receipt changed')
+        audit=json.loads(raw)
+        evidence=audit.get('evidence_files') or audit['evidence_sha256']
+        for key,digest in evidence.items():
+            name=key.removeprefix('artifacts/gpt4omini/')
+            if files.setdefault(name,digest)!=digest:
+                raise BudgetStop('Disagreement over predecessor artifact')
+    return files
+
+
 def admission_guard(approval, ledger, root):
     """Recheck sealed ancestry edges and immutable file identity at EVERY call.
 
@@ -52,7 +70,7 @@ def admission_guard(approval, ledger, root):
     previous=list(FULL_CELLS)[:list(FULL_CELLS).index(approval['conversation'])]
     for cell in previous:
         certificate=ledger.root/'outcomes'/cell/'frontier.json'
-        files=read(certificate)['files']
+        files=predecessor_files(ledger.root,cell)
         protected[certificate]=file_signature(certificate)
         for name,digest in files.items():
             path=(ledger.root/name).absolute()

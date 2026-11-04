@@ -1,4 +1,4 @@
-"""Freeze/execute only the reviewed Full conv-44 GPT-4o-mini lineage, never another cell."""
+"""Freeze and execute the next independently admitted GPT-4o-mini Full baseline."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -107,7 +107,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         if frontier['next_cell']!=CELL or not frontier['affordable']:
             raise RuntimeError('Predecessor acceptance or affordability failed')
         prior_cells=list(FULL_CELLS)[:list(FULL_CELLS).index(CELL)]
-        from amem_repro.gpt4omini_campaign import verify_accepted_cell
+        from amem_repro.gpt4omini_campaign import predecessor_files,verify_accepted_cell
         for c in prior_cells:
             verify_accepted_cell(DIRECTORY,c)
             from scripts.gpt4omini_finance import verify_accepted_finances
@@ -120,7 +120,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
                 raise RuntimeError('Prior audits or financial proof differ')
             proof=DIRECTORY/'outcomes'/c/'frontier.json'
             paths.append(proof)
-            for name,digest in read(proof)['files'].items():
+            for name,digest in predecessor_files(DIRECTORY,c).items():
                 files[str((DIRECTORY/name).relative_to(ROOT))]=digest
     for path in paths:files[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
     suite=(VERIFICATION/'full-suite.txt' if CELL!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt').read_text()
@@ -305,7 +305,7 @@ if __name__=='__main__':
     parser.add_argument('--cell',choices=FULL_CELLS,default='conv-44')
     args=parser.parse_args()
     CELL=args.cell;STORE=cell_store(DIRECTORY,CELL)
-    VERIFICATION=FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-final'
+    VERIFICATION=FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release'
     try:
         if args.execute:execute()
         else:freeze(args.gate,args.reviewed_commit,args.merge_commit)
