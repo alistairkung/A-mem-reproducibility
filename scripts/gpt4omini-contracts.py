@@ -27,6 +27,24 @@ def execute():
             or approval['script_sha256'] != hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
             or fingerprint(read(PLAN)) != 'a4eb0f587fe50d7f64bee80993f77ada062b7a6bbb90da6527edb460546088a8'):
         raise RuntimeError('Reviewed source or frozen compatibility plan differs')
+    sources = source_fingerprint(ROOT)['files']
+    protected = {ROOT/name:digest for name,digest in sources.items()}
+    protected[Path(__file__).resolve()] = approval['script_sha256']
+    for path,digest in protected.items():
+        blob = subprocess.check_output(['git','show',head+':'+str(path.relative_to(ROOT))],cwd=ROOT)
+        if hashlib.sha256(blob).hexdigest()!=digest:
+            raise RuntimeError('Reviewed Git bytes differ')
+    prior = read(CAMPAIGN/'compatibility-v5/approval.json')
+    if fingerprint(prior) != approval['prior_approval_sha256']:
+        raise RuntimeError('Third-key approval changed')
+    protected.update({ROOT/name:sha for name,sha in prior['evidence_files'].items()})
+    protected[PLAN] = hashlib.sha256(PLAN.read_bytes()).hexdigest()
+    def healthy(db=None):
+        for path,digest in protected.items():
+            if hashlib.sha256(path.read_bytes()).hexdigest()!=digest:
+                raise RuntimeError('Reviewed evidence or source changed')
+        verify_prior()
+    healthy()
     for axis in ('standards','spec'):
         review = read(OUT / f'{axis}-review.json')
         if review['verdict'] != 'pass' or review['reviewed_commit'] != head or fingerprint(review) != approval['reviews'][axis]:
@@ -45,6 +63,7 @@ def execute():
                       transport=httpx.HTTPTransport(retries=0), follow_redirects=False) as client:
         client._amem_credential = key
         phase = ledger.claim(approval)
+        ledger.set_guard(phase, healthy)
         controller = OpenRouterController(client,ledger=ledger,phase=phase,journal=OUT/'raw',observer=record)
         error = None
         try:
