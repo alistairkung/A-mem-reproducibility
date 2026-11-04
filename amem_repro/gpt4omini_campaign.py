@@ -100,9 +100,14 @@ def verify_inventory(directory, files):
 
 
 def verify_prior(root=ROOT):
-    files=read(root/'artifacts/gpt4omini/verification/prior-preservation-all.json')
-    verify_inventory(root,files)
-    return len(files)
+    import subprocess
+    evidence=read(root/'artifacts/gpt4omini/verification/prior-preservation-authoritative.json')
+    legacy=Path(evidence['legacy_root']).resolve()
+    head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=legacy,text=True).strip()
+    if head!=evidence['legacy_commit']:
+        raise BudgetStop('Historical source checkout is no longer frozen')
+    verify_inventory(legacy,evidence['files'])
+    return len(evidence['files'])
 
 
 class FallbackGuard:

@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse
 import hashlib
 import json
+import re
 import sys
 import subprocess
 from datetime import datetime,timezone
@@ -23,9 +24,13 @@ def read(path):
 
 
 def verify_prior():
-    for name,digest in read(OUTPUT.parent/'verification/prior-preservation-all.json').items():
-        path=(ROOT/name).resolve()
-        if not path.is_relative_to(ROOT) or hashlib.file_digest(path.open('rb'),'sha256').hexdigest()!=digest:
+    evidence=read(OUTPUT.parent/'verification/prior-preservation-authoritative.json')
+    legacy=Path(evidence['legacy_root']).resolve()
+    if subprocess.check_output(['git','rev-parse','HEAD'],cwd=legacy,text=True).strip()!=evidence['legacy_commit']:
+        raise RuntimeError('Historical source checkout changed')
+    for name,digest in evidence['files'].items():
+        path=(legacy/name).resolve()
+        if not path.is_relative_to(legacy) or hashlib.file_digest(path.open('rb'),'sha256').hexdigest()!=digest:
             raise RuntimeError('Preserved historical evidence changed')
 
 
@@ -143,6 +148,12 @@ def execute():
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--execute',action='store_true')
+    parser.add_argument('--directory',default=str(OUTPUT))
     args=parser.parse_args()
+    proposed=Path(args.directory).absolute()
+    if (proposed!=proposed.resolve() or proposed.parent!=(ROOT/'artifacts/gpt4omini').resolve()
+            or not re.fullmatch(r'compatibility(?:-v[2-9][0-9]*)?',proposed.name)):
+        raise SystemExit('Compatibility requires a canonical campaign subdirectory')
+    OUTPUT=proposed
     if args.execute:execute()
     else:prepare()

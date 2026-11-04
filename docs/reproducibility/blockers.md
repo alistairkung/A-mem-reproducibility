@@ -835,3 +835,22 @@ Ten focused tests and the two full675/158 mock executions pass. Final source-bou
 whole suite, fixed archive gates, real-cloud native gate and independent re-review
 remain release requirements. These are new-engineering fixes in existing blocker
 classes, not changes to Run1/Run2 evidence or additional paid authority.
+
+### BLK-019 / BLK-005 — 4 November2026 historical source-alias preservation gate
+
+Before the first OpenRouter model request, full preservation verification rejects
+a changed shared observer visible through a synthetic historical workspace's
+source symlink. No campaign ledger/client/transmission exists. A complete alias
+audit identifies29 tracked-source links; some earlier inventory expansion occurred
+after support edits and cannot substitute for the clean pre-task source commit.
+Preserve both maps, the failed precheck and the alias audit.
+
+Restore the original research checkout exactly to its clean pre-task `b8b3656`,
+without editing any historical artifact or link. Isolate the new campaign in its
+own checkout and physical ledger/cache namespace. The authoritative preservation
+record combines the original file inventories with original Git bytes for the
+tracked aliases; all1,534 older files and29 source aliases verify. Add legacy
+checkout/file checks at paid work boundaries. This is restoration/isolation of
+support source, not a waiver of changed evidence, financial adjudication, altered
+experiment receipt or retroactive scientific change. The original unused approval
+stays preserved/ineligible; a new reviewed source-bound plan is required.

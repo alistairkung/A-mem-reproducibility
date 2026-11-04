@@ -126,3 +126,30 @@ The default-evidence and new-source rejection logs remain preserved. This select
 is offline test context only; it cannot authorize a historical phase or new model
 request. A fresh clone without optional private historical evidence still runs its
 portable tests and explicitly skips unavailable archives.
+
+## Preservation anchor and isolated execution checkout
+
+The pre-transmission audit found that a preserved synthetic Run2 workspace links
+support files directly to the original research checkout. Changing that checkout
+would change the fixture's visible source bytes. No OpenRouter request was admitted:
+the original prepared approval remains unconsumed/ineligible, with no paid ledger.
+
+Keep `/Users/alistair/projects/FTEC/A-mem-reproducibility` detached at the clean
+pre-task `b8b3656f1342bceda4c79ffe7e824c1fc79afbab`. Run the new campaign from the
+separate `.worktrees/gpt4omini-baseline` checkout, with physical new campaign
+artifacts/ledger/cache there. The original `artifacts/gpt4omini` is a convenience
+link to that new namespace; every older study artifact/link remains untouched.
+Shared immutable assets and historical regression inputs are read-only links.
+
+`prior-preservation-authoritative.json` retains both earlier inventories and pins
+all1,534 older file contents. It reconciles the original tracked-source aliases
+against the independently recorded clean pre-task Git commit; the earlier partial
+snapshots and failed check remain preserved. All29 source aliases match original
+Git bytes. The driver checks this frozen legacy checkout before each phase and
+checks immutable legacy-file signatures at each work boundary. Do not advance the
+preservation checkout while the historical source aliases depend on it.
+
+The fresh compatibility plan/approval uses `compatibility-v2/`, retaining the
+pre-transmission attempt rather than replacing or reusing its source binding.
+This changes operational isolation only; prompts, schemas, generation/scoring
+policies, population, provider route and financial caps are unchanged.

@@ -55,11 +55,12 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     for name,digest in gate.get('fixture_files',{}).items():
         if hashlib.sha256((ROOT/name).read_bytes()).hexdigest()!=digest:
             raise RuntimeError('Executed native gate fixture changed')
-    compatibility=read(DIRECTORY/'compatibility/receipt.json')
+    compatibility=read(DIRECTORY/'compatibility-v2/receipt.json')
     if compatibility['status']!='complete' or compatibility['calls']!=6:
         raise RuntimeError('Six-call native compatibility not complete')
     files=dict(sources['files'])
-    paths=[Path(gate_path),DIRECTORY/'compatibility/receipt.json',DIRECTORY/'compatibility/plan-v2.json',
+    paths=[Path(gate_path),DIRECTORY/'compatibility-v2/receipt.json',DIRECTORY/'compatibility-v2/plan-v2.json',
+        DIRECTORY/'verification/prior-preservation-authoritative.json',
         DIRECTORY/'verification/baseline-preflight.json',DIRECTORY/'verification/baseline-full-suite.txt',
         DIRECTORY/'verification/baseline-standards-review.json',DIRECTORY/'verification/baseline-spec-review.json',
         DIRECTORY/'verification/archive-equivalence.json',
@@ -85,7 +86,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
                   'protected_microusd':8000000,'max_baseline_calls':1666,
                   'max_new_langfuse_units':30000},
         'gate_path':str(Path(gate_path).relative_to(ROOT)),
-        'forecast':read(DIRECTORY/'compatibility/plan-v2.json')['forecast']}
+        'forecast':read(DIRECTORY/'compatibility-v2/plan-v2.json')['forecast']}
     verify_release(release)
     save_new(DIRECTORY/'frozen/campaign-approval.json',release)
     print(json.dumps({'approved':True,'campaign':binding['campaign_id'],'source':binding['source_sha256']}))
@@ -184,8 +185,19 @@ def execute():
             observer=LangfuseObserver(cloud,{**release['binding'],'run_id':phase,
                 'execution_mode':'paid-gpt4omini-baseline','parent_run_id':parent['phase'] if parent else None})
             original_healthy=observer.assert_healthy
+            from amem_repro.gpt4omini_campaign import file_signature
+            legacy_manifest=read(DIRECTORY/'verification/prior-preservation-authoritative.json')
+            legacy=Path(legacy_manifest['legacy_root'])
+            legacy_signatures={legacy/name:file_signature(legacy/name) for name in legacy_manifest['files']
+                               if not (legacy/name).is_symlink()}
+            # Aliases are checked through their immutable original target as well.
+            for name in legacy_manifest['files']:
+                target=(legacy/name).resolve();legacy_signatures[target]=file_signature(target)
+            legacy_signatures[legacy/'.git/HEAD']=file_signature(legacy/'.git/HEAD')
             def service_healthy():
                 original_healthy()
+                if any(file_signature(path)!=signature for path,signature in legacy_signatures.items()):
+                    raise RuntimeError('Historical evidence changed; no next paid operation')
                 units=len(observer.observations)+len({r['trace_id'] for r in observer.observations})+len(observer.scores)
                 # Retain room for all158 questions in both complete Experiments.
                 if prior_runtime_units+units+10744>release['limits']['max_new_langfuse_units']:
