@@ -729,3 +729,14 @@ are unavailable unless an experiment receipt supplies them.
 - **Final resolution or limitation:** Open. The narrow prospective batching remedy has offline evidence, but cloud partial-write reconciliation, an explicit reporting-only identity/re-import decision and independent acceptance verification remain necessary. Preserve the original Incomplete phase/claim/halt; no more LLM calls are needed to repair reporting.
 - **Verification:** Independent state/scoring/financial audits verify all675 notes/158 predictions, exact source/ancestry,534 p2 requests and conservativeUSD4.166489 total. Runtime cloud proof verifies1,771 observations; Experiment visibility remains unverified. Offline batch characterization proves smaller serialized batches only; it does not resolve partial writes or authorize automatic recovery.
 - **Research significance:** A small end-to-end tracing fixture does not establish full-benchmark export scalability. Successful local scoring, runtime ingestion, SDK-returned Experiment IDs and verified remote Experiment completeness are separate facts; reporting failure must remain visible without discarding sound scientific evidence.
+
+### BLK-024 — 4 November2026 authorized reporting-only attempt
+
+The user separately authorizes engineering/reviews/merge and one bounded saved-result import;
+no model execution or future paid cell. [Recovery specification](run2-reporting-recovery.md).
+Original cloud inspection discovers4,494 orphan scores despite0 Experiment/item results; preserve
+and isolate these original subjects rather than assume no partial writes. New explicit import/run
+identities,16-span batches and exact item/score/trace readback are implemented for review. Actual
+SDK network-disabled reproduction retains632 spans/316 items/4,494 scores: default max155,613,589B,
+bounded max9,059,941B, zero changed results/model calls. Interrupted claims resume reads only.
+BLK-024 remains Open pending merged-source live readback; BLK-009 and all paid-cell holds remain.
