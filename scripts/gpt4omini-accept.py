@@ -15,6 +15,8 @@ from amem_repro.openrouter import CampaignLedger,FULL_CELLS,cell_store,save_new
 def read(p):return json.loads(p.read_bytes())
 
 def seal(campaign,cell,org_units):
+    from amem_repro.gpt4omini_campaign import verify_accepted_cell
+    verify_accepted_cell(campaign,cell)
     order=list(FULL_CELLS)
     accepted=order[:order.index(cell)+1]
     out=campaign/'outcomes'/cell

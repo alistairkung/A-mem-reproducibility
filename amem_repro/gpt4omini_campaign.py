@@ -49,6 +49,19 @@ def admission_guard(approval, ledger, root):
             or fingerprint(read(manifest))!=approval['binding']['manifest_sha256']):
         raise BudgetStop('Frozen dataset or selection changed')
     protected.update({data:file_signature(data),manifest:file_signature(manifest)})
+    previous=list(FULL_CELLS)[:list(FULL_CELLS).index(approval['conversation'])]
+    for cell in previous:
+        certificate=ledger.root/'outcomes'/cell/'frontier.json'
+        files=read(certificate)['files']
+        protected[certificate]=file_signature(certificate)
+        for name,digest in files.items():
+            path=(ledger.root/name).absolute()
+            if path.resolve()!=path or not path.is_relative_to(ledger.root):
+                raise BudgetStop('Predecessor file path aliases foreign storage')
+            signature=file_signature(path)
+            if hashlib.file_digest(path.open('rb'),'sha256').hexdigest()!=digest or file_signature(path)!=signature:
+                raise BudgetStop('Predecessor artifact changed')
+            protected[path]=signature
     ancestors=[]
     path=Path(approval['parent_path']) if approval.get('parent_path') else None
     while path:
@@ -97,6 +110,42 @@ def verify_inventory(directory, files):
         if (not path.is_relative_to(Path(directory).resolve()) or path.is_symlink()
                 or hashlib.file_digest(path.open('rb'),'sha256').hexdigest()!=digest):
             raise BudgetStop('Preserved evidence or provenance changed: '+name)
+
+
+def verify_accepted_cell(campaign, cell):
+    """Verify source receipts and independent audits before sealing newer hashes."""
+    import sqlite3
+    from base64 import b64decode
+    store=cell_store(campaign,cell)
+    with sqlite3.connect((campaign/'budget.sqlite').as_uri()+'?mode=ro',uri=True) as db:
+        phases=db.execute("""SELECT id,seal FROM phases WHERE json_extract(approval,'$.kind')='baseline'
+                           AND json_extract(approval,'$.conversation')=? ORDER BY rowid""",(cell,)).fetchall()
+    if not phases: raise BudgetStop('No prior collection')
+    for phase,seal in phases:
+        directory=store/'runs'/phase
+        record=read(directory/'phase.json')
+        if fingerprint(record)!=seal: raise BudgetStop('Prior scientific receipt differs from ledger')
+        verify_inventory(directory,record['files'])
+    if record['status'] not in ('complete','degraded') or record['binding']['conversation_id']!=cell:
+        raise BudgetStop('Predecessor scientific collection incomplete')
+    cache=read(directory/'cache-proof.json')
+    verify_inventory(campaign/cache['directory'],cache['files'])
+    for axis in ('spec','standards'):
+        review=read(campaign/'outcomes'/cell/f'acceptance-{axis}.json')
+        if review.get('accepted') is not True or review.get('verdict')!='pass' or review['phase']!=phase:
+            raise BudgetStop('Predecessor independent acceptance incomplete')
+        files=review.get('evidence_files') or review.get('evidence_sha256')
+        if not files:raise BudgetStop('Missing prior independent proof digests')
+        verify_inventory(campaign,{n.removeprefix('artifacts/gpt4omini/'):d for n,d in files.items()})
+    finance=read(store/'reconciliation.json')
+    if not finance['verified']:raise BudgetStop('Predecessor financial proof incomplete')
+    journal=Path(finance['generation_journal'])
+    if not journal.resolve().is_relative_to(store.resolve()): raise BudgetStop('Foreign billing journal')
+    for i,generation in enumerate(finance['generations']):
+        matches=list(journal.glob(f'{i}-*.json'))
+        if not any((r:=read(f))['status']==200 and json.loads(b64decode(r['response_base64'])).get('data')==generation
+                   for f in matches):
+            raise BudgetStop('Prior generation evidence changed')
 
 
 def verify_prior(root=ROOT):

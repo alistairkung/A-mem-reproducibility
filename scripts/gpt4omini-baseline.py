@@ -107,7 +107,9 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         if frontier['next_cell']!=CELL or not frontier['affordable']:
             raise RuntimeError('Predecessor acceptance or affordability failed')
         prior_cells=list(FULL_CELLS)[:list(FULL_CELLS).index(CELL)]
+        from amem_repro.gpt4omini_campaign import verify_accepted_cell
         for c in prior_cells:
+            verify_accepted_cell(DIRECTORY,c)
             prior_store=cell_store(DIRECTORY,c)
             audits=[read(DIRECTORY/'outcomes'/c/f'acceptance-{axis}.json') for axis in ('standards','spec')]
             if not all(audit.get('accepted') is True and audit.get('verdict')=='pass' for audit in audits):
@@ -273,7 +275,7 @@ def execute():
                         raise RuntimeError('Historical artifact link changed; no next paid operation')
                 units=len(observer.observations)+len({r['trace_id'] for r in observer.observations})+len(observer.scores)
                 # Retain room for all158 questions in both complete Experiments.
-                if prior_runtime_units+units+10744>release['limits']['max_new_langfuse_units']:
+                if prior_runtime_units+units+68*FULL_CELLS[CELL][1]>release['limits']['max_new_langfuse_units']:
                     raise RuntimeError('Included-service unit allocation reached; no further paid operation')
             observer.assert_healthy=service_healthy
             try:
