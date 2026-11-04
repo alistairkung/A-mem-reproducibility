@@ -16,7 +16,7 @@ from .artifacts import CacheStore, build_identity, snapshot_memory, restore_memo
 from .budget import BudgetStop
 from .config import OPENROUTER_CONFIG, fingerprint, source_fingerprint, stage_output_limits
 from .evolution_fallback import verify_fallback_state
-from .openrouter import CAMPAIGN, CampaignLedger, OpenRouterController, save_new
+from .openrouter import FULL_CELLS, cell_store, CAMPAIGN, CampaignLedger, OpenRouterController, save_new
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT/'artifacts/gpt4omini'
@@ -31,6 +31,24 @@ def file_signature(path):
     if path.is_symlink():raise BudgetStop('Protected source/artifact became a symlink')
     stat=path.stat()
     return stat.st_dev,stat.st_ino,stat.st_size,stat.st_mtime_ns,stat.st_ctime_ns
+
+
+def predecessor_files(campaign, cell):
+    """Include audit dependencies omitted by the first immutable frontier."""
+    outcome=campaign/'outcomes'/cell
+    files=dict(read(outcome/'frontier.json')['files'])
+    for axis in ('spec','standards'):
+        receipt=outcome/f'acceptance-{axis}.json'
+        raw=receipt.read_bytes()
+        if hashlib.sha256(raw).hexdigest()!=files[str(receipt.relative_to(campaign))]:
+            raise BudgetStop('Predecessor acceptance receipt changed')
+        audit=json.loads(raw)
+        evidence=audit.get('evidence_files') or audit['evidence_sha256']
+        for key,digest in evidence.items():
+            name=key.removeprefix('artifacts/gpt4omini/')
+            if files.setdefault(name,digest)!=digest:
+                raise BudgetStop('Disagreement over predecessor artifact')
+    return files
 
 
 def admission_guard(approval, ledger, root):
@@ -49,6 +67,19 @@ def admission_guard(approval, ledger, root):
             or fingerprint(read(manifest))!=approval['binding']['manifest_sha256']):
         raise BudgetStop('Frozen dataset or selection changed')
     protected.update({data:file_signature(data),manifest:file_signature(manifest)})
+    previous=list(FULL_CELLS)[:list(FULL_CELLS).index(approval['conversation'])]
+    for cell in previous:
+        certificate=ledger.root/'outcomes'/cell/'frontier.json'
+        files=predecessor_files(ledger.root,cell)
+        protected[certificate]=file_signature(certificate)
+        for name,digest in files.items():
+            path=(ledger.root/name).absolute()
+            if path.resolve()!=path or not path.is_relative_to(ledger.root):
+                raise BudgetStop('Predecessor file path aliases foreign storage')
+            signature=file_signature(path)
+            if hashlib.file_digest(path.open('rb'),'sha256').hexdigest()!=digest or file_signature(path)!=signature:
+                raise BudgetStop('Predecessor artifact changed')
+            protected[path]=signature
     ancestors=[]
     path=Path(approval['parent_path']) if approval.get('parent_path') else None
     while path:
@@ -97,6 +128,42 @@ def verify_inventory(directory, files):
         if (not path.is_relative_to(Path(directory).resolve()) or path.is_symlink()
                 or hashlib.file_digest(path.open('rb'),'sha256').hexdigest()!=digest):
             raise BudgetStop('Preserved evidence or provenance changed: '+name)
+
+
+def verify_accepted_cell(campaign, cell):
+    """Verify source receipts and independent audits before sealing newer hashes."""
+    import sqlite3
+    from base64 import b64decode
+    store=cell_store(campaign,cell)
+    with sqlite3.connect((campaign/'budget.sqlite').as_uri()+'?mode=ro',uri=True) as db:
+        phases=db.execute("""SELECT id,seal FROM phases WHERE json_extract(approval,'$.kind')='baseline'
+                           AND json_extract(approval,'$.conversation')=? ORDER BY rowid""",(cell,)).fetchall()
+    if not phases: raise BudgetStop('No prior collection')
+    for phase,seal in phases:
+        directory=store/'runs'/phase
+        record=read(directory/'phase.json')
+        if fingerprint(record)!=seal: raise BudgetStop('Prior scientific receipt differs from ledger')
+        verify_inventory(directory,record['files'])
+    if record['status'] not in ('complete','degraded') or record['binding']['conversation_id']!=cell:
+        raise BudgetStop('Predecessor scientific collection incomplete')
+    cache=read(directory/'cache-proof.json')
+    verify_inventory(campaign/cache['directory'],cache['files'])
+    for axis in ('spec','standards'):
+        review=read(campaign/'outcomes'/cell/f'acceptance-{axis}.json')
+        if review.get('accepted') is not True or review.get('verdict')!='pass' or review['phase']!=phase:
+            raise BudgetStop('Predecessor independent acceptance incomplete')
+        files=review.get('evidence_files') or review.get('evidence_sha256')
+        if not files:raise BudgetStop('Missing prior independent proof digests')
+        verify_inventory(campaign,{n.removeprefix('artifacts/gpt4omini/'):d for n,d in files.items()})
+    finance=read(store/'reconciliation.json')
+    if not finance['verified']:raise BudgetStop('Predecessor financial proof incomplete')
+    journal=Path(finance['generation_journal'])
+    if not journal.resolve().is_relative_to(store.resolve()): raise BudgetStop('Foreign billing journal')
+    for i,generation in enumerate(finance['generations']):
+        matches=list(journal.glob(f'{i}-*.json'))
+        if not any((r:=read(f))['status']==200 and json.loads(b64decode(r['response_base64'])).get('data')==generation
+                   for f in matches):
+            raise BudgetStop('Prior generation evidence changed')
 
 
 def verify_prior(root=ROOT):
@@ -154,11 +221,14 @@ class FallbackGuard:
 
 def checkpoint_from(parent_path, ledger, binding, *, root=ROOT):
     """Verify the full immutable ancestry, exact state and the next original turn."""
+    cell=binding['conversation_id']
+    store=cell_store(ledger.root,cell)
+    nturns,_=FULL_CELLS[cell]
     path=Path(parent_path).resolve()
     lineage=[];seen=set();parent=None
     with ledger.transaction() as db:
         while path:
-            if (not path.is_relative_to((ledger.root/'runs').resolve()) or path.name!='phase.json'
+            if (not path.is_relative_to((store/'runs').resolve()) or path.name!='phase.json'
                     or str(path) in seen):
                 raise BudgetStop('Foreign or cyclic checkpoint ancestry')
             seen.add(str(path));value=read(path)
@@ -177,11 +247,11 @@ def checkpoint_from(parent_path, ledger, binding, *, root=ROOT):
     state=read(leaf_path.parent/'partial-memory.json')['state']
     from .manifests import expand_manifest
     manifest=expand_manifest(root/'data/locomo10.json',read(root/'manifests/fallback.json'))
-    conversation=next(c for c in manifest['conversations'] if c['original_id']=='conv-44')
+    conversation=next(c for c in manifest['conversations'] if c['original_id']==cell)
     prefix=[o['turn_id'] for o in state['outcomes']]
     if (not prefix or prefix!=conversation['turn_ids'][:len(prefix)]
             or len(prefix)!=len(state['notes']) or len(prefix)!=parent['notes']
-            or len(prefix)>675 or parent['questions']!=0
+            or len(prefix)>nturns or parent['questions']!=0
             or ledger.unaccepted_unknowns(read(leaf_path.parent/'approval.json'))):
         raise BudgetStop('Checkpoint is not an exact advancing original turn prefix')
     failures=[]
@@ -190,7 +260,7 @@ def checkpoint_from(parent_path, ledger, binding, *, root=ROOT):
         if event['type']=='failure':failures.append(event)
     return {'state':state,'failures':failures,'lineage':{'policy':'gpt4omini-exact-state-v1',
             'campaign_id':CAMPAIGN,'condition':'full','parent_run_id':parent['phase'],
-            'ancestors':lineage,'next_turn_id':conversation['turn_ids'][len(prefix)] if len(prefix)<675 else None}}
+            'ancestors':lineage,'next_turn_id':conversation['turn_ids'][len(prefix)] if len(prefix)<nturns else None}}
 
 
 def execute_phase(approval, ledger, *, observer, client, token_counter,
@@ -204,6 +274,10 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
     root=Path(root)
     scorer=scorer or AuthorScorer(root)
     binding=approval['binding']
+    cell=approval['conversation']
+    if binding['conversation_id']!=cell:raise BudgetStop('Cell identity differs from source-bound approval')
+    store=cell_store(ledger.root,cell)
+    nturns,nqa=FULL_CELLS[cell]
     if fingerprint(source_fingerprint(root))!=binding['source_sha256']:
         raise BudgetStop('Source changed since reviewed phase freeze')
     parent_path=approval.get('parent_path')
@@ -217,7 +291,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
     checkpoint=checkpoint_from(parent_path,ledger,binding,root=root) if parent_path else None
     phase=ledger.claim(approval)
     ledger.set_guard(phase,admission_guard(approval,ledger,root))
-    output=ledger.root/'runs'/phase
+    output=store/'runs'/phase
     output.mkdir(parents=True,exist_ok=False)
     save_new(output/'approval.json',approval)
     controller=OpenRouterController(client,ledger=ledger,phase=phase,journal=output/'raw')
@@ -244,9 +318,9 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
     error=None;summary=None;failure=None
     try:
         summary=run_manifest(root/'data/locomo10.json',read(root/'manifests/fallback.json'),
-            copy.deepcopy(OPENROUTER_CONFIG),output_dir=output,cache_root=ledger.root/'cache',
+            copy.deepcopy(OPENROUTER_CONFIG),output_dir=output,cache_root=store/'cache',
             source_hashes=source_fingerprint(root),condition='full',agent_factory=tracked_factory,
-            scorer=scorer,observer=observer,run_id=phase,conversation_ids=['conv-44'],
+            scorer=scorer,observer=observer,run_id=phase,conversation_ids=[cell],
             boundary_check=boundary,evolution_guard=guard,checkpoint=checkpoint,
             execution_type='checkpoint_recovery' if checkpoint else 'fresh_build')
         boundary()
@@ -265,7 +339,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                     for failed in result.get('metric_failures',[]):
                         post_scoring_failures+=1
                         callback({**failed,'question_id':result['question_id'],
-                                  'conversation_id':'conv-44','scoring_policy':policy})
+                                  'conversation_id':cell,'scoring_policy':policy})
             save_new(output/'scoring-views.json',views)
         except BaseException as exc:
             error=type(exc).__name__;failure=exc
@@ -283,14 +357,14 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
             raise BudgetStop('Partial checkpoint differs from actual final author state')
     elif not error:
         start=next(e for e in events if e['type']=='run_start')
-        conversation=next(c for c in start['manifest']['conversations'] if c['original_id']=='conv-44')
+        conversation=next(c for c in start['manifest']['conversations'] if c['original_id']==cell)
         identity=build_identity(OPENROUTER_CONFIG,conversation,start['manifest']['dataset_sha256'],
                                 start['source_hashes'],provider_contract_policy='strict-original-v1')
         identity.update(condition='full',memory_actions={'strengthen':True,'update_neighbor':True},
                         action_policy='released-action-boundaries-v1',action_implementation='frozen-author',
                         evolution_failure_policy=guard.policy_id)
         if checkpoint:identity['checkpoint']=checkpoint['lineage']
-        saved=CacheStore(ledger.root/'cache').load(identity)
+        saved=CacheStore(store/'cache').load(identity)
         if {k:v for k,v in saved.items() if k!='build_failures'}!=state:
             raise BudgetStop('Exact completed cache differs from actual final author state')
         state=saved
@@ -306,7 +380,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         context={'binding':{**binding,'run_id':phase},'output_dir':str(output)}
         receipt['observations']=verify_observations(capture,context)
         if not error:
-            if receipt['notes']!=675 or receipt['questions']!=158:
+            if receipt['notes']!=nturns or receipt['questions']!=nqa:
                 raise BudgetStop('Original turn/question coverage incomplete')
             if approval.get('retained_access_prefix'):
                 if [o['turn_id'] for o in outcomes]!=conversation['turn_ids']:
@@ -314,16 +388,16 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                 if [r['question_id'] for r in results]!=[q['question_id'] for q in conversation['questions']]:
                     raise BudgetStop('Ordered benchmark questions differ')
                 with ledger.transaction() as db:
-                    count=db.execute("SELECT COUNT(*) FROM attempts a JOIN phases p ON a.phase=p.id WHERE json_extract(p.approval,'$.kind')='baseline' AND a.state='settled'").fetchone()[0]
-                if count!=1666:raise BudgetStop('Full baseline original request count differs')
+                    count=db.execute("SELECT COUNT(*) FROM attempts a JOIN phases p ON a.phase=p.id WHERE json_extract(p.approval,'$.kind')='baseline' AND json_extract(p.approval,'$.conversation')=? AND a.state='settled'",(cell,)).fetchone()[0]
+                if count!=2*(nturns+nqa):raise BudgetStop('Full baseline original request count differs')
             receipt['experiments']=import_results(views,context,client=observer.client,
                                                 traces=original_qa_traces(capture))
-            receipt['status']='degraded' if post_scoring_failures or approval.get('retained_access_prefix') else summary['status']
+            receipt['status']='degraded' if post_scoring_failures or checkpoint or (cell=='conv-44' and approval.get('retained_access_prefix')) else summary['status']
             save_new(output/'final-memory.json',state)
             # Cloud work must not conceal a changed cache/source after initial validation.
-            if CacheStore(ledger.root/'cache').load(identity)!=state:
+            if CacheStore(store/'cache').load(identity)!=state:
                 raise BudgetStop('Completed cache changed during reporting')
-            cache_path=CacheStore(ledger.root/'cache').path_for(identity)
+            cache_path=CacheStore(store/'cache').path_for(identity)
             save_new(output/'cache-proof.json',{'directory':str(cache_path.relative_to(ledger.root)),
                                                'files':inventory(cache_path)})
             if fingerprint(source_fingerprint(root))!=binding['source_sha256']:

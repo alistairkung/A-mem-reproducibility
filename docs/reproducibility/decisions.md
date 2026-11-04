@@ -1241,3 +1241,13 @@ whole-study forecast. No ablation execution or automatic top-up is authorized.
 Preserve the already accepted US$0.058950 historical upper bound. An unexplained
 new billing difference, genuine new unknown or missing required evidence stops the
 paid frontier. Reporting recovery uses saved results only.
+
+### Accept Full / conv-44 and prepare the two remaining Full cells
+
+Phase A independently verifies 675 turns, 158 QA, 1,666 settled baseline requests,
+both Experiments and request-level finance. The Degraded classification retains
+the earlier compatibility history. Its fresh build had no new failures. Phase B's
+cost-only gate passes on measured Full stage rates. The sequential extension
+keeps actual cell spend and cache separate, pins prior evidence and SQL history,
+and requires independent acceptance before each new cell. The same scientific
+configuration applies. [Full baseline record](gpt4omini-full-baselines.md)

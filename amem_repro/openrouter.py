@@ -25,6 +25,14 @@ from .contracts import load_author_contracts, validate_arguments
 CAMPAIGN = 'amem-gpt4omini-openrouter-20261104-v1'
 MODEL = OPENROUTER_CONFIG['model']['id']
 BASE_URL = OPENROUTER_CONFIG['model']['base_url']
+FULL_CELLS = {'conv-44':(675,158), 'conv-49':(509,196), 'conv-50':(568,204)}
+
+def cell_store(root, conversation):
+    if conversation not in FULL_CELLS: raise BudgetStop('Unselected conversation')
+    path = Path(root) if conversation=='conv-44' else Path(root)/'cells'/conversation
+    if path.absolute()!=path.resolve(): raise BudgetStop('Aliased cell namespace')
+    return path
+
 CONTEXT = 128000
 INPUT_RATE = Decimal('.15')  # microUSD / token, without cache discounts
 OUTPUT_RATE = Decimal('.60')
@@ -204,10 +212,36 @@ class CampaignLedger:
             raise BudgetStop('Accepted financial history changed')
         return {p[0] for p in prefix['phases']}
 
+    def check_previous_cells(self, db, approval):
+        cell=approval['conversation']
+        if cell=='conv-44':return
+        previous=list(FULL_CELLS)[:list(FULL_CELLS).index(cell)]
+        seal=approval.get('previous_acceptance_sha256')
+        path=self.root/'outcomes'/previous[-1]/'frontier.json'
+        if path.is_symlink() or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=seal:
+            raise BudgetStop('Missing verified predecessor acceptance')
+        cert=json.loads(path.read_bytes())
+        if (cert['accepted_cells']!=previous or cert['next_cell']!=cell or cert['affordable'] is not True
+                or approval['binding'].get('conversation_id')!=cell):
+            raise BudgetStop('Wrong or unaffordable paid frontier')
+        rows=[list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid')
+              if json.loads(r[1])['conversation']!=cell]
+        ids={r[0] for r in rows}
+        for c in previous:
+            if not any(json.loads(r[1])['kind']=='baseline' and json.loads(r[1])['conversation']==c
+                       and r[3]=='complete' and r[4]==cert['phase_seals'][c] for r in rows):
+                raise BudgetStop('Preceding baseline seal changed')
+        history={'phases':rows,
+                 'attempts':[list(r) for r in db.execute('SELECT * FROM attempts ORDER BY id') if r[1] in ids],
+                 'halts':[list(r) for r in db.execute('SELECT * FROM halts ORDER BY phase') if r[0] in ids]}
+        if fingerprint(history)!=cert['ledger_prefix_sha256']:
+            raise BudgetStop('Accepted predecessor financial history changed')
+
     def claim(self, approval):
         if (approval.get('approved') is not True or approval.get('binding') != self.binding
                 or approval.get('kind') not in ('compatibility', 'baseline')
-                or approval.get('condition') != 'full' or approval.get('conversation') != 'conv-44'):
+                or approval.get('condition') != 'full' or approval.get('conversation') not in FULL_CELLS
+                or (approval.get('kind')=='compatibility' and approval['conversation']!='conv-44')):
             raise BudgetStop('Explicit exact campaign/cell approval required')
         phase = approval['phase']
         parent = approval.get('parent')
@@ -216,11 +250,12 @@ class CampaignLedger:
             retest = bool(approval.get('access_retest'))
             if retest:
                 self._access_retest(db, approval)
+            self.check_previous_cells(db, approval)
             retained = self.retained_prefix(db, approval)
             rows = [row for row in rows if row[0] not in retained]
             if not retest and any(row[2] not in ('complete','recoverable') for row in rows):
                 raise BudgetStop('An earlier phase is unfinished or terminal')
-            same = [r for r in rows if json.loads(r[1])['kind'] == approval['kind']]
+            same = [r for r in rows if json.loads(r[1])['kind'] == approval['kind'] and json.loads(r[1])['conversation']==approval['conversation']]
             if parent and not retest:
                 if (not same or same[-1][0] != parent or same[-1][2] != 'recoverable'
                         or not same[-1][3] or approval.get('parent_seal') != same[-1][3]):
@@ -248,6 +283,7 @@ class CampaignLedger:
                     raise BudgetStop('Phase is not an active one-shot owner')
                 approval = json.loads(row[0])
                 retest = bool(approval.get('access_retest'))
+                self.check_previous_cells(db,approval)
                 retained = self.retained_prefix(db, approval)
                 if retest:
                     self._access_retest(db, approval, exclude_phase=phase)
@@ -269,9 +305,14 @@ class CampaignLedger:
                     "WHERE json_extract(p.approval,'$.kind')=?",(kind,)).fetchone()[0]
                 kind_spent = db.execute('SELECT COALESCE(SUM(a.charge),0) FROM attempts a JOIN phases p ON a.phase=p.id '
                     "WHERE json_extract(p.approval,'$.kind')=?",(kind,)).fetchone()[0]
-                if (spent+reserve > 5_000_000 or spent+reserve > 42_000_000
+                cell=approval['conversation']
+                cell_spent,baseline_count=db.execute("""SELECT COALESCE(SUM(a.charge),0),
+                    COALESCE(SUM(json_extract(p.approval,'$.kind')='baseline'),0) FROM attempts a
+                    JOIN phases p ON p.id=a.phase WHERE json_extract(p.approval,'$.conversation')=?""",(cell,)).fetchone()
+                if (cell_spent+reserve > 5_000_000 or spent+reserve > 15_000_000 or spent+reserve > 42_000_000
                         or (kind=='compatibility' and kind_spent+reserve > 250_000)
-                        or kind_count >= (8 if kind=='compatibility' else 1666)):
+                        or (kind=='compatibility' and kind_count>=8)
+                        or (kind=='baseline' and baseline_count>=2*sum(FULL_CELLS[cell]))):
                     raise BudgetStop('Cell/smoke/campaign call or spending cap reached')
                 cursor = db.execute('INSERT INTO attempts (phase,stage,request_hash,reservation,charge,state) '
                     "VALUES (?,?,?,?,?,'reserved')",(phase,stage,fingerprint(request),reserve,reserve))

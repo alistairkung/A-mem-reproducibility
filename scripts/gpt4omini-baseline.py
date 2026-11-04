@@ -1,4 +1,4 @@
-"""Freeze/execute only the reviewed Full conv-44 GPT-4o-mini lineage, never another cell."""
+"""Freeze and execute the next independently admitted GPT-4o-mini Full baseline."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -15,7 +15,11 @@ sys.path.insert(0,str(ROOT))
 DIRECTORY=(ROOT/'artifacts/gpt4omini').resolve()
 
 
-VERIFICATION = DIRECTORY/'verification/renewed'
+from amem_repro.openrouter import FULL_CELLS,cell_store
+CELL='conv-44'
+STORE=DIRECTORY
+FIRST_VERIFY=DIRECTORY/'verification/renewed'
+VERIFICATION=FIRST_VERIFY
 PREFIX = '3b3bb2e36098b84f5881e65079a23943427ea3276216f731adb0d590a37a32f1'
 
 def read(path):return json.loads(Path(path).read_bytes())
@@ -26,6 +30,7 @@ def verify_release(release):
     from amem_repro.gpt4omini_campaign import verify_inventory,verify_prior
     if (ROOT/'artifacts/gpt4omini').absolute()!=(ROOT/'artifacts/gpt4omini').resolve():
         raise RuntimeError('Paid campaign namespace cannot alias another artifact directory')
+    if release['binding']['conversation_id']!=CELL:raise RuntimeError('Approval belongs to another cell')
     if release.get('approved') is not True or release['binding']['campaign_id']!='amem-gpt4omini-openrouter-20261104-v1':
         raise RuntimeError('Explicit reviewed one-cell campaign approval required')
     if fingerprint(source_fingerprint(ROOT))!=release['binding']['source_sha256']:
@@ -84,40 +89,64 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         raise RuntimeError('Full-size reporting integrity evidence failed')
     verify_inventory(ROOT,read(DIRECTORY/'compatibility-release-tail/approval.json')['query_evidence'])
     files=dict(sources['files'])
-    paths=[VERIFICATION/'programme-cost-plan.json',VERIFICATION/'full-size-export.json',VERIFICATION/'capacity-refresh.json',VERIFICATION/'forecast.json',VERIFICATION/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
+    paths=[FIRST_VERIFY/'programme-cost-plan.json',VERIFICATION/'full-size-export.json',VERIFICATION/'capacity-refresh.json',FIRST_VERIFY/'forecast.json',FIRST_VERIFY/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
         *[p for name in ('compatibility-release','compatibility-release-tail') for p in (DIRECTORY/name).rglob('*') if p.is_file()],
         DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
         DIRECTORY/'verification/preservation-reconciliation.json',
-        VERIFICATION/'baseline-preflight.json',VERIFICATION/'full-final-60cabea.txt',
+        VERIFICATION/'baseline-preflight.json',VERIFICATION/'full-suite.txt' if CELL!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt',
         VERIFICATION/'baseline-standards-review.json',VERIFICATION/'baseline-spec-review.json',
         VERIFICATION/'archive-equivalence.json',
-        ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',ROOT/'scripts/gpt4omini-reporting-proof.py',
+        ROOT/'scripts/gpt4omini-accept.py',ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',ROOT/'scripts/gpt4omini-reporting-proof.py',
         ROOT/'tests/gpt4omini_fixture.py',ROOT/'tests/gpt4omini_executor_fixture.py',
         ROOT/'tests/test_gpt4omini_executor.py',ROOT/'tests/test_gpt4omini_full_executor.py']
+    if CELL!='conv-44':
+        previous=list(FULL_CELLS)[list(FULL_CELLS).index(CELL)-1]
+        frontier_path=DIRECTORY/'outcomes'/previous/'frontier.json'
+        frontier=read(frontier_path)
+        if frontier['next_cell']!=CELL or not frontier['affordable']:
+            raise RuntimeError('Predecessor acceptance or affordability failed')
+        prior_cells=list(FULL_CELLS)[:list(FULL_CELLS).index(CELL)]
+        from amem_repro.gpt4omini_campaign import predecessor_files,verify_accepted_cell
+        for c in prior_cells:
+            verify_accepted_cell(DIRECTORY,c)
+            from scripts.gpt4omini_finance import verify_accepted_finances
+            verify_accepted_finances(DIRECTORY,c)
+            prior_store=cell_store(DIRECTORY,c)
+            audits=[read(DIRECTORY/'outcomes'/c/f'acceptance-{axis}.json') for axis in ('standards','spec')]
+            if not all(audit.get('accepted') is True and audit.get('verdict')=='pass' for audit in audits):
+                raise RuntimeError('Missing prior independent acceptance')
+            if audits[0]['phase']!=audits[1]['phase'] or not read(prior_store/'reconciliation.json')['verified']:
+                raise RuntimeError('Prior audits or financial proof differ')
+            proof=DIRECTORY/'outcomes'/c/'frontier.json'
+            paths.append(proof)
+            for name,digest in predecessor_files(DIRECTORY,c).items():
+                files[str((DIRECTORY/name).relative_to(ROOT))]=digest
     for path in paths:files[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
-    suite=(VERIFICATION/'full-final-60cabea.txt').read_text()
+    suite=(VERIFICATION/'full-suite.txt' if CELL!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt').read_text()
     if not re.search(r'(?m)^\d+ passed.*$',suite) or re.search(r'\b\d+ (failed|errors)\b',suite):
         raise RuntimeError('Whole frozen-source offline suite did not pass')
     replay=read(VERIFICATION/'archive-equivalence.json')
     if replay.get('verified') is not True:raise RuntimeError('Fixed full archive equivalence gate failed')
     binding={**SCIENTIFIC_BINDING,'source_sha256':fingerprint(sources),
         'manifest_sha256':fingerprint(read(ROOT/'manifests/fallback.json')),
-        'condition':'full','conversation_id':'conv-44','population':'fallback','repetition':0,
+        'condition':'full','conversation_id':CELL,'population':'fallback','repetition':0,
         'initial_checkpoint':'fresh-empty','accepted_financial_prefix':PREFIX,
         'provider_contract_policy':'strict-original-v1',
         'max_output_tokens_by_stage':stage_output_limits(OPENROUTER_CONFIG),
         'observability_policy':'run2-audit-essential-v1'}
-    release={'approved':True,'approved_by':'User4 November2026 GPT-4o-mini handover; one Full/conv-44 only',
+    release={'approved':True,'approved_by':'User three Full baselines in order; this approval covers '+CELL,
         'approved_at':datetime.now(timezone.utc).isoformat(),'binding':binding,'files':files,
         'reviewed_commit':reviewed_commit,'merge_commit':merge_commit,
         'limits':{'cell_microusd':5000000,'usable_campaign_microusd':42000000,
-                  'protected_microusd':8000000,'max_baseline_calls':1666,
+                  'protected_microusd':8000000,'max_baseline_calls':2*sum(FULL_CELLS[CELL]),
                   'max_new_langfuse_units':30000},
         'gate_path':str(Path(gate_path).relative_to(ROOT)),
-        'forecast':read(VERIFICATION/'forecast.json')}
+        'forecast':read(FIRST_VERIFY/'forecast.json') if CELL=='conv-44' else frontier['forecast']}
+    if CELL!='conv-44':
+        release['previous_acceptance_sha256']=hashlib.sha256(frontier_path.read_bytes()).hexdigest()
     verify_release(release)
-    save_new(DIRECTORY/'frozen/campaign-approval.json',release)
+    save_new(STORE/'frozen/campaign-approval.json',release)
     print(json.dumps({'approved':True,'campaign':binding['campaign_id'],'source':binding['source_sha256']}))
 
 
@@ -145,7 +174,7 @@ def execute():
     from amem_repro.measurements import TokenCounter
     from amem_repro.phases import _verified_receipt
     environment()
-    release=read(DIRECTORY/'frozen/campaign-approval.json');verify_release(release)
+    release=read(STORE/'frozen/campaign-approval.json');verify_release(release)
     preflight=read(VERIFICATION/'baseline-preflight.json')
     _verified_receipt(preflight,ROOT/'artifacts/assets',ROOT)
     from scripts.safe_service_audit import check_langfuse_project_auth
@@ -159,7 +188,7 @@ def execute():
     encoding=tiktoken.get_encoding('o200k_base')
     counter=TokenCounter(lambda text:encoding.encode(text,disallowed_special=()),
                          'tiktoken o200k_base; hosted prompt overhead unverified; API usage authoritative',version('tiktoken'))
-    if (DIRECTORY/'cache').exists() or (DIRECTORY/'runs').exists():
+    if (STORE/'cache').exists() or (STORE/'runs').exists():
         raise RuntimeError('Fresh baseline requires an unused primary cache and run namespace')
     ledger=CampaignLedger(DIRECTORY/'budget.sqlite',campaign_root=DIRECTORY,binding=release['binding'])
     key=os.environ['OPENROUTER_API_KEY']
@@ -169,14 +198,23 @@ def execute():
                       transport=httpx.HTTPTransport(retries=0),follow_redirects=False) as client:
         client._amem_credential=key
         from scripts.gpt4omini_finance import compare, snapshot, reconcile
-        account=snapshot(client,DIRECTORY/'frozen/opening-account-reads')
+        account=snapshot(client,STORE/'frozen/opening-account-reads')
         prior=read(DIRECTORY/'compatibility-v5/financial-readback-after-success.json')
         previous={r['probe']:r['data'] for r in prior['account_readbacks']}
+        previous_cost=prior['generation']['total_cost']
+        prior_path=DIRECTORY/'compatibility-v5/financial-readback-after-success.json'
+        if CELL!='conv-44':
+            previous_cell=list(FULL_CELLS)[list(FULL_CELLS).index(CELL)-1]
+            prior_path=cell_store(DIRECTORY,previous_cell)/'reconciliation.json'
+            settlement=read(prior_path)
+            if not settlement['verified']:raise RuntimeError('Preceding cell reconciliation failed')
+            previous=settlement['closing']
+            previous_cost=settlement['accounting']['reported_cost_usd']
         known=ledger.totals()['reported_cost_usd']
         opening={'account':account,'reported_cost_usd':known,'approval':{'retained_access_prefix':PREFIX},
-                 'previous_snapshot':str(DIRECTORY/'compatibility-v5/financial-readback-after-success.json'),
-                 'movement':compare(previous,account,prior['generation']['total_cost'],known)}
-        save_new(DIRECTORY/'frozen/account-before-baseline.json',opening)
+                 'previous_snapshot':str(prior_path),
+                 'movement':compare(previous,account,previous_cost,known)}
+        save_new(STORE/'frozen/account-before-baseline.json',opening)
         funds=Decimal(account['credits']['total_credits'])-Decimal(account['credits']['total_usage'])
         if not opening['movement']['verified'] or funds<13 or Decimal(account['key']['limit_remaining'])<5:
             raise RuntimeError('Prepaid funds, key limit or unaccounted movement')
@@ -188,20 +226,21 @@ def execute():
                 or Decimal(provider['pricing']['completion'])!=Decimal('.0000006')
                 or not {'temperature','response_format','structured_outputs','max_tokens'}<=set(provider['supported_parameters'])):
             raise RuntimeError('Frozen provider route/pricing/capabilities changed')
-        save_new(DIRECTORY/'frozen/route-before-baseline.json',endpoint.json())
+        save_new(STORE/'frozen/route-before-baseline.json',endpoint.json())
         parent=None;prior_runtime_units=0
-        for sequence in range(676):
+        for sequence in range(FULL_CELLS[CELL][0]+1):
             verify_release(release)
             if ledger.unaccepted_unknowns({'retained_access_prefix':PREFIX}):raise RuntimeError('Unknown exposure forbids continuation')
-            phase=f'gpt4omini-full-conv44-r0-p{sequence}'
+            phase=f"gpt4omini-full-{CELL.replace('-', '')}-r0-p{sequence}"
             approval={'approved':True,'approved_by':release['approved_by'],
                 'approved_at':datetime.now(timezone.utc).isoformat(),'binding':release['binding'],
-                'kind':'baseline','condition':'full','conversation':'conv-44','phase':phase,
+                'kind':'baseline','condition':'full','conversation':CELL,'phase':phase,
                 'release_sha256':fingerprint(release),'retained_access_prefix':PREFIX}
+            if CELL!='conv-44':approval['previous_acceptance_sha256']=release['previous_acceptance_sha256']
             if parent:
                 approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
-                    parent_path=str(DIRECTORY/'runs'/parent['phase']/'phase.json'))
-            save_new(DIRECTORY/'frozen'/(phase+'-approval.json'),approval)
+                    parent_path=str(STORE/'runs'/parent['phase']/'phase.json'))
+            save_new(STORE/'frozen'/(phase+'-approval.json'),approval)
             cloud=Langfuse(public_key=os.environ['LANGFUSE_PUBLIC_KEY'],secret_key=os.environ['LANGFUSE_SECRET_KEY'],
                 base_url='https://cloud.langfuse.com',flush_at=16,should_export_span=should_export_span,
                 environment='amem-gpt4omini',release=release['binding']['source_sha256'])
@@ -222,6 +261,10 @@ def execute():
             legacy_signatures[legacy/'.git/HEAD']=file_signature(legacy/'.git/HEAD')
             legacy_signatures[DIRECTORY/'verification/prior-preservation-authoritative-v2.json']=file_signature(
                 DIRECTORY/'verification/prior-preservation-authoritative-v2.json')
+            if CELL!='conv-44':
+                for name in release['files']:
+                    if name.startswith('artifacts/gpt4omini/'):
+                        path=(ROOT/name).resolve(); legacy_signatures[path]=file_signature(path)
             def service_healthy():
                 original_healthy()
                 if any(file_signature(path)!=signature for path,signature in legacy_signatures.items()):
@@ -234,13 +277,13 @@ def execute():
                         raise RuntimeError('Historical artifact link changed; no next paid operation')
                 units=len(observer.observations)+len({r['trace_id'] for r in observer.observations})+len(observer.scores)
                 # Retain room for all158 questions in both complete Experiments.
-                if prior_runtime_units+units+10744>release['limits']['max_new_langfuse_units']:
+                if prior_runtime_units+units+68*FULL_CELLS[CELL][1]>release['limits']['max_new_langfuse_units']:
                     raise RuntimeError('Included-service unit allocation reached; no further paid operation')
             observer.assert_healthy=service_healthy
             try:
                 result=execute_phase(approval,ledger,observer=observer,client=client,token_counter=counter,root=ROOT)
             finally:cloud.shutdown()
-            capture=read(DIRECTORY/'runs'/phase/'trace-capture.json')
+            capture=read(STORE/'runs'/phase/'trace-capture.json')
             prior_runtime_units+=len(capture['observations'])+len(capture['trace_ids'])+len(capture['scores'])
             verify_release(release)
             verify_prior()
@@ -248,7 +291,7 @@ def execute():
                 'error_type','recoverable_length_failure','budget')}),flush=True)
             if result['status'] in ('complete','degraded'):
                 _verified_receipt(preflight,ROOT/'artifacts/assets',ROOT)
-                reconcile(client,ledger,DIRECTORY/'reconciliation.json',opening)
+                reconcile(client,ledger,STORE/'reconciliation.json',opening)
                 return
             if not result['recoverable_length_failure']:raise RuntimeError('Material failure; paid frontier closed')
             parent=result
@@ -259,7 +302,10 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--execute',action='store_true');parser.add_argument('--gate')
     parser.add_argument('--reviewed-commit');parser.add_argument('--merge-commit')
+    parser.add_argument('--cell',choices=FULL_CELLS,default='conv-44')
     args=parser.parse_args()
+    CELL=args.cell;STORE=cell_store(DIRECTORY,CELL)
+    VERIFICATION=FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release'
     try:
         if args.execute:execute()
         else:freeze(args.gate,args.reviewed_commit,args.merge_commit)
