@@ -1,7 +1,7 @@
 # Run2 reporting-only recovery
 
 4 November2026. Authorized scope: [latest decision](decisions.md#authorization--blk-024-reporting-only-recovery-and-cost-reforecast).
-BLK-024 remains Open until actual recovery readback passes. No model execution is authorized.
+BLK-024 is now Resolved by [actual readback and the separate Degraded acceptance](run2-conv44-reporting-complete-20261104.md). The engineering and execution diary below preserves prior gates. No model execution is authorized.
 
 ## Implementation boundary
 
@@ -94,3 +94,39 @@ projection of the immutable current ledger: remove p2 rows and rewind the copied
 All retained original rows compare exactly,1,132 logical/1,133 attempts/USD2.370010 including
 unknown454; never use this derived fixture as actual spending/phase evidence. Original ledger bytes
 remain unchanged. Run the complete suite with both evidence-root variables set.
+
+## Live readback correction — consumed import, reads only
+
+PR#33 merged as `513b44e11ff846035add3b5aefe32043cbd960a6` after809 tests/92 subtests passed,
+17 expected warnings,1282.58s; independent Standards/Spec PASS on `35f89f7` and60 focused checks.
+The19-pin merged-source approval authorized one import. Its durable claim is consumed; SDK return
+contains both new Experiments and all316 item traces. No second ingestion/model request is permitted.
+
+Initial cloud reads saw316 items but only4,130 embedded scores while indexing caught up. A later
+read has all4,494 scores. However, the modern score endpoint's `experiment-id` filter returns0 for
+these local-data Experiment IDs; explicit score IDs and item trace IDs return the exact same15/15
+sample scores and subjects. This is a confirmed read-filter discrepancy, not evidence of missing
+saved values or a scientific change. Preserve both failed read attempts and the diagnostic snapshots.
+The installed CLI describes the Experiment score filter as a dataset-run filter; no broader root
+cause is asserted without verification.
+
+The narrow correction fetches scores by the actual item trace IDs in batches of at most50, retaining
+all score identities/subjects/values and duplicate/extra-score detection. The full pre-ingestion suite
+remains valid; focused readback regressions and independent review cover this post-ingestion change.
+No scientific package file changes. The original merged-source reporting approval stays immutable
+and consumed; do not amend its pins or use it to write with new source. A separate read-only entry
+requires the existing claim and passes `client=None`; the missing-claim path rejects before import:
+
+```sh
+.venv/bin/python scripts/verify-run2-reporting-recovery.py
+```
+
+Evidence: `score-filter-diagnostic/{proof.json,langfuse-readback-*.json}`,
+`trace-scoped-readback-tests.log` and the original failed-attempt snapshots. BLK-024 remains Open
+until the corrected actual readback verifies every expected result.
+
+Final reconciliation passes:316 items/4,494 exact scores/316 reporting traces; original158 QA trace
+associations retained. `lineage-completion.json` verifies675 notes/158 QA, all receipts and1,741 old
+file hashes withUSD4.166489 exposure unchanged. Both readback reviews PASS on `f90d775`;59 focused
+tests pass after the read-only correction. Current billing delta5,442 units/USD0 draft usage fee.
+The original approval/claim is consumed and unchanged; no second ingestion or model request.
