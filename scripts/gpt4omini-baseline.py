@@ -75,7 +75,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     if hashlib.sha256(original_finance.read_bytes()).hexdigest()!=evidence['files'][str(original_finance.relative_to(DIRECTORY))]:
         raise RuntimeError('Original reconciled account snapshot changed')
     files=dict(sources['files'])
-    paths=[VERIFICATION/'full-size-export.json',VERIFICATION/'capacity-refresh.json',VERIFICATION/'forecast.json',VERIFICATION/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
+    paths=[VERIFICATION/'programme-cost-plan.json',VERIFICATION/'full-size-export.json',VERIFICATION/'capacity-refresh.json',VERIFICATION/'forecast.json',VERIFICATION/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
         *[p for name in ('compatibility-release','compatibility-release-tail') for p in (DIRECTORY/name).rglob('*') if p.is_file()],
         DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
@@ -160,7 +160,7 @@ def execute():
                       transport=httpx.HTTPTransport(retries=0),follow_redirects=False) as client:
         client._amem_credential=key
         from scripts.gpt4omini_finance import compare, snapshot, reconcile
-        account=snapshot(client)
+        account=snapshot(client,DIRECTORY/'frozen/opening-account-reads')
         prior=read(DIRECTORY/'compatibility-v5/financial-readback-after-success.json')
         previous={r['probe']:r['data'] for r in prior['account_readbacks']}
         known=ledger.totals()['reported_cost_usd']

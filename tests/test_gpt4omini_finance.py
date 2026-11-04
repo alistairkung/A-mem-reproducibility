@@ -42,3 +42,15 @@ def test_new_unknown_blocks_reconciliation_before_any_remote_lookup(tmp_path):
     with pytest.raises(ValueError,match='unknown'):
         reconcile(client,Ledger(),tmp_path/'receipt.json',{'approval':{}})
     assert not client.get.called and not (tmp_path/'receipt.json').exists()
+
+
+@pytest.mark.parametrize('bad',[b'not JSON',b'{"data":{}}'])
+def test_snapshot_preserves_unusable_billing_response(tmp_path,bad):
+    from base64 import b64decode
+    import json
+    from scripts.gpt4omini_finance import snapshot
+    client=httpx.Client(transport=httpx.MockTransport(lambda r:httpx.Response(200,content=bad)))
+    with pytest.raises((ValueError,KeyError)):
+        snapshot(client,tmp_path)
+    record=json.loads((tmp_path/'credits.json').read_bytes())
+    assert record['status']==200 and b64decode(record['response_base64'])==bad

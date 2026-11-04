@@ -12,10 +12,22 @@ def decimal(value):
         raise ValueError('Non-finite billing value')
     return number
 
-def snapshot(client):
+def journal_get(client,endpoint,params,path):
+    try:
+        response=client.get(BASE_URL+'/'+endpoint,params=params)
+    except Exception as exc:
+        key=client.headers.get('Authorization','').removeprefix('Bearer ')
+        message=str(exc).replace(key,'[redacted]') if key else str(exc)
+        save_new(path,{'endpoint':endpoint,'params':params,'error':type(exc).__name__,'message':message})
+        raise
+    save_new(path,{'endpoint':endpoint,'params':params,'status':response.status_code,
+                   'response_base64':b64encode(response.content).decode('ascii')})
+    return response
+
+def snapshot(client,journal):
     values={}
     for endpoint,fields in [('credits',('total_usage','total_credits')),('key',('usage','limit_remaining'))]:
-        response=client.get(BASE_URL+'/'+endpoint)
+        response=journal_get(client,endpoint,{},journal/(endpoint+'.json'))
         response.raise_for_status()
         data=response.json()['data']
         values[endpoint]={key:str(decimal(data[key])) for key in fields}
@@ -40,15 +52,7 @@ def verify_generations(client,rows,journal):
         seen.add(request_id)
         for poll in range(9):
             path=journal/f'{index}-{poll}.json'
-            try:
-                response=client.get(BASE_URL+'/generation',params={'id':request_id})
-            except Exception as exc:
-                key=client.headers.get('Authorization','').removeprefix('Bearer ')
-                message=str(exc).replace(key,'[redacted]') if key else str(exc)
-                save_new(path,{'requested_id':request_id,'error':type(exc).__name__,'message':message})
-                raise
-            save_new(path,{'requested_id':request_id,'status':response.status_code,
-                           'response_base64':b64encode(response.content).decode('ascii')})
+            response=journal_get(client,'generation',{'id':request_id},path)
             if response.status_code not in (404,429) or poll==8:break
             time.sleep(min(30,2**poll))
         response.raise_for_status()
@@ -68,7 +72,7 @@ def reconcile(client,ledger,output,opening):
         raise ValueError('New unknown financial exposure')
     journal=Path(output).parent/('generation-readback-'+uuid4().hex)
     details=verify_generations(client,rows,journal)
-    closing=snapshot(client)
+    closing=snapshot(client,journal/'account')
     totals=ledger.totals()
     change=compare(opening['account'],closing,opening['reported_cost_usd'],totals['reported_cost_usd'])
     record={'verified':change['verified'],'generations':details,'generation_count':len(details),
