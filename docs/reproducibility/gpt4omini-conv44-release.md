@@ -17,3 +17,18 @@ Freeze 1,000 output tokens for metadata, query and answer, and 4,096 for the sha
 Eight physical compatibility attempts produced five settled generations costing US$0.00574890. Conservative spending including the three retained reservations and per-attempt rounding is US$0.064702. Scaling the largest measured cost per stage to the baseline gives US$1.38429105 for collection. Applying the original all-outputs-at-cap stress assumptions gives US$4.63406010. Including compatibility yields US$1.44899305 and US$4.69876210 respectively against the US$5 cap. The sample consists of engineering prompts and the actual build can produce different lengths. The US$8 contingency remains protected.
 
 The source-bound gate requires archived author and Full candidate equivalence, full offline regression, current-source Langfuse trace and Experiment readback, and independent Standards/Spec review. The root requires an unused primary run/cache namespace. Each supported continuation binds the exact parent seal and resume state. A new unsupported failure or financial unknown stops transmission. Each accepted completion requires ordered coverage, 1,666 settled baseline requests, final state verification, both scoring views, cloud readback and charge reconciliation.
+
+The expanded programme authorizes Full / conv-49 and Full / conv-50 after the
+preceding acceptance and affordability gates. Applying the observed per-stage
+scenario to all twelve cells projects US$16.49772720 in collection charges plus
+compatibility exposure. The all-outputs-at-cap historical prompt-size stress
+exceeds US$42 for the full design. It assumes maximum output on every request.
+The actual per-stage distributions from each completed cell must replace these
+initial planning assumptions before the next cell. Preserve the full 2×2 design
+and the US$8 contingency.
+
+Reconciliation uses immutable opening and closing credit/key snapshots and each
+settled generation ID. The opening comparison is anchored to the verified fourth
+request and contemporaneous account readings. Differences in account usage, key
+usage and credit adjustments are recorded separately. Unexplained movement
+stops acceptance while every individually verified cost and reservation is retained.

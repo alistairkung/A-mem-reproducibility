@@ -79,7 +79,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         VERIFICATION/'baseline-preflight.json',VERIFICATION/'baseline-full-suite.txt',
         VERIFICATION/'baseline-standards-review.json',VERIFICATION/'baseline-spec-review.json',
         VERIFICATION/'archive-equivalence.json',
-        ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',
+        ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',
         ROOT/'tests/gpt4omini_fixture.py',ROOT/'tests/gpt4omini_executor_fixture.py',
         ROOT/'tests/test_gpt4omini_executor.py',ROOT/'tests/test_gpt4omini_full_executor.py']
     for path in paths:files[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
@@ -124,30 +124,6 @@ def environment():
     os.environ['LANGFUSE_OTEL_MAX_BATCH_SIZE_BYTES']=str(32*1024*1024)
 
 
-def reconcile(client, ledger, output):
-    from amem_repro.openrouter import BASE_URL,MODEL,save_new
-    details=[]
-    with ledger.transaction() as db:
-        rows=db.execute("SELECT provider_id,reported_cost FROM attempts WHERE state='settled' ORDER BY id").fetchall()
-    for request_id,cost in rows:
-        response=client.get(BASE_URL+'/generation',params={'id':request_id})
-        response.raise_for_status();data=response.json()['data']
-        hops=data.get('provider_responses') or []
-        if (len(hops)!=1 or hops[0].get('status')!=200 or hops[0].get('provider_name')!='OpenAI'
-                or hops[0].get('model_permaslug')!=MODEL or data.get('id')!=request_id or data.get('provider_name')!='OpenAI' or data.get('model')!=MODEL
-                or abs(Decimal(str(data['total_cost']))-Decimal(cost))>Decimal('0.000000001')):
-            raise RuntimeError('Independent request route/charge mismatch')
-        details.append(data)
-    response=client.get(BASE_URL+'/credits');response.raise_for_status();credits=response.json()['data']
-    reported=Decimal(ledger.totals()['reported_cost_usd'])
-    if abs(Decimal(str(credits['total_usage']))-Decimal('0.011651')-reported)>Decimal('0.000000001'):
-        raise RuntimeError('OpenRouter aggregate spending differs from admitted generations')
-    result={'verified':True,'generation_count':len(details),'generations':details,'credits':credits,
-            'accounting':ledger.totals(),'rounding_tolerance_usd':'0.000000001'}
-    save_new(output,result)
-    return result
-
-
 def execute():
     import httpx
     from amem_repro.config import fingerprint
@@ -179,15 +155,18 @@ def execute():
     with httpx.Client(headers={'Authorization':'Bearer '+key},timeout=120,
                       transport=httpx.HTTPTransport(retries=0),follow_redirects=False) as client:
         client._amem_credential=key
-        credits=client.get(BASE_URL+'/credits');credits.raise_for_status()
-        balance=credits.json()['data']
-        funds=Decimal(str(balance['total_credits']))-Decimal(str(balance['total_usage']))
-        auth=client.get(BASE_URL+'/key');auth.raise_for_status()
-        known=Decimal(ledger.totals()['reported_cost_usd'])
-        if (abs(Decimal(str(balance['total_usage']))-Decimal('0.011651')-known)>Decimal('.000000001')
-                or abs(Decimal(str(auth.json()['data']['usage']))-known)>Decimal('.000000001')
-                or funds<13 or Decimal(str(auth.json()['data']['limit_remaining']))<5):
-            raise RuntimeError('Prepaid funds, key limit, or external offset changed')
+        from scripts.gpt4omini_finance import compare, snapshot, reconcile
+        account=snapshot(client)
+        prior=read(DIRECTORY/'compatibility-v5/financial-readback-after-success.json')
+        previous={r['probe']:r['data'] for r in prior['account_readbacks']}
+        known=ledger.totals()['reported_cost_usd']
+        opening={'account':account,'reported_cost_usd':known,'approval':{'retained_access_prefix':PREFIX},
+                 'previous_snapshot':str(DIRECTORY/'compatibility-v5/financial-readback-after-success.json'),
+                 'movement':compare(previous,account,prior['generation']['total_cost'],known)}
+        save_new(DIRECTORY/'frozen/account-before-baseline.json',opening)
+        funds=Decimal(account['credits']['total_credits'])-Decimal(account['credits']['total_usage'])
+        if not opening['movement']['verified'] or funds<13 or Decimal(account['key']['limit_remaining'])<5:
+            raise RuntimeError('Prepaid funds, key limit or unaccounted movement')
         endpoint=client.get(BASE_URL+'/models/openai/gpt-4o-mini-2024-07-18/endpoints')
         endpoint.raise_for_status();data=endpoint.json()['data']
         provider=next(e for e in data['endpoints'] if e['tag']=='openai')
@@ -256,7 +235,7 @@ def execute():
                 'error_type','recoverable_length_failure','budget')}),flush=True)
             if result['status'] in ('complete','degraded'):
                 _verified_receipt(preflight,ROOT/'artifacts/assets',ROOT)
-                reconcile(client,ledger,DIRECTORY/'reconciliation.json')
+                reconcile(client,ledger,DIRECTORY/'reconciliation.json',opening)
                 return
             if not result['recoverable_length_failure']:raise RuntimeError('Material failure; paid frontier closed')
             parent=result
