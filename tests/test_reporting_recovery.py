@@ -59,6 +59,8 @@ def fixture(tmp_path, monkeypatch):
             data = self.experiments if resource=='experiments' else self.items if resource=='experiment-items' else self.scores
             if resource=='experiments': data=[x for x in data if x['id'] in ids]
             elif resource=='experiment-items': data=[x for x in data if x['experimentId'] in ids]
+            elif 'trace-id' in options:
+                data=[x for x in data if x['subject']['traceId'] in options['trace-id'].split(',')]
             elif not any(x['id'] in ids for x in self.experiments):data=[]
             data=copy.deepcopy(data)
             if self.mutation: self.mutation(resource, data)
@@ -136,6 +138,19 @@ def test_unclaimed_preexisting_recovery_is_rejected(tmp_path,monkeypatch):
 def test_completed_writes_can_resume_without_sdk_return_receipt(tmp_path,monkeypatch):
     *_,output,cloud,run=fixture(tmp_path,monkeypatch)
     run();(output/'sdk-returned.json').unlink()
+    assert run()['verified'] and len(cloud.calls)==2
+
+
+def test_local_experiment_score_filter_can_be_empty_but_explicit_traces_verify(tmp_path,monkeypatch):
+    views,original,traces,output,cloud,run=fixture(tmp_path,monkeypatch)
+    original_query=cloud.query
+    def query(resource,options):
+        if resource=='scores' and 'experiment-id' in options:
+            return {'status':200,'body':{'data':[], 'meta':{'truncated':False}}}
+        if resource=='scores':assert len(options['trace-id'].split(','))<=50
+        return original_query(resource,options)
+    cloud.query=query
+    assert run()['score_count']==632
     assert run()['verified'] and len(cloud.calls)==2
 
 

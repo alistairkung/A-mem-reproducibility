@@ -740,3 +740,12 @@ identities,16-span batches and exact item/score/trace readback are implemented f
 SDK network-disabled reproduction retains632 spans/316 items/4,494 scores: default max155,613,589B,
 bounded max9,059,941B, zero changed results/model calls. Interrupted claims resume reads only.
 BLK-024 remains Open pending merged-source live readback; BLK-009 and all paid-cell holds remain.
+
+### BLK-024 — 4 November2026 live score-filter reconciliation
+
+The sole authorized import finishes with316 item traces. Initial readback catches indexing lag
+(4,130 embedded scores); subsequent readback has all4,494. `scores --experiment-id` nevertheless
+returns0, while explicit score IDs and trace IDs return identical expected sample scores/subjects.
+Retain the consumed claim, SDK return, both failed read attempts and diagnostic evidence. Narrow
+read-only correction uses bounded explicit item trace filters; no re-ingestion or model client.
+Status remains Open until exact actual readback passes. See [live correction](run2-reporting-recovery.md#live-readback-correction--consumed-import-reads-only).

@@ -101,8 +101,18 @@ def inspect_import(imported, output, query):
     items = _read(query, 'experiment-items', {**common, 'experiment-id': ids,
                   'fields': 'core,io,metadata,itemMetadata,experimentMetadata,scores',
                   'score-limit': 50}, output, paths)
-    scores = _read(query, 'scores', {'experiment-id': ids, 'fields': 'details,subject',
-                   'limit': 100, 'all': True, 'max-items': 6000}, output, paths)
+    scores = []
+    if items:
+        # Local-data Experiment IDs are not reliably supported by the score
+        # endpoint's dataset-run filter. Explicit item traces preserve subjects
+        # and also expose unexpected/duplicate scores on those same traces.
+        traces = sorted({item['traceId'] for item in items})
+        for start in range(0, len(traces), 50):
+            scores.extend(_read(query, 'scores', {'trace-id': ','.join(traces[start:start+50]),
+                'fields': 'details,subject', 'limit': 100, 'all': True, 'max-items': 1000}, output, paths))
+    else:
+        scores = _read(query, 'scores', {'experiment-id': ids, 'fields': 'details,subject',
+                       'limit': 100, 'all': True, 'max-items': 6000}, output, paths)
     return experiments, items, scores, paths
 
 
