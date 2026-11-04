@@ -38,6 +38,11 @@ def execute():
     if fingerprint(prior) != approval['prior_approval_sha256']:
         raise RuntimeError('Third-key approval changed')
     protected.update({ROOT/name:sha for name,sha in prior['evidence_files'].items()})
+    previous_dir = CAMPAIGN/'compatibility-release'
+    previous_files = {str(path.relative_to(ROOT)) for path in previous_dir.rglob('*') if path.is_file()}
+    if set(approval['query_evidence']) != previous_files:
+        raise RuntimeError('Incomplete sealed query evidence')
+    protected.update({ROOT/name:digest for name,digest in approval['query_evidence'].items()})
     protected[PLAN] = hashlib.sha256(PLAN.read_bytes()).hexdigest()
     def healthy(db=None):
         for path,digest in protected.items():
