@@ -159,6 +159,7 @@ def test_reporting_process_removes_provider_credentials_and_denies_provider_impo
     with pytest.raises(PermissionError):socket.getaddrinfo('api.deepseek.com',443)
     with pytest.raises(PermissionError):sys.meta_path[0].find_spec('openai')
     with pytest.raises(PermissionError):sys.meta_path[0].find_spec('amem_repro.run2')
+    with pytest.raises(PermissionError):sys.meta_path[0].find_spec('amem_repro.adapter')
     assert socket.getaddrinfo('cloud.langfuse.com',443)==[]
 
 

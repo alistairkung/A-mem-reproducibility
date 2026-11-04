@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import sys
 import uuid
+from collections import Counter
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +60,14 @@ def main():
             row = next(r for r in views[md['scoring_policy']]['individual_results'] if r['question_id'] == md['question_id'])
             assert md['original_record'] == row
             assert md['original_trace_id'] == traces[row['question_id']]
+        by_trace = {}
+        for span in exporter.roots:
+            md = json.loads(span.attributes[A.EXPERIMENT_ITEM_METADATA])
+            by_trace[f'{span.context.trace_id:032x}'] = (md['scoring_policy'], md['question_id'])
+        actual_scores = Counter((*by_trace[s['trace_id']], s['name'], s['value']) for s in scores)
+        expected_scores = Counter((p, r['question_id'], name, value) for p, v in views.items()
+                                  for r in v['individual_results'] for name, value in r['metrics'].items())
+        assert actual_scores == expected_scores
         assert len(exporter.roots) == 316 and len(scores) == 4494 and fingerprint(views) == before
         if batch is None: assert max(exporter.sizes) > 64 * 1024 * 1024
         else: assert max(exporter.sizes) < PAYLOAD_CEILING
@@ -67,6 +76,7 @@ def main():
                         'batch_count': len(exporter.sizes), 'max_batch_bytes': max(exporter.sizes),
                         'over_64mib': sum(s > 64*1024*1024 for s in exporter.sizes),
                         'all_original_records_and_trace_associations_exact': True})
+        results[-1]['all_metric_question_policy_values_exact'] = True
     evidence = {'recovery_import_id': RECOVERY_ID, 'results_sha256': before, 'results': results,
                 'network_calls': 0, 'model_calls': 0, 'safety_ceiling_bytes': PAYLOAD_CEILING,
                 'sdk_version': '5.1.0'}

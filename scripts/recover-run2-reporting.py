@@ -47,8 +47,9 @@ def reporting_environment():
     class ReportingImports:
         def find_spec(self, fullname, path=None, target=None):
             if (fullname.split('.')[0] in ('openai', 'litellm', 'ollama')
-                    or fullname in ('amem_repro.deepseek', 'amem_repro.runner',
-                                    'amem_repro.run2', 'amem_repro.author_runtime')):
+                    or fullname in ('amem_repro.adapter', 'amem_repro.author',
+                                    'amem_repro.runner', 'amem_repro.run2',
+                                    'amem_repro.actions', 'amem_repro.checkpoint', 'amem_repro.study')):
                 raise PermissionError('Model and scientific runners are forbidden in reporting')
     sys.meta_path.insert(0, ReportingImports())
 
