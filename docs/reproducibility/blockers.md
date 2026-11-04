@@ -4,6 +4,14 @@ Last reviewed: 4 November 2026. Scope: the FTEC5660 controlled reproduction defi
 [protocol](experimental-protocol.md), [decisions](decisions.md) and [tickets](implementation-tickets.md).
 This tracker records evidence and investigation history; it grants no execution or protocol-change approval.
 
+**Current GPT-4o-mini state:** BLK-025 is Open. The sole compatibility completion returned
+HTTP403 with a provider Terms Of Service prohibition, no generation ID/output/usage and no
+actual serving identity. The separately authorized updated-key access check also returned the same403.
+Execution stopped after two requests across two consumed approvals, zero automatic
+retries; Full conv-44 has not started. Account reads show USD50 credits/zero usage,
+but both full reservations (USD0.039300 total) remain unknown and held. No baseline, later cell or new paid probe may proceed.
+See [the independently audited stop](gpt4omini-openrouter-blocked-20261104.md).
+
 **Current Run2 state:** Full conv-44 is fully verified as a **Degraded completed lineage** via a
 separate reporting acceptance supplement. PR#33 merged `513b44e`; one fresh16-span import and
 actual readback verify316 question/view items/4,494 exact scores. Runtime5,097 observations/1,336
@@ -63,6 +71,7 @@ Read [the current observation/recovery release](run2-observation-policy.md).
 | [BLK-022](#blk-022) | HTTP200 body-read failure leaves an unknown charge after a successful SDK retry | Mitigated | Run2 Full conv-44 lineage | [Full reservation retained through p2](run2-conv44-collected-export-blocked-20261103.md) |
 | [BLK-023](#blk-023) | Langfuse project credential exposed in a tool snapshot | Resolved | Secure Run2 observability/continuation | Replacement authentication/readback; original pair absent |
 | [BLK-024](#blk-024) | Full-cell Experiment export exceeds local OTLP batch size | Resolved | Run2 Full conv-44 reporting | [Exact recovered readback and acceptance](run2-conv44-reporting-complete-20261104.md) |
+| [BLK-025](#blk-025) | OpenRouter rejects first dated GPT-4o-mini compatibility request with HTTP403 | Open | New GPT-4o-mini campaign; baseline not started | [Denied request, retained reservation and independent audits](gpt4omini-openrouter-blocked-20261104.md) |
 
 **Run1 final status (3 November 2026):** PR#22 merged as `5ddc96e` after613 offline tests/92 subtests
 and clear independent Standards/Spec reviews. The single authorized second conv-44 continuation
@@ -805,3 +814,111 @@ records the full known liability, rather than understating exposure as the lower
 reservation; the trace also uses this known campaign amount rather than historical
 DeepSeek rates. Synthetic faults and rejected alternatives remain preserved; no
 live overcharge, financial exception or additional paid authority is asserted.
+
+### BLK-005 / BLK-017 / BLK-019 / BLK-004 / BLK-011 — GPT baseline core review,4 November2026
+
+Independent reviews of unexecuted native prototype `5470c49` reproduce material
+control defects offline: a secondary summary OSError remains recoverable after a
+length stop; mismatched parent identity/path repeats processed turns; arbitrary
+Full cache selection accepts counter999 instead of actual675; post-run rescoring
+failure leaves Complete status and escapes the verified observation capture.
+No model network request or historical write occurs. Preserve the initial reviews,
+actual-executor helpers and red proofs under `artifacts/gpt4omini/verification/`.
+
+The prospective correction uses a distinct intentional length-stop type, requires
+healthy mandatory artifacts with no secondary control fault, binds exact parent
+path/identity/seal, rechecks all ancestor/leaf edges and immutable file signatures
+at every admission after initial full hashes, and protects source/data/selection.
+It loads only the exact cache identity/completion marker and compares its complete
+state to the actual author agent; final cache/source checks follow reporting.
+Rescore before capture, emit policy/question-scoped metric failures and classify
+Degraded; preserve original predictions and author metric math. Transport attempts
+are recorded before HTTP invocation so unknown body-read failures remain visible
+as one attempt, with their original errors/reservations retained.
+
+Production-executor regressions verify675 original turns/158 questions/1,666 mock
+posts, exact cache identity/counter675 despite a foreign cache, two real sealed
+checkpoint children, rejected wrong-parent paths/post-claim ancestor/leaf changes,
+terminal secondary persistence failure and correctly observed Degraded rescoring.
+Ten focused tests and the two full675/158 mock executions pass. Final source-bound
+whole suite, fixed archive gates, real-cloud native gate and independent re-review
+remain release requirements. These are new-engineering fixes in existing blocker
+classes, not changes to Run1/Run2 evidence or additional paid authority.
+
+### BLK-019 / BLK-005 — 4 November2026 historical source-alias preservation gate
+
+Before the first OpenRouter model request, full preservation verification rejects
+a changed shared observer visible through a synthetic historical workspace's
+source symlink. No campaign ledger/client/transmission exists. A complete alias
+audit identifies30 tracked-source links; some earlier inventory expansion occurred
+after support edits and cannot substitute for the clean pre-task source commit.
+Preserve both maps, the failed precheck and the alias audit.
+
+Restore the original research checkout exactly to its clean pre-task `b8b3656`,
+without editing any historical artifact or link. Isolate the new campaign in its
+own checkout and physical ledger/cache namespace. The authoritative preservation
+record combines the original file inventories with original Git bytes for the
+tracked aliases; all1,534 older files and29 source aliases verify. Add legacy
+checkout/file checks at paid work boundaries. This is restoration/isolation of
+support source, not a waiver of changed evidence, financial adjudication, altered
+experiment receipt or retroactive scientific change. The original unused approval
+stays preserved/ineligible; a new reviewed source-bound plan is required.
+
+
+<a id="blk-025"></a>
+## BLK-025 — OpenRouter prohibits the first dated GPT-4o-mini compatibility request
+
+- **Status:** Open.
+- **Observed4 November2026,06:22:08 UTC:** the sole admitted metadata compatibility
+  POST to `https://openrouter.ai/api/v1/chat/completions` returns HTTP403:
+  “The request is prohibited due to a violation of provider Terms Of Service.”
+  `provider_name` is null. No generation ID, response model, output or usage exists.
+  Authentication, catalogue and credit GETs had succeeded. They do not prove access
+  to actual model execution or identify the entity responsible for the denial.
+- **Impact:** all four live native-schema contracts, actual dated serving identity,
+  routing and output-cap suitability remain unverified. Full/conv-44 is unstarted;
+  there are no scientific metrics or baseline Langfuse Experiments. This is a
+  provider-access blocker, distinct from BLK-001's schema adaptation and BLK-022's
+  historical HTTP200 body-read failure.
+- **Financial boundary:** the new ledger contains one physical attempt, terminal
+  phase/halt and one unknown full USD0.019650 reservation. No retry, second probe,
+  fallback, continuation or baseline occurred. Read-only credit/key reads at06:26 UTC
+  show USD50 and zero recorded usage; aggregate usage cannot settle this attempt.
+  Preserve the original raw response/error, approval, receipt and every charge.
+- **Confirmed preservation:** independent Standards and Spec outcome audits verify
+  1,534 earlier files,61 links and the clean original `b8b3656` source anchor. Run1
+  and Run2 ledgers/reservations remain unchanged. New artifacts are isolated.
+- **Fix attempts / outcome:** PR#35 merged `c90d5af` for native transport/accounting;
+  reviewed compatibility source `3fd147d` admits exactly one request and halts safely.
+  Subsequent work is read-only accounting/audit and outcome documentation. No access
+  workaround or semantic retry is attempted. Synthetic replay/cloud gates are not
+  evidence that this provider accepts the actual request.
+- **Unknown / release requirements:** cause, responsible entity and individual charge
+  are unresolved. Do not infer a location/account/user violation or change route,
+  model or credential. Provider/account clarification and request-level financial
+  evidence are needed, then a fresh explicit decision and all outstanding release
+  gates before any new transmission. The consumed approval cannot be reused.
+- **Evidence:** [complete outcome](gpt4omini-openrouter-blocked-20261104.md);
+  private `artifacts/gpt4omini/compatibility-v2/`, `budget.sqlite`, and source-bound
+  independent outcome audits. Raw identifiers and credentials remain private.
+
+
+### BLK-025 — separately authorized updated-key check,4 November2026
+
+After the user privately updated the API key and explicitly requested another
+attempt, free authentication/credit/key reads succeed. Independent Standards/Spec
+PASS at `79e480b` covers exactly one original metadata payload with a fresh approval,
+retained original ledger snapshot/seal/halt/reservation and cumulative caps.40 tests
+pass, including the independently requested exact retained-request hash binding.
+Offline actual-launcher success/denial checks verify one POST, preserved ancestry,
+blocked reuse and no baseline release. No historical source/evidence is changed.
+
+The new request at06:49:31 UTC returns the same HTTP403 prohibition, no generation
+ID/output/usage/model and null provider name. Preserve `compatibility-v3/` raw000002
+response, event, original error, approval/reviews, terminal receipt/seal and halt.
+Both phases are consumed/terminal; exactly two admitted physical requests total,
+no automatic retry, no further probe and no baseline. The original SQL rows match
+the frozen pre-retest snapshot exactly. Both full USD0.019650 reservations remain
+unknown, total USD0.039300. At06:50 UTC account/key readbacks still show USD50/zero
+usage; no reservation is released or individual charge declared zero. BLK-025 stays
+Open. The source is preserved in draft PR#36; baseline release remains blocked.
