@@ -82,7 +82,8 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         'approved_at':datetime.now(timezone.utc).isoformat(),'binding':binding,'files':files,
         'reviewed_commit':reviewed_commit,'merge_commit':merge_commit,
         'limits':{'cell_microusd':5000000,'usable_campaign_microusd':42000000,
-                  'protected_microusd':8000000,'max_baseline_calls':1666},
+                  'protected_microusd':8000000,'max_baseline_calls':1666,
+                  'max_new_langfuse_units':30000},
         'gate_path':str(Path(gate_path).relative_to(ROOT)),
         'forecast':read(DIRECTORY/'compatibility/plan-v2.json')['forecast']}
     verify_release(release)
@@ -164,7 +165,7 @@ def execute():
                 or not {'temperature','response_format','structured_outputs','max_tokens'}<=set(provider['supported_parameters'])):
             raise RuntimeError('Frozen provider route/pricing/capabilities changed')
         save_new(DIRECTORY/'frozen/route-before-baseline.json',endpoint.json())
-        parent=None
+        parent=None;prior_runtime_units=0
         for sequence in range(676):
             verify_release(release)
             if ledger.totals()['unknown_attempts']:raise RuntimeError('Unknown exposure forbids continuation')
@@ -182,9 +183,19 @@ def execute():
                 environment='amem-gpt4omini',release=release['binding']['source_sha256'])
             observer=LangfuseObserver(cloud,{**release['binding'],'run_id':phase,
                 'execution_mode':'paid-gpt4omini-baseline','parent_run_id':parent['phase'] if parent else None})
+            original_healthy=observer.assert_healthy
+            def service_healthy():
+                original_healthy()
+                units=len(observer.observations)+len({r['trace_id'] for r in observer.observations})+len(observer.scores)
+                # Retain room for all158 questions in both complete Experiments.
+                if prior_runtime_units+units+10744>release['limits']['max_new_langfuse_units']:
+                    raise RuntimeError('Included-service unit allocation reached; no further paid operation')
+            observer.assert_healthy=service_healthy
             try:
                 result=execute_phase(approval,ledger,observer=observer,client=client,token_counter=counter,root=ROOT)
             finally:cloud.shutdown()
+            capture=read(DIRECTORY/'runs'/phase/'trace-capture.json')
+            prior_runtime_units+=len(capture['observations'])+len(capture['trace_ids'])+len(capture['scores'])
             verify_release(release)
             verify_prior()
             print(json.dumps({k:result[k] for k in ('phase','status','notes','questions','evolution_counter',

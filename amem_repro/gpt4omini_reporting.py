@@ -52,7 +52,9 @@ def import_results(views, context, *, client, traces, query=None):
                 'fields':'details,subject','limit':100,'all':True,'max-items':1000},output,paths)
         indexed=_indexed(scores,'id',[s['id'] for item in items for s in item['scores']])
         for item in items:
-            question=item['input']['question_id']
+            original_input=item['input']
+            if isinstance(original_input,str):original_input=json.loads(original_input)
+            question=original_input['question_id']
             _metadata({'original_trace_id':traces[question]},item.get('experimentItemMetadata'),'item/QA-trace')
             for score in item['scores']:
                 actual=indexed[score['id']]
