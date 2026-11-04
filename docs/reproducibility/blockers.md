@@ -805,3 +805,33 @@ records the full known liability, rather than understating exposure as the lower
 reservation; the trace also uses this known campaign amount rather than historical
 DeepSeek rates. Synthetic faults and rejected alternatives remain preserved; no
 live overcharge, financial exception or additional paid authority is asserted.
+
+### BLK-005 / BLK-017 / BLK-019 / BLK-004 / BLK-011 — GPT baseline core review,4 November2026
+
+Independent reviews of unexecuted native prototype `5470c49` reproduce material
+control defects offline: a secondary summary OSError remains recoverable after a
+length stop; mismatched parent identity/path repeats processed turns; arbitrary
+Full cache selection accepts counter999 instead of actual675; post-run rescoring
+failure leaves Complete status and escapes the verified observation capture.
+No model network request or historical write occurs. Preserve the initial reviews,
+actual-executor helpers and red proofs under `artifacts/gpt4omini/verification/`.
+
+The prospective correction uses a distinct intentional length-stop type, requires
+healthy mandatory artifacts with no secondary control fault, binds exact parent
+path/identity/seal, rechecks all ancestor/leaf edges and immutable file signatures
+at every admission after initial full hashes, and protects source/data/selection.
+It loads only the exact cache identity/completion marker and compares its complete
+state to the actual author agent; final cache/source checks follow reporting.
+Rescore before capture, emit policy/question-scoped metric failures and classify
+Degraded; preserve original predictions and author metric math. Transport attempts
+are recorded before HTTP invocation so unknown body-read failures remain visible
+as one attempt, with their original errors/reservations retained.
+
+Production-executor regressions verify675 original turns/158 questions/1,666 mock
+posts, exact cache identity/counter675 despite a foreign cache, two real sealed
+checkpoint children, rejected wrong-parent paths/post-claim ancestor/leaf changes,
+terminal secondary persistence failure and correctly observed Degraded rescoring.
+Ten focused tests and the two full675/158 mock executions pass. Final source-bound
+whole suite, fixed archive gates, real-cloud native gate and independent re-review
+remain release requirements. These are new-engineering fixes in existing blocker
+classes, not changes to Run1/Run2 evidence or additional paid authority.

@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import sys
+import subprocess
 from datetime import datetime,timezone
 from decimal import Decimal,ROUND_CEILING
 
@@ -82,9 +83,16 @@ def execute():
             or not plan['forecast']['fits_cell_cap'] or len(plan['probes'])!=6):
         raise RuntimeError('Reviewed compatibility plan/source/script/affordability changed')
     for axis in ('spec','standards'):
-        review=read(ROOT/f'artifacts/gpt4omini/verification/transport-{axis}-review.json')
-        if review.get('verdict')!='pass' or review.get('reviewed_commit')!=approval['reviewed_commit']:
+        review=read(ROOT/f'artifacts/gpt4omini/verification/compatibility-{axis}-review.json')
+        if (review.get('verdict')!='pass' or review.get('reviewed_commit')!=approval['reviewed_commit']
+                or fingerprint(review)!=approval.get('review_receipts',{}).get(axis)):
             raise RuntimeError('Independent reviewed-source proof missing')
+    for name,digest in source_fingerprint(ROOT)['files'].items():
+        blob=subprocess.check_output(['git','show',approval['reviewed_commit']+':'+name],cwd=ROOT)
+        if hashlib.sha256(blob).hexdigest()!=digest:
+            raise RuntimeError('Current sources differ from the reviewed immutable commit')
+    if subprocess.check_output(['git','show',approval['reviewed_commit']+':scripts/gpt4omini-compatibility.py'],cwd=ROOT)!=Path(__file__).read_bytes():
+        raise RuntimeError('Compatibility launcher differs from reviewed commit')
     verify_prior()
     values=dotenv_values(ROOT/'.env');key=values.get('OPENROUTER_API_KEY')
     if not key:raise RuntimeError('Private OpenRouter credential missing')

@@ -120,6 +120,9 @@ def test_transport_failure_does_not_retry_or_release_unknown(tmp_path):
     with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
     assert len(requests)==1 and l.totals()['unknown_attempts']==1
     assert events[0]['error_message']=='original body read failure'
+    assert len(events[0]['attempts'])==1
+    assert events[0]['attempts'][0]['error_type']=='ReadError'
+    assert events[0]['attempts'][0]['usage'] is None
 
 
 def test_malformed_evolution_rejected_and_pending_until_state_verified(tmp_path):

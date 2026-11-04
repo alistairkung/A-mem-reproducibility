@@ -26,7 +26,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def run_fixture(directory, *, observer=None, records=None, candidate=False,
                 fail_decisions=None, checkpoint=None, ledger=None, parent=None,
-                use_runtime_assets=False, token_counter=None):
+                use_runtime_assets=False, token_counter=None, boundary_check=None):
     directory=Path(directory).resolve();directory.mkdir(parents=True,exist_ok=True)
     binding={**SCIENTIFIC_BINDING,'source_sha256':fingerprint(source_fingerprint(ROOT))}
     ledger=ledger or CampaignLedger(directory/'accounting/budget.sqlite',
@@ -84,7 +84,7 @@ def run_fixture(directory, *, observer=None, records=None, candidate=False,
     factory=make_action_agent_factory if candidate else make_agent_factory
     options={'condition':'full'} if candidate else {}
     build=factory(ROOT,controller_factory=controllers,memory_module=module,token_counter=counter,**options)
-    healthy=observer.assert_healthy if observer else lambda:None
+    healthy=boundary_check or (observer.assert_healthy if observer else lambda:None)
     guard=FallbackGuard(controller,healthy,lambda note:module.note_document(SimpleNamespace(**note)))
     scorer=AuthorScorer(ROOT,dependencies=None if use_runtime_assets else dependencies())
     error=None

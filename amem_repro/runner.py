@@ -242,7 +242,7 @@ def run_manifest(
             identity['action_implementation'] = action_implementation
             if evolution_guard is not None:
                 from .evolution_fallback import POLICY_ID
-                identity['evolution_failure_policy'] = POLICY_ID
+                identity['evolution_failure_policy'] = getattr(evolution_guard,'policy_id',POLICY_ID)
             if execution_type == 'deterministic_replay':
                 identity['execution_type'] = execution_type
             if checkpoint is not None:

@@ -78,6 +78,7 @@ class CampaignLedger:
             raise BudgetStop('Campaign scientific binding differs from the authorized identity')
         self.failed = False
         self.claimed = {}
+        self.guards = {}
         self._file_identity=None
         self._root_identity=None
         encoded=json.dumps(SCIENTIFIC_BINDING,sort_keys=True)
@@ -170,6 +171,7 @@ class CampaignLedger:
                 if db.execute('SELECT COUNT(*) FROM halts').fetchone()[0]:
                     raise BudgetStop('A terminal campaign failure forbids further transmissions')
                 approval = json.loads(row[0])
+                if phase in self.guards:self.guards[phase](db)
                 if approval['binding'] != self.binding:
                     raise BudgetStop('Immutable approval changed')
                 if db.execute("SELECT COUNT(*) FROM attempts WHERE state!='settled'").fetchone()[0]:
@@ -190,6 +192,11 @@ class CampaignLedger:
         except BaseException:
             self.failed = True
             raise BudgetStop('Financial admission failed; no transmission permitted') from None
+
+    def set_guard(self, phase, guard):
+        if phase not in self.claimed or phase in self.guards:
+            raise BudgetStop('Admission guard must bind exactly once to the claimed owner')
+        self.guards[phase]=guard
 
     def settle(self, attempt, response, output_limit):
         try:
@@ -278,7 +285,11 @@ class OpenRouterController:
             attempt, reserve = self.ledger.reserve(self.phase,stage,body)
             save_new(self.journal/f'{attempt:06d}-request.json',body)
             event['budget_logical_id'] = attempt
+            event['attempts']=[{'attempt':1,'status_code':None,'error_type':None,
+                'request_body':body,'response_body':None,'usage':None,
+                'budget_attempt_id':attempt,'reservation_microusd':reserve}]
             raw = self.client.post(BASE_URL+'/chat/completions',json=body)
+            event['attempts'][0]['status_code']=raw.status_code
             # Preserve exact bytes as well as parsed objects, without headers/secrets.
             path = self.journal/f'{attempt:06d}-response.bin'
             with path.open('xb') as stream:
@@ -327,6 +338,8 @@ class OpenRouterController:
         except BaseException as error:
             event['error_type']=type(error).__name__
             event['error_message']=str(error)
+            if event['attempts']:
+                event['attempts'][0].update(error_type=type(error).__name__,error_message=str(error))
             self.ledger.stop(self.phase,event['error_type'])
             raise BudgetStop('Provider/validation/control failure; no further paid request') from None
         finally:

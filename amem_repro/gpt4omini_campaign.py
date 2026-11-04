@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from types import SimpleNamespace
 
-from .artifacts import snapshot_memory, restore_memory
+from .artifacts import CacheStore, build_identity, snapshot_memory, restore_memory
 from .budget import BudgetStop
 from .config import OPENROUTER_CONFIG, fingerprint, source_fingerprint, stage_output_limits
 from .evolution_fallback import verify_fallback_state
@@ -20,6 +20,65 @@ from .openrouter import CAMPAIGN, CampaignLedger, OpenRouterController, save_new
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT/'artifacts/gpt4omini'
+
+
+class RecoverableLength(BudgetStop):
+    """Only this intentional safe-boundary stop can authorize a checkpoint child."""
+
+
+def file_signature(path):
+    path=Path(path)
+    if path.is_symlink():raise BudgetStop('Protected source/artifact became a symlink')
+    stat=path.stat()
+    return stat.st_dev,stat.st_ino,stat.st_size,stat.st_mtime_ns,stat.st_ctime_ns
+
+
+def admission_guard(approval, ledger, root):
+    """Recheck sealed ancestry edges and immutable file identity at EVERY call.
+
+    Full hashes are checked before the signatures are captured. ctime/inode/size/
+    mtime checks avoid re-reading gigabytes of old raw responses per admission.
+    Any changed signature is terminal; it is never refreshed or trusted anew.
+    """
+    sources=source_fingerprint(root)
+    if fingerprint(sources)!=approval['binding']['source_sha256']:
+        raise BudgetStop('Reviewed source changed')
+    protected={root/name:file_signature(root/name) for name in sources['files']}
+    data=root/'data/locomo10.json';manifest=root/'manifests/fallback.json'
+    if (hashlib.file_digest(data.open('rb'),'sha256').hexdigest()!=approval['binding']['dataset_sha256']
+            or fingerprint(read(manifest))!=approval['binding']['manifest_sha256']):
+        raise BudgetStop('Frozen dataset or selection changed')
+    protected.update({data:file_signature(data),manifest:file_signature(manifest)})
+    ancestors=[]
+    path=Path(approval['parent_path']) if approval.get('parent_path') else None
+    while path:
+        value=read(path);phase=value['phase']
+        verify_inventory(path.parent,value['files'])
+        files={path.parent/name:file_signature(path.parent/name) for name in value['files']}
+        files[path]=file_signature(path)
+        protected.update(files)
+        ancestors.append((phase,fingerprint(value),value.get('parent_path'),read(path.parent/'approval.json')))
+        path=Path(value['parent_path']) if value.get('parent_path') else None
+    def check(db):
+        for path,signature in protected.items():
+            if file_signature(path)!=signature:raise BudgetStop('Protected ancestor/source changed after claim')
+        source_names={str(p.relative_to(root)) for p in (*root.glob('amem_repro/**/*.py'),*root.glob('config/*.json'))}
+        expected={n for n in sources['files'] if n.startswith(('amem_repro/','config/'))}
+        if source_names!=expected:raise BudgetStop('Source inventory changed after claim')
+        own=db.execute('SELECT approval,parent,state,seal FROM phases WHERE id=?',(approval['phase'],)).fetchone()
+        if own!=(json.dumps(approval,sort_keys=True),approval.get('parent'),'running',None):
+            raise BudgetStop('Current phase ownership changed')
+        if db.execute('SELECT COUNT(*) FROM phases WHERE parent=?',(approval['phase'],)).fetchone()[0]:
+            raise BudgetStop('An active leaf cannot already have a checkpoint child')
+        for phase,seal,parent_path,auth in ancestors:
+            row=db.execute('SELECT approval,parent,state,seal FROM phases WHERE id=?',(phase,)).fetchone()
+            if row!=(json.dumps(auth,sort_keys=True),auth.get('parent'),'recoverable',seal):
+                raise BudgetStop('Ancestor seal, state or approval changed')
+            incoming=db.execute('SELECT id FROM phases WHERE parent=?',(phase,)).fetchall()
+            expected_child=approval['phase'] if phase==approval.get('parent') else next(
+                (p for p,s,path,a in ancestors if a.get('parent')==phase),None)
+            if incoming!=[(expected_child,)]:raise BudgetStop('Foreign or missing checkpoint edge')
+    return check
 
 
 def read(path):
@@ -51,6 +110,7 @@ class FallbackGuard:
     def __init__(self, controller, healthy, note_document):
         self.controller, self.healthy, self.note_document = controller, healthy, note_document
         self.recoverable = False
+        self.policy_id='gpt4omini-original-fallback-v1'
 
     def before(self, agent):
         return snapshot_memory(agent.memory_system,validate=False)
@@ -77,7 +137,7 @@ class FallbackGuard:
             self.controller.pending=None
             if pending['kind']=='length':
                 self.recoverable=True
-                raise BudgetStop('Settled decision exhaustion; exact-state child required')
+                raise RecoverableLength('Settled decision exhaustion; exact-state child required')
         except BudgetStop:raise
         except BaseException:raise BudgetStop('Fallback verification failed') from None
 
@@ -137,8 +197,16 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
     if fingerprint(source_fingerprint(root))!=binding['source_sha256']:
         raise BudgetStop('Source changed since reviewed phase freeze')
     parent_path=approval.get('parent_path')
+    if bool(parent_path)!=bool(approval.get('parent')):
+        raise BudgetStop('Continuation requires both its exact parent identity and path')
+    if parent_path:
+        claimed_parent=read(parent_path)
+        if (claimed_parent['phase']!=approval['parent']
+                or fingerprint(claimed_parent)!=approval.get('parent_seal')):
+            raise BudgetStop('Parent path and approved immutable parent edge differ')
     checkpoint=checkpoint_from(parent_path,ledger,binding,root=root) if parent_path else None
     phase=ledger.claim(approval)
+    ledger.set_guard(phase,admission_guard(approval,ledger,root))
     output=ledger.root/'runs'/phase
     output.mkdir(parents=True,exist_ok=False)
     save_new(output/'approval.json',approval)
@@ -163,7 +231,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
             if restored!=checkpoint['state']:raise BudgetStop('Exact checkpoint restoration failed')
         agents.append(agent)
         return agent
-    error=None;summary=None
+    error=None;summary=None;failure=None
     try:
         summary=run_manifest(root/'data/locomo10.json',read(root/'manifests/fallback.json'),
             copy.deepcopy(OPENROUTER_CONFIG),output_dir=output,cache_root=ledger.root/'cache',
@@ -173,21 +241,55 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
             execution_type='checkpoint_recovery' if checkpoint else 'fresh_build')
         boundary()
     except BaseException as exc:
-        error=type(exc).__name__
+        error=type(exc).__name__;failure=exc
+    events=[json.loads(l) for l in (output/'events.jsonl').read_text().splitlines()]
+    results=[e['result'] for e in events if e['type']=='question_result']
+    views=None;post_scoring_failures=0
+    if not error:
+        callback=scorer.observer
+        scorer.observer=None
+        try:
+            views=rescore_records(results,scorer)
+            for policy,view in views.items():
+                for result in view['individual_results']:
+                    for failed in result.get('metric_failures',[]):
+                        post_scoring_failures+=1
+                        callback({**failed,'question_id':result['question_id'],
+                                  'conversation_id':'conv-44','scoring_policy':policy})
+            save_new(output/'scoring-views.json',views)
+        except BaseException as exc:
+            error=type(exc).__name__;failure=exc
+        finally:scorer.observer=callback
     capture=observer.finish()
     save_new(output/'trace-capture.json',capture)
     events=[json.loads(l) for l in (output/'events.jsonl').read_text().splitlines()]
-    results=[e['result'] for e in events if e['type']=='question_result']
-    # The runner's complete cache/partial bundle contains the ordered outcomes.
-    if (output/'partial-memory.json').exists():state=read(output/'partial-memory.json')['state']
-    else:
-        caches=[p for p in (ledger.root/'cache').glob('*/state.json')
-                if read(p.parent/'identity.json').get('condition')=='full']
-        if not caches:raise BudgetStop('No complete memory artifact')
-        state=read(caches[-1])
+    outcomes=copy.deepcopy(checkpoint['state']['outcomes']) if checkpoint else []
+    outcomes += [{k:v for k,v in e.items() if k not in ('type','run_id','build_id','conversation_id','level')}
+                 for e in events if e['type']=='evolution_outcome']
+    state=snapshot_memory(agents[-1].memory_system,outcomes) if agents else None
+    identity=None
+    if (output/'partial-memory.json').exists():
+        if read(output/'partial-memory.json')['state']!=state:
+            raise BudgetStop('Partial checkpoint differs from actual final author state')
+    elif not error:
+        start=next(e for e in events if e['type']=='run_start')
+        conversation=next(c for c in start['manifest']['conversations'] if c['original_id']=='conv-44')
+        identity=build_identity(OPENROUTER_CONFIG,conversation,start['manifest']['dataset_sha256'],
+                                start['source_hashes'],provider_contract_policy='strict-original-v1')
+        identity.update(condition='full',memory_actions={'strengthen':True,'update_neighbor':True},
+                        action_policy='released-action-boundaries-v1',action_implementation='frozen-author',
+                        evolution_failure_policy=guard.policy_id)
+        if checkpoint:identity['checkpoint']=checkpoint['lineage']
+        saved=CacheStore(ledger.root/'cache').load(identity)
+        if {k:v for k,v in saved.items() if k!='build_failures'}!=state:
+            raise BudgetStop('Exact completed cache differs from actual final author state')
+        state=saved
+    if state is None:raise BudgetStop('No author state could be preserved')
     receipt={'phase':phase,'binding':binding,'parent_path':str(parent_path) if parent_path else None,
              'status':'incomplete','notes':len(state['notes']),'questions':len(results),
              'evolution_counter':state['evo_cnt'],'error_type':error,
+             'error_message':str(failure) if failure else None,
+             'post_scoring_failure_count':post_scoring_failures,
              'recoverable_length_failure':False,'budget':ledger.totals()}
     try:
         observer.assert_healthy()
@@ -196,13 +298,22 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         if not error:
             if receipt['notes']!=675 or receipt['questions']!=158:
                 raise BudgetStop('Original turn/question coverage incomplete')
-            views=rescore_records(results,scorer)
-            save_new(output/'scoring-views.json',views)
             receipt['experiments']=import_results(views,context,client=observer.client,
                                                 traces=original_qa_traces(capture))
-            receipt['status']=summary['status']
+            receipt['status']='degraded' if post_scoring_failures else summary['status']
             save_new(output/'final-memory.json',state)
-        elif guard.recoverable and not ledger.totals()['unknown_attempts']:
+            # Cloud work must not conceal a changed cache/source after initial validation.
+            if CacheStore(ledger.root/'cache').load(identity)!=state:
+                raise BudgetStop('Completed cache changed during reporting')
+            cache_path=CacheStore(ledger.root/'cache').path_for(identity)
+            save_new(output/'cache-proof.json',{'directory':str(cache_path.relative_to(ledger.root)),
+                                               'files':inventory(cache_path)})
+            if fingerprint(source_fingerprint(root))!=binding['source_sha256']:
+                raise BudgetStop('Reviewed source changed during reporting')
+        elif (type(failure) is RecoverableLength and guard.recoverable
+                and (output/'summary.json').exists() and (output/'partial-memory.json').exists()
+                and not any(e.get('kind') in ('partial_artifact','reporting','token_measurement') for e in events)
+                and not ledger.totals()['unknown_attempts']):
             receipt['recoverable_length_failure']=True
     except BaseException as exc:
         receipt['error_type']=type(exc).__name__

@@ -25,9 +25,11 @@ def import_results(views, context, *, client, traces, query=None):
     if set(expected)!=set(traces):raise VerificationError('QA trace identity differs from saved results')
     class AssociatedClient:
         def run_experiment(self, **kwargs):
+            kwargs['metadata']['observability_policy']='run2-audit-essential-v1'
             identity=kwargs['metadata']['experiment_identity']
             kwargs['experiment_id']=hashlib.sha256(fingerprint(identity).encode()).hexdigest()[:16]
             for item in kwargs['data']:
+                item['metadata']['observability_policy']='run2-audit-essential-v1'
                 item['metadata']['original_trace_id']=traces[item['metadata']['question_id']]
             return client.run_experiment(**kwargs)
         def flush(self):client.flush()
