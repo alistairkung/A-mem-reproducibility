@@ -69,6 +69,28 @@ RUN2_CONFIG["generation"].update(
     output_token_policy="run2-shared-decision-8192-v1",
 )
 
+# Separate campaign: never relabel or migrate either DeepSeek campaign.
+OPENROUTER_CONFIG = copy.deepcopy(DEFAULT_CONFIG)
+OPENROUTER_CONFIG["protocol_id"] = "amem-gpt4omini-openrouter-20261104-v1"
+OPENROUTER_CONFIG["model"] = {
+    "id": "openai/gpt-4o-mini-2024-07-18",
+    "base_url": "https://openrouter.ai/api/v1",
+    "route": "/chat/completions",
+    "documented_version": "gpt-4o-mini-2024-07-18",
+    "immutable_weights_pin": False,
+    "provider": {"order": ["openai"], "only": ["openai"],
+                 "allow_fallbacks": False, "require_parameters": True},
+}
+OPENROUTER_CONFIG["generation"].update(
+    shared_decision_max_tokens=4096,
+    output_token_policy="gpt4omini-shared-decision-4096-v1",
+)
+OPENROUTER_CONFIG["transport"]["max_retries"] = 0
+OPENROUTER_CONFIG["budget"] = {
+    "ceiling_usd": 50, "contingency_usd": 8,
+    "cell_allocation_usd": 5, "compatibility_allocation_usd": .25,
+}
+
 
 def stage_output_limits(config=None):
     """Return the explicitly selected frozen profile; Run1 remains the default."""
@@ -131,7 +153,8 @@ def fingerprint(value):
 def validate_config(config):
     """Reject deviations rather than silently adjusting the approved protocol."""
     reject_credentials(config)
-    if fingerprint(config) not in (fingerprint(DEFAULT_CONFIG), fingerprint(RUN2_CONFIG)):
+    if fingerprint(config) not in (fingerprint(DEFAULT_CONFIG), fingerprint(RUN2_CONFIG),
+                                 fingerprint(OPENROUTER_CONFIG)):
         raise ValueError("Configuration differs from the frozen protocol")
 
 

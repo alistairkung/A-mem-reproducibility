@@ -1,0 +1,191 @@
+"""New-campaign native contracts and financial failure boundaries, no network."""
+import copy
+import json
+import sqlite3
+from pathlib import Path
+
+import httpx
+import pytest
+
+from amem_repro.adapter import AdapterError
+from amem_repro.budget import BudgetStop
+from amem_repro.config import OPENROUTER_CONFIG, validate_config, stage_output_limits
+from amem_repro.contracts import load_author_contracts
+from amem_repro.openrouter import (
+    CAMPAIGN, MODEL, CampaignLedger, OpenRouterController, fingerprint, usage_charge,
+)
+
+VALUES = {
+    'metadata':{'keywords':['cat'],'context':'A cat.','tags':['cat']},
+    'shared_decision':{'should_evolve':False,'actions':[],'suggested_connections':[],
+                       'new_context_neighborhood':[],'tags_to_update':[],'new_tags_neighborhood':[]},
+    'query_keywords':{'keywords':'cat'},'answer':{'answer':'cat'},
+}
+
+
+def setup(tmp_path, *, stage='metadata', change=None, handler=None, observer=None):
+    binding={'campaign_id':CAMPAIGN,'source_sha256':'a'*64}
+    ledger=CampaignLedger(tmp_path/'budget.sqlite',campaign_root=tmp_path,binding=binding)
+    approval={'approved':True,'binding':binding,'kind':'compatibility','phase':'smoke',
+              'condition':'full','conversation':'conv-44'}
+    phase=ledger.claim(approval)
+    requests=[]
+    def respond(request):
+        requests.append(json.loads(request.content))
+        if handler:return handler(request)
+        response={'id':'gen-'+str(len(requests)),'model':MODEL,'provider':'OpenAI',
+                  'choices':[{'finish_reason':'stop','message':{'content':json.dumps(VALUES[stage])}}],
+                  'usage':{'prompt_tokens':100,'completion_tokens':100,'cost':.000075}}
+        if change:change(response)
+        return httpx.Response(200,json=response)
+    client=httpx.Client(transport=httpx.MockTransport(respond),follow_redirects=False)
+    events=[]
+    controller=OpenRouterController(client,ledger=ledger,phase=phase,journal=tmp_path/'raw',
+                                    observer=observer or events.append)
+    return controller,ledger,requests,events,approval
+
+
+@pytest.mark.parametrize('stage',VALUES)
+def test_native_original_contracts_and_exact_bytes(tmp_path,stage):
+    c,l,requests,events,_=setup(tmp_path,stage=stage)
+    contract=load_author_contracts()[stage]
+    result=c.get_completion('Unchanged original prompt',contract)
+    assert result==json.dumps(VALUES[stage])
+    assert len(requests)==1
+    body=requests[0]
+    assert body['response_format']==contract
+    assert body['messages']==[{'role':'system','content':'You must respond with a JSON object.'},
+                              {'role':'user','content':'Unchanged original prompt'}]
+    assert body['provider']=={'order':['openai'],'only':['openai'],
+                             'allow_fallbacks':False,'require_parameters':True}
+    assert not {'thinking','tools','tool_choice','models','plugins','transforms'} & body.keys()
+    assert body['model']==MODEL and body['max_tokens']==stage_output_limits(OPENROUTER_CONFIG)[stage]
+    assert l.totals()=={'attempts':1,'conservative_microusd':75,'unknown_attempts':0,
+                        'reported_cost_usd':'0.000075'}
+    assert events[0]['raw_schema_valid'] and events[0]['conservative_cost_usd']==.000075
+    assert (tmp_path/'raw/000001-request.json').exists()
+    assert (tmp_path/'raw/000001-response.bin').exists()
+
+
+def test_new_config_does_not_mutate_deepseek_profiles():
+    from amem_repro.config import DEFAULT_CONFIG,RUN2_CONFIG
+    validate_config(OPENROUTER_CONFIG)
+    assert DEFAULT_CONFIG['model']['id']==RUN2_CONFIG['model']['id']=='deepseek-flash'
+    assert stage_output_limits()['shared_decision']==4000
+    assert stage_output_limits(RUN2_CONFIG)['shared_decision']==8192
+    assert stage_output_limits(OPENROUTER_CONFIG)['shared_decision']==4096
+    changed=copy.deepcopy(OPENROUTER_CONFIG);changed['model']['provider']['allow_fallbacks']=True
+    with pytest.raises(ValueError):validate_config(changed)
+
+
+@pytest.mark.parametrize('change',[
+    lambda r:r.update(model='openai/gpt-4o-mini'),lambda r:r.update(provider='Azure'),
+    lambda r:r['choices'][0].update(finish_reason='tool_calls'),
+    lambda r:r['choices'][0]['message'].update(refusal='refused'),
+    lambda r:r['choices'][0]['message'].update(content='{"keywords":[],"context":0,"tags":[]}'),
+])
+def test_unsupported_outputs_are_terminal_and_not_retried(tmp_path,change):
+    c,l,requests,events,_=setup(tmp_path,change=change)
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    assert len(requests)==1 and events[0]['error_type']
+
+
+@pytest.mark.parametrize('change',[
+    lambda r:r.pop('usage'),lambda r:r['usage'].pop('cost'),
+    lambda r:r['usage'].update(completion_tokens=True),
+    lambda r:r['usage'].update(cost=-1),lambda r:r['usage'].update(cost='NaN'),
+])
+def test_unknown_usage_retains_full_reservation_and_blocks_admission(tmp_path,change):
+    c,l,requests,events,_=setup(tmp_path,change=change)
+    for _ in range(2):
+        with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    assert len(requests)==1 and l.totals()['unknown_attempts']==1
+    assert l.totals()['conservative_microusd']==19650
+
+
+@pytest.mark.parametrize('status',[429,500,503])
+def test_http_errors_do_not_trigger_transport_or_gateway_retries(tmp_path,status):
+    c,l,requests,events,_=setup(tmp_path,handler=lambda _:httpx.Response(status,json={'error':{'message':'test'}}))
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    assert len(requests)==1 and l.totals()['unknown_attempts']==1
+
+
+def test_transport_failure_does_not_retry_or_release_unknown(tmp_path):
+    def fail(request):raise httpx.ReadError('original body read failure',request=request)
+    c,l,requests,events,_=setup(tmp_path,handler=fail)
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    assert len(requests)==1 and l.totals()['unknown_attempts']==1
+    assert events[0]['error_message']=='original body read failure'
+
+
+def test_malformed_evolution_rejected_and_pending_until_state_verified(tmp_path):
+    bad='{"should_evolve":true,"actions"["strengthen"]}'
+    c,l,requests,events,_=setup(tmp_path,stage='shared_decision',
+        change=lambda r:r['choices'][0]['message'].update(content=bad))
+    with pytest.raises(AdapterError):c.get_completion('original',load_author_contracts()['shared_decision'])
+    assert events[0]['output']==bad and c.pending['kind']=='malformed'
+    assert l.totals()['unknown_attempts']==0
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['shared_decision'])
+    assert len(requests)==1
+
+
+def test_length_evolution_is_settled_once_and_pending_exact_fallback(tmp_path):
+    def change(r):
+        r['choices'][0].update(finish_reason='length')
+        r['choices'][0]['message']['content']='{"should_evolve":'
+        r['usage']['completion_tokens']=4096;r['usage']['cost']=.0024726
+    c,l,requests,events,_=setup(tmp_path,stage='shared_decision',change=change)
+    with pytest.raises(AdapterError):c.get_completion('original',load_author_contracts()['shared_decision'])
+    assert c.pending['kind']=='length' and l.totals()['unknown_attempts']==0
+    assert len(requests)==1
+
+
+def test_single_use_approval_cannot_restart_even_after_completion(tmp_path):
+    c,l,requests,events,approval=setup(tmp_path)
+    l.finish('smoke',{'status':'complete'},'complete')
+    with pytest.raises(BudgetStop):l.claim(approval)
+
+
+@pytest.mark.parametrize('kind',['symlink','hardlink','root-symlink'])
+def test_ledger_alias_rejected_before_older_file_is_opened(tmp_path,kind):
+    old=tmp_path/'old.sqlite';old.write_bytes(b'immutable old ledger')
+    campaign=tmp_path/'new';campaign.mkdir()
+    if kind=='root-symlink':
+        campaign.rmdir();campaign.symlink_to(tmp_path,target_is_directory=True)
+    elif kind=='symlink':(campaign/'budget.sqlite').symlink_to(old)
+    else:
+        import os
+        os.link(old,campaign/'budget.sqlite')
+    with pytest.raises(BudgetStop):CampaignLedger(campaign/'budget.sqlite',campaign_root=campaign,binding={})
+    assert old.read_bytes()==b'immutable old ledger'
+
+
+def test_failed_settlement_is_outside_retry_and_preserves_raw_response(tmp_path,monkeypatch):
+    c,l,requests,events,_=setup(tmp_path)
+    from contextlib import contextmanager
+    original=l.transaction
+    count=0
+    @contextmanager
+    def broken():
+        nonlocal count
+        count+=1
+        if count==2:raise sqlite3.OperationalError('offline settlement fault')
+        with original() as db:yield db
+    monkeypatch.setattr(l,'transaction',broken)
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    assert len(requests)==1 and (tmp_path/'raw/000001-response.bin').exists()
+    assert l.totals()['unknown_attempts']==1
+
+
+def test_smoke_and_cell_spending_cannot_be_reset_by_child_phase(tmp_path):
+    c,l,requests,events,approval=setup(tmp_path)
+    with l.transaction() as db:
+        db.execute("INSERT INTO attempts (phase,stage,request_hash,reservation,charge,state) VALUES ('smoke','metadata','old',240000,240000,'settled')")
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    assert requests==[]
+
+
+def test_both_original_c5_temperatures_are_preserved(tmp_path):
+    c,l,requests,events,_=setup(tmp_path,stage='answer')
+    c.get_completion('original',load_author_contracts()['answer'],temperature=.5)
+    assert requests[0]['temperature']==.5

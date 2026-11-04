@@ -231,6 +231,13 @@ class LangfuseObserver:
             int((Decimal('.30') * u.get('prompt_tokens', 0)
                  + Decimal('1.20') * u.get('completion_tokens', 0))
                 .to_integral_value(rounding=ROUND_CEILING)) for u in usage) / 1000000}
+        if 'conservative_cost_usd' in event and not unknown and usage:
+            # New providers supply their independently settled local-ledger cost.
+            # Historical DeepSeek observations retain the original default rates.
+            value = Decimal(str(event['conservative_cost_usd']))
+            if not value.is_finite() or value < 0:
+                raise ObservabilityError('Invalid settled campaign generation cost')
+            cost = {'total': float(value)}
         response = event.get('provider_response') or next(
             (a['response_body'] for a in reversed(event.get('attempts', []))
              if isinstance(a.get('response_body'), dict) and a['response_body'].get('choices')), {})
@@ -244,6 +251,8 @@ class LangfuseObserver:
             'endpoint', 'documented_model_version', 'request_id', 'returned_model',
             'system_fingerprint', 'provider_contract_policy', 'raw_schema_valid',
             'validation_copy_schema_valid', 'compatibility_deviation', 'error_type')}
+        if 'actual_provider' in event:
+            metadata['actual_provider'] = event['actual_provider']
         attempts = event.get('attempts', [])
         if attempts and isinstance(attempts[0].get('request_body'), dict):
             # Already sanitized by the recording transport; no headers or credentials.

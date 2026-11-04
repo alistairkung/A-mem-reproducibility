@@ -30,7 +30,10 @@ class VerificationError(RuntimeError):
 
 def _output(context):
     path=Path(context['output_dir']).resolve()
-    if not any(a=='artifacts' and b=='run2' for a,b in zip(path.parts,path.parts[1:])):
+    namespaces = [b for a,b in zip(path.parts,path.parts[1:]) if a=='artifacts']
+    gpt = (context.get('binding',{}).get('campaign_id') == 'amem-gpt4omini-openrouter-20261104-v1'
+           and 'gpt4omini' in namespaces)
+    if 'run2' not in namespaces and not gpt:
         raise VerificationError('Cloud evidence must use a separate Run2 artifact directory')
     path.mkdir(parents=True,exist_ok=True)
     return path
@@ -50,7 +53,7 @@ def _query_cli(resource, options):
     if resource not in ('observations','scores','experiments','experiment-items'):
         raise VerificationError('Unsupported Langfuse read resource')
     env={k:v for k,v in os.environ.items() if not any(
-        token in k.upper() for token in ('DEEPSEEK','OPENAI_API','ANTHROPIC_API'))}
+        token in k.upper() for token in ('DEEPSEEK','OPENAI_API','ANTHROPIC_API','OPENROUTER'))}
     host=env.get('LANGFUSE_BASE_URL') or env.get('LANGFUSE_HOST')
     if not host or not all(env.get(k) for k in ('LANGFUSE_PUBLIC_KEY','LANGFUSE_SECRET_KEY')):
         raise VerificationError('Langfuse project keys and explicit host are required')
