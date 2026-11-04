@@ -19,7 +19,7 @@ from pathlib import Path
 
 from .adapter import AdapterError, _observed_payload
 from .budget import BudgetStop
-from .config import OPENROUTER_CONFIG, fingerprint, stage_output_limits
+from .config import AUTHOR_REVISION, OPENROUTER_CONFIG, fingerprint, stage_output_limits
 from .contracts import load_author_contracts, validate_arguments
 
 CAMPAIGN = 'amem-gpt4omini-openrouter-20261104-v1'
@@ -28,6 +28,9 @@ BASE_URL = OPENROUTER_CONFIG['model']['base_url']
 CONTEXT = 128000
 INPUT_RATE = Decimal('.15')  # microUSD / token, without cache discounts
 OUTPUT_RATE = Decimal('.60')
+SCIENTIFIC_BINDING = {'campaign_id':CAMPAIGN,'config_sha256':fingerprint(OPENROUTER_CONFIG),
+    'dataset_sha256':'79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4',
+    'author_revision':AUTHOR_REVISION}
 
 
 def save_new(path, value):
@@ -61,7 +64,7 @@ def usage_charge(usage, output_limit):
 class CampaignLedger:
     """One fresh ledger; immutable phase approvals, exclusive ownership and SQL caps."""
     def __init__(self, path, *, campaign_root, binding):
-        if Path(campaign_root).is_symlink():
+        if Path(campaign_root).absolute()!=Path(campaign_root).resolve():
             raise BudgetStop('Campaign root cannot alias historical storage')
         self.root = Path(campaign_root).resolve()
         self.path = Path(path)
@@ -71,7 +74,21 @@ class CampaignLedger:
             raise BudgetStop('Campaign ledger must be its own regular isolated file')
         self.root.mkdir(parents=True, exist_ok=True)
         self.binding = copy.deepcopy(binding)
+        if any(binding.get(k)!=v for k,v in SCIENTIFIC_BINDING.items()):
+            raise BudgetStop('Campaign scientific binding differs from the authorized identity')
         self.failed = False
+        self.claimed = {}
+        self._file_identity=None
+        self._root_identity=None
+        encoded=json.dumps(SCIENTIFIC_BINDING,sort_keys=True)
+        if self.path.exists():
+            # A foreign ledger is inspected read-only before ANY schema/pragma write.
+            try:
+                with sqlite3.connect(self.path.resolve().as_uri()+'?mode=ro',uri=True) as db:
+                    previous=db.execute('SELECT binding FROM campaign WHERE id=?',(CAMPAIGN,)).fetchone()
+                    if previous!=(encoded,):raise BudgetStop('Existing file belongs to another campaign')
+            except sqlite3.Error:
+                raise BudgetStop('Existing file is not this campaign ledger') from None
         with self.transaction() as db:
             db.executescript('''
                 CREATE TABLE IF NOT EXISTS campaign (id TEXT PRIMARY KEY, binding TEXT NOT NULL);
@@ -81,15 +98,26 @@ class CampaignLedger:
                     stage TEXT NOT NULL, request_hash TEXT NOT NULL, reservation INTEGER NOT NULL,
                     charge INTEGER NOT NULL, state TEXT NOT NULL, response_hash TEXT, usage TEXT,
                     provider_id TEXT UNIQUE, reported_cost TEXT);
+                CREATE TABLE IF NOT EXISTS halts (phase TEXT PRIMARY KEY, reason TEXT NOT NULL);
             ''')
-            encoded = json.dumps(binding, sort_keys=True)
             previous = db.execute('SELECT binding FROM campaign WHERE id=?', (CAMPAIGN,)).fetchone()
             if previous and previous[0] != encoded:
                 raise BudgetStop('Campaign configuration/provenance changed')
             db.execute('INSERT OR IGNORE INTO campaign VALUES (?,?)', (CAMPAIGN, encoded))
+        self._file_identity=(self.path.stat().st_dev,self.path.stat().st_ino)
+        self._root_identity=(self.root.stat().st_dev,self.root.stat().st_ino)
 
     @contextmanager
     def transaction(self):
+        if (self.root.absolute()!=self.root.resolve() or self.path.is_symlink()
+                or self.path.resolve()!=self.root/'budget.sqlite'
+                or (self.path.exists() and self.path.stat().st_nlink!=1)
+                or (self._file_identity is not None and
+                    self._file_identity!=(self.path.stat().st_dev,self.path.stat().st_ino))
+                or (self._root_identity is not None and
+                    self._root_identity!=(self.root.stat().st_dev,self.root.stat().st_ino))):
+            self.failed=True
+            raise BudgetStop('Campaign storage changed or aliases other evidence')
         db = sqlite3.connect(self.path, timeout=30)
         try:
             db.execute('PRAGMA synchronous=FULL')
@@ -122,6 +150,7 @@ class CampaignLedger:
                 raise BudgetStop('A fresh root cannot repeat a consumed campaign phase')
             db.execute('INSERT INTO phases VALUES (?,?,?,\'running\',NULL)',
                        (phase,json.dumps(approval,sort_keys=True),parent))
+        self.claimed[phase]=copy.deepcopy(approval)
         return phase
 
     def reserve(self, phase, stage, request):
@@ -135,8 +164,11 @@ class CampaignLedger:
                           .to_integral_value(rounding=ROUND_CEILING))
             with self.transaction() as db:
                 row = db.execute('SELECT approval,state FROM phases WHERE id=?',(phase,)).fetchone()
-                if not row or row[1] != 'running':
+                if (not row or row[1] != 'running' or phase not in self.claimed
+                        or json.loads(row[0])!=self.claimed[phase]):
                     raise BudgetStop('Phase is not an active one-shot owner')
+                if db.execute('SELECT COUNT(*) FROM halts').fetchone()[0]:
+                    raise BudgetStop('A terminal campaign failure forbids further transmissions')
                 approval = json.loads(row[0])
                 if approval['binding'] != self.binding:
                     raise BudgetStop('Immutable approval changed')
@@ -163,21 +195,38 @@ class CampaignLedger:
         try:
             usage = response['usage']
             charge = usage_charge(usage, output_limit)
+            if not isinstance(response.get('id'),str) or not response['id'].startswith('gen-'):
+                raise BudgetStop('Missing original provider generation identity')
+            over_reservation=False
             with self.transaction() as db:
                 row = db.execute('SELECT state,reservation FROM attempts WHERE id=?',(attempt,)).fetchone()
-                if not row or row[0] != 'reserved' or charge > row[1]:
-                    raise BudgetStop('Duplicate settlement or exceeded physical reservation')
+                if not row or row[0] != 'reserved':
+                    raise BudgetStop('Duplicate settlement')
+                over_reservation=charge>row[1]
                 db.execute("UPDATE attempts SET state='settled',charge=?,response_hash=?,usage=?,provider_id=?,reported_cost=? WHERE id=?",
                     (charge,fingerprint(response),json.dumps(usage,sort_keys=True),response['id'],str(usage['cost']),attempt))
-            return charge
         except BaseException:
             self.failed = True
             raise BudgetStop('Usage settlement failed; full reservation retained') from None
+        if over_reservation:
+            self.failed=True
+            raise BudgetStop('Actual provider charge exceeds reservation; full known charge retained')
+        return charge
+
+    def stop(self, phase, reason):
+        self.failed=True
+        try:
+            with self.transaction() as db:
+                db.execute('INSERT OR IGNORE INTO halts VALUES (?,?)',(phase,reason))
+        except BaseException:
+            # The claimed unfinished phase and this process latch remain closed.
+            pass
 
     def finish(self, phase, receipt, state):
         if state not in ('complete','recoverable','terminal'):
             raise BudgetStop('Invalid terminal phase state')
         seal = fingerprint(receipt)
+        if phase not in self.claimed:raise BudgetStop('Only the claimed phase owner can seal')
         with self.transaction() as db:
             changed = db.execute("UPDATE phases SET state=?,seal=? WHERE id=? AND state='running'",
                                  (state,seal,phase)).rowcount
@@ -275,6 +324,7 @@ class OpenRouterController:
         except BaseException as error:
             event['error_type']=type(error).__name__
             event['error_message']=str(error)
+            self.ledger.stop(self.phase,event['error_type'])
             raise BudgetStop('Provider/validation/control failure; no further paid request') from None
         finally:
             event['duration_seconds'] = time.perf_counter()-started
@@ -284,4 +334,6 @@ class OpenRouterController:
             # Critical local observation failure is terminal, outside author catches.
             if self.observer:
                 try:self.observer(safe)
-                except BaseException:raise BudgetStop('Generation evidence persistence failed') from None
+                except BaseException:
+                    self.ledger.stop(self.phase,'generation_evidence_failed')
+                    raise BudgetStop('Generation evidence persistence failed') from None

@@ -12,7 +12,7 @@ from amem_repro.budget import BudgetStop
 from amem_repro.config import OPENROUTER_CONFIG, validate_config, stage_output_limits
 from amem_repro.contracts import load_author_contracts
 from amem_repro.openrouter import (
-    CAMPAIGN, MODEL, CampaignLedger, OpenRouterController, fingerprint, usage_charge,
+    CAMPAIGN, MODEL, SCIENTIFIC_BINDING, CampaignLedger, OpenRouterController, fingerprint, usage_charge,
 )
 
 VALUES = {
@@ -24,7 +24,7 @@ VALUES = {
 
 
 def setup(tmp_path, *, stage='metadata', change=None, handler=None, observer=None):
-    binding={'campaign_id':CAMPAIGN,'source_sha256':'a'*64}
+    binding={**SCIENTIFIC_BINDING,'source_sha256':'a'*64}
     ledger=CampaignLedger(tmp_path/'budget.sqlite',campaign_root=tmp_path,binding=binding)
     approval={'approved':True,'binding':binding,'kind':'compatibility','phase':'smoke',
               'condition':'full','conversation':'conv-44'}
@@ -88,6 +88,10 @@ def test_unsupported_outputs_are_terminal_and_not_retried(tmp_path,change):
     c,l,requests,events,_=setup(tmp_path,change=change)
     with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
     assert len(requests)==1 and events[0]['error_type']
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    reopened=CampaignLedger(tmp_path/'budget.sqlite',campaign_root=tmp_path,binding=l.binding)
+    with pytest.raises(BudgetStop):reopened.reserve('smoke','metadata',requests[0])
+    assert len(requests)==1
 
 
 @pytest.mark.parametrize('change',[
@@ -160,6 +164,21 @@ def test_ledger_alias_rejected_before_older_file_is_opened(tmp_path,kind):
     assert old.read_bytes()==b'immutable old ledger'
 
 
+@pytest.mark.parametrize('alias',['direct','ancestor'])
+def test_foreign_sqlite_is_unchanged_even_when_target_is_regular(tmp_path,alias):
+    older=tmp_path/'older';older.mkdir()
+    path=older/'budget.sqlite'
+    with sqlite3.connect(path) as db:db.execute('CREATE TABLE historical_evidence (value TEXT)')
+    before=path.read_bytes()
+    root=older
+    if alias=='ancestor':
+        link=tmp_path/'alias';link.symlink_to(tmp_path,target_is_directory=True)
+        root=link/'older'
+    with pytest.raises(BudgetStop):
+        CampaignLedger(root/'budget.sqlite',campaign_root=root,binding=SCIENTIFIC_BINDING)
+    assert path.read_bytes()==before
+
+
 def test_failed_settlement_is_outside_retry_and_preserves_raw_response(tmp_path,monkeypatch):
     c,l,requests,events,_=setup(tmp_path)
     from contextlib import contextmanager
@@ -182,6 +201,21 @@ def test_smoke_and_cell_spending_cannot_be_reset_by_child_phase(tmp_path):
     with l.transaction() as db:
         db.execute("INSERT INTO attempts (phase,stage,request_hash,reservation,charge,state) VALUES ('smoke','metadata','old',240000,240000,'settled')")
     with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    assert requests==[]
+
+
+def test_known_charge_anomaly_retains_full_reported_liability(tmp_path):
+    c,l,requests,events,_=setup(tmp_path,change=lambda r:r['usage'].update(cost=.03))
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    assert l.totals()['conservative_microusd']==30000
+    assert l.totals()['reported_cost_usd']=='0.03'
+    assert len(requests)==1
+
+
+def test_fresh_ledger_cannot_attach_to_another_process_claim(tmp_path):
+    c,l,requests,events,approval=setup(tmp_path)
+    another=CampaignLedger(tmp_path/'budget.sqlite',campaign_root=tmp_path,binding=l.binding)
+    with pytest.raises(BudgetStop):another.reserve('smoke','metadata',{'max_tokens':1000})
     assert requests==[]
 
 
