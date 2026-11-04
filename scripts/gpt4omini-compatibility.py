@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 import subprocess
@@ -24,14 +25,18 @@ def read(path):
 
 
 def verify_prior():
-    evidence=read(OUTPUT.parent/'verification/prior-preservation-authoritative.json')
+    evidence=read(OUTPUT.parent/'verification/prior-preservation-authoritative-v2.json')
     legacy=Path(evidence['legacy_root']).resolve()
     if subprocess.check_output(['git','rev-parse','HEAD'],cwd=legacy,text=True).strip()!=evidence['legacy_commit']:
         raise RuntimeError('Historical source checkout changed')
-    for name,digest in evidence['files'].items():
+    for name,digest in {**evidence['files'],**evidence['input_files']}.items():
         path=(legacy/name).resolve()
         if not path.is_relative_to(legacy) or hashlib.file_digest(path.open('rb'),'sha256').hexdigest()!=digest:
             raise RuntimeError('Preserved historical evidence changed')
+    for name,target in evidence['symlinks'].items():
+        path=legacy/name
+        if not path.is_symlink() or os.readlink(path)!=target:
+            raise RuntimeError('Historical artifact link changed')
 
 
 def prepare():
@@ -98,7 +103,7 @@ def execute():
             raise RuntimeError('Current sources differ from the reviewed immutable commit')
     if subprocess.check_output(['git','show',approval['reviewed_commit']+':scripts/gpt4omini-compatibility.py'],cwd=ROOT)!=Path(__file__).read_bytes():
         raise RuntimeError('Compatibility launcher differs from reviewed commit')
-    if fingerprint(read(OUTPUT.parent/'verification/prior-preservation-authoritative.json'))!=approval.get('preservation_sha256'):
+    if fingerprint(read(OUTPUT.parent/'verification/prior-preservation-authoritative-v2.json'))!=approval.get('preservation_sha256'):
         raise RuntimeError('Approved historical preservation evidence changed')
     verify_prior()
     values=dotenv_values(ROOT/'.env');key=values.get('OPENROUTER_API_KEY')

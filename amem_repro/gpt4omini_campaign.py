@@ -101,12 +101,17 @@ def verify_inventory(directory, files):
 
 def verify_prior(root=ROOT):
     import subprocess
-    evidence=read(root/'artifacts/gpt4omini/verification/prior-preservation-authoritative.json')
+    evidence=read(root/'artifacts/gpt4omini/verification/prior-preservation-authoritative-v2.json')
     legacy=Path(evidence['legacy_root']).resolve()
     head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=legacy,text=True).strip()
     if head!=evidence['legacy_commit']:
         raise BudgetStop('Historical source checkout is no longer frozen')
     verify_inventory(legacy,evidence['files'])
+    verify_inventory(legacy,evidence['input_files'])
+    for name,target in evidence['symlinks'].items():
+        path=legacy/name
+        if not path.is_symlink() or os.readlink(path)!=target:
+            raise BudgetStop('Historical artifact link changed')
     return len(evidence['files'])
 
 

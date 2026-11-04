@@ -60,7 +60,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         raise RuntimeError('Six-call native compatibility not complete')
     files=dict(sources['files'])
     paths=[Path(gate_path),DIRECTORY/'compatibility-v2/receipt.json',DIRECTORY/'compatibility-v2/plan-v2.json',
-        DIRECTORY/'verification/prior-preservation-authoritative.json',
+        DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
         DIRECTORY/'verification/baseline-preflight.json',DIRECTORY/'verification/baseline-full-suite.txt',
         DIRECTORY/'verification/baseline-standards-review.json',DIRECTORY/'verification/baseline-spec-review.json',
         DIRECTORY/'verification/archive-equivalence.json',
@@ -186,20 +186,29 @@ def execute():
                 'execution_mode':'paid-gpt4omini-baseline','parent_run_id':parent['phase'] if parent else None})
             original_healthy=observer.assert_healthy
             from amem_repro.gpt4omini_campaign import file_signature
-            legacy_manifest=read(DIRECTORY/'verification/prior-preservation-authoritative.json')
+            legacy_manifest=read(DIRECTORY/'verification/prior-preservation-authoritative-v2.json')
             legacy=Path(legacy_manifest['legacy_root'])
             legacy_signatures={legacy/name:file_signature(legacy/name) for name in legacy_manifest['files']
                                if not (legacy/name).is_symlink()}
             # Aliases are checked through their immutable original target as well.
             for name in legacy_manifest['files']:
                 target=(legacy/name).resolve();legacy_signatures[target]=file_signature(target)
+            for name in legacy_manifest['input_files']:
+                legacy_signatures[legacy/name]=file_signature(legacy/name)
+            legacy_links={legacy/name:(target,(legacy/name).lstat()) for name,target in legacy_manifest['symlinks'].items()}
             legacy_signatures[legacy/'.git/HEAD']=file_signature(legacy/'.git/HEAD')
-            legacy_signatures[DIRECTORY/'verification/prior-preservation-authoritative.json']=file_signature(
-                DIRECTORY/'verification/prior-preservation-authoritative.json')
+            legacy_signatures[DIRECTORY/'verification/prior-preservation-authoritative-v2.json']=file_signature(
+                DIRECTORY/'verification/prior-preservation-authoritative-v2.json')
             def service_healthy():
                 original_healthy()
                 if any(file_signature(path)!=signature for path,signature in legacy_signatures.items()):
                     raise RuntimeError('Historical evidence changed; no next paid operation')
+                for path,(target,stat) in legacy_links.items():
+                    current=path.lstat()
+                    if (not path.is_symlink() or os.readlink(path)!=target
+                            or (current.st_dev,current.st_ino,current.st_mtime_ns,current.st_ctime_ns)
+                               !=(stat.st_dev,stat.st_ino,stat.st_mtime_ns,stat.st_ctime_ns)):
+                        raise RuntimeError('Historical artifact link changed; no next paid operation')
                 units=len(observer.observations)+len({r['trace_id'] for r in observer.observations})+len(observer.scores)
                 # Retain room for all158 questions in both complete Experiments.
                 if prior_runtime_units+units+10744>release['limits']['max_new_langfuse_units']:

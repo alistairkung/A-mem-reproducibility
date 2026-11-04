@@ -841,7 +841,7 @@ classes, not changes to Run1/Run2 evidence or additional paid authority.
 Before the first OpenRouter model request, full preservation verification rejects
 a changed shared observer visible through a synthetic historical workspace's
 source symlink. No campaign ledger/client/transmission exists. A complete alias
-audit identifies29 tracked-source links; some earlier inventory expansion occurred
+audit identifies30 tracked-source links; some earlier inventory expansion occurred
 after support edits and cannot substitute for the clean pre-task source commit.
 Preserve both maps, the failed precheck and the alias audit.
 

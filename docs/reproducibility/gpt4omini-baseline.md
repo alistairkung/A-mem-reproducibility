@@ -141,10 +141,10 @@ artifacts/ledger/cache there. The original `artifacts/gpt4omini` is a convenienc
 link to that new namespace; every older study artifact/link remains untouched.
 Shared immutable assets and historical regression inputs are read-only links.
 
-`prior-preservation-authoritative.json` retains both earlier inventories and pins
+`prior-preservation-authoritative-v2.json` retains both earlier inventories and pins
 all1,534 older file contents. It reconciles the original tracked-source aliases
 against the independently recorded clean pre-task Git commit; the earlier partial
-snapshots and failed check remain preserved. All29 source aliases match original
+snapshots and failed check remain preserved. All30 source aliases match original
 Git bytes. The driver checks this frozen legacy checkout before each phase and
 checks immutable legacy-file signatures at each work boundary. Do not advance the
 preservation checkout while the historical source aliases depend on it.
