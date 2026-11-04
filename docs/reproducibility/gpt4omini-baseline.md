@@ -104,3 +104,25 @@ readiness is a report, not paid authority.
 
 Engineering and offline verification in progress. No model request has been sent.
 Free credential/model/credit evidence is under `artifacts/gpt4omini/verification/`.
+
+## Historical regression fixture isolation
+
+The preserved Run2 recovery tests intentionally reject added/changed scientific
+source inventories. A new provider campaign must not become eligible for a consumed
+DeepSeek migration merely to make historical tests pass. Their optional reviewed
+source selector uses an exact pre-GPT checkout (`b8b3656`); all assertions, original
+fixtures and production migration restrictions stay unchanged. Combine it with the
+already documented immutable transport-stop and sequential evidence fixtures:
+
+```sh
+git worktree add --detach .worktrees/gpt4omini-legacy-source b8b3656f1342bceda4c79ffe7e824c1fc79afbab
+AMEM_RUN2_REVIEWED_SOURCE_ROOT="$PWD/.worktrees/gpt4omini-legacy-source" \
+AMEM_BLK022_EVIDENCE_ROOT="$PWD/artifacts/run2/reporting-recovery/historical-fixture" \
+AMEM_RUN2_SEQUENTIAL_EVIDENCE_ROOT="$PWD/artifacts/run2/reporting-recovery/sequential-fixture" \
+.venv/bin/pytest -q
+```
+
+The default-evidence and new-source rejection logs remain preserved. This selection
+is offline test context only; it cannot authorize a historical phase or new model
+request. A fresh clone without optional private historical evidence still runs its
+portable tests and explicitly skips unavailable archives.

@@ -14,6 +14,7 @@ from amem_repro import run2_blk022 as incident
 from amem_repro.budget import BudgetStop, ledger_summary
 
 ROOT = Path(__file__).resolve().parents[1]
+REVIEWED_SOURCE_ROOT = Path(os.environ.get('AMEM_RUN2_REVIEWED_SOURCE_ROOT', ROOT)).resolve()
 
 
 @pytest.fixture
@@ -251,14 +252,16 @@ def candidate(evidence, monkeypatch):
     from amem_repro.config import source_fingerprint
     import subprocess
     root, campaign = evidence
-    sources = source_fingerprint(ROOT)
+    # Historical paid-migration tests must use their original source inventory.
+    # New campaign modules are intentionally ineligible for that consumed grant.
+    sources = source_fingerprint(REVIEWED_SOURCE_ROOT)
     for name in sources['files']:
         target = root / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.symlink_to(ROOT / name)
-    (root / '.git').symlink_to(ROOT / '.git')
-    (root / 'data').symlink_to(ROOT / 'data', target_is_directory=True)
-    (root / 'manifests').symlink_to(ROOT / 'manifests', target_is_directory=True)
+        target.symlink_to(REVIEWED_SOURCE_ROOT / name)
+    (root / '.git').symlink_to(REVIEWED_SOURCE_ROOT / '.git')
+    (root / 'data').symlink_to(REVIEWED_SOURCE_ROOT / 'data', target_is_directory=True)
+    (root / 'manifests').symlink_to(REVIEWED_SOURCE_ROOT / 'manifests', target_is_directory=True)
     from amem_repro import observation_policy
     # This existing fixture mocks the external preflight; mock the independently
     # tested cloud/credential gate too. Never treat it as historical cloud proof.
@@ -284,7 +287,7 @@ def candidate(evidence, monkeypatch):
     financial = incident.verify_financial_adjudication(
         approve(incident.plan_financial_adjudication(root=root, campaign=campaign)),
         root=root, campaign=campaign)
-    reference = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+    reference = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REVIEWED_SOURCE_ROOT, text=True).strip()
     return root, campaign, sources, preflight, financial, reference, origin / 'artifacts/assets'
 
 
