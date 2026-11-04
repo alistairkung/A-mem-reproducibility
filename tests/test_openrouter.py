@@ -227,3 +227,52 @@ def test_both_original_c5_temperatures_are_preserved(tmp_path):
     c,l,requests,events,_=setup(tmp_path,stage='answer')
     c.get_completion('original',load_author_contracts()['answer'],temperature=.5)
     assert requests[0]['temperature']==.5
+
+
+def access_retest_approval(ledger, original, request):
+    ledger.finish(original['phase'],{'status':'incomplete'},'terminal')
+    with ledger.transaction() as db:snapshot=ledger.access_snapshot(db)
+    return {**original,'phase':'access-retest','parent':original['phase'],
+            'parent_seal':snapshot['phases'][0][4],'limits':{'max_physical_calls':1},
+            'access_retest':{'policy':'updated-key-one-probe-20261104-v1',
+                             'request_sha256':fingerprint(request),'retained_snapshot':snapshot}}
+
+
+def test_explicit_updated_key_probe_retains_denied_history_and_cannot_release_baseline(tmp_path):
+    c,l,requests,events,original=setup(tmp_path,handler=lambda _:httpx.Response(403,json={'error':{'code':403}}))
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    approval=access_retest_approval(l,original,requests[0])
+    reopened=CampaignLedger(l.path,campaign_root=tmp_path,binding=l.binding)
+    phase=reopened.claim(approval)
+    before=approval['access_retest']['retained_snapshot']
+    attempt,_=reopened.reserve(phase,'metadata',requests[0]);assert attempt==2
+    with reopened.transaction() as db:assert reopened.access_snapshot(db,phase)==before
+    assert reopened.totals()['conservative_microusd']==39300
+    with pytest.raises(BudgetStop):reopened.reserve(phase,'metadata',requests[0])
+    reopened.finish(phase,{'status':'incomplete'},'terminal')
+    other=CampaignLedger(l.path,campaign_root=tmp_path,binding=l.binding)
+    with pytest.raises(BudgetStop):other.claim({**original,'kind':'baseline','phase':'baseline'})
+    with pytest.raises(BudgetStop):other.claim(approval)
+    with other.transaction() as db:assert other.access_snapshot(db,phase)==before
+
+
+@pytest.mark.parametrize('change',['snapshot','seal','kind','calls','request','new-halt'])
+def test_access_retest_rejects_changed_scope_or_history_before_second_post(tmp_path,change):
+    c,l,requests,events,original=setup(tmp_path,handler=lambda _:httpx.Response(403,json={'error':{'code':403}}))
+    with pytest.raises(BudgetStop):c.get_completion('original',load_author_contracts()['metadata'])
+    approval=access_retest_approval(l,original,requests[0])
+    if change=='snapshot':approval['access_retest']['retained_snapshot']['attempts'][0][5]=0
+    if change=='seal':approval['parent_seal']='changed'
+    if change=='kind':approval['kind']='baseline'
+    if change=='calls':approval['limits']['max_physical_calls']=2
+    reopened=CampaignLedger(l.path,campaign_root=tmp_path,binding=l.binding)
+    if change not in ('request','new-halt'):
+        with pytest.raises(BudgetStop):reopened.claim(approval)
+    else:
+        phase=reopened.claim(approval)
+        if change=='new-halt':
+            with reopened.transaction() as db:db.execute('INSERT INTO halts VALUES (?,?)',(phase,'new control failure'))
+        request=copy.deepcopy(requests[0])
+        if change=='request':request['messages'][1]['content']='different'
+        with pytest.raises(BudgetStop):reopened.reserve(phase,'metadata',request)
+    assert reopened.totals()['attempts']==1 and len(requests)==1

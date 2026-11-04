@@ -153,3 +153,18 @@ The fresh compatibility plan/approval uses `compatibility-v2/`, retaining the
 pre-transmission attempt rather than replacing or reusing its source binding.
 This changes operational isolation only; prompts, schemas, generation/scoring
 policies, population, provider route and financial caps are unchanged.
+
+
+### Updated-key access check — 4 November2026
+
+After the first403 and retained USD0.019650 reservation were reported, the user
+updated the private API key and explicitly requested another attempt. This permits
+one fresh exact metadata compatibility POST with a new immutable approval; retain
+the original terminal phase/halt and full unknown reservation unchanged. The same
+USD0.25 compatibility/USD5 cell caps apply cumulatively. Maximum cumulative
+reservation for these two attempts is USD0.039300. No baseline release, individual
+charge settlement, general terminal-state bypass or repeated retry is inferred.
+Verify current private authentication, exact prior ledger snapshot/raw403/provenance,
+reviewed source and independent Standards/Spec reviews before this one request.
+A new failure stops; even a successful access check cannot release the baseline
+while the earlier unknown exposure and outstanding release gates remain unresolved.
