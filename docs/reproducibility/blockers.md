@@ -858,7 +858,9 @@ Restore the original research checkout exactly to its clean pre-task `b8b3656`,
 without editing any historical artifact or link. Isolate the new campaign in its
 own checkout and physical ledger/cache namespace. The authoritative preservation
 record combines the original file inventories with original Git bytes for the
-tracked aliases; all1,534 older files and29 source aliases verify. Add legacy
+tracked aliases; all1,534 older files verify. The initial29-alias count was
+preliminary; the complete V2 audit verifies44 tracked-source aliases (30 support/
+config plus14 frozen author/runtime) and61 exact symlink targets. Add legacy
 checkout/file checks at paid work boundaries. This is restoration/isolation of
 support source, not a waiver of changed evidence, financial adjudication, altered
 experiment receipt or retroactive scientific change. The original unused approval

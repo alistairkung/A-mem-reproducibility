@@ -119,7 +119,8 @@ not the baseline core. This outcome PR changes documentation only.
   historical Degraded label is not a GPT baseline result. Network was disabled;
   zero paid calls. `verification/archive-equivalence.json` hashes both proofs.
 - Runtime/assets offline preflight passes. Real-cloud native Gatev4 passes actual
-  readback under the current `3fd147d` source, as detailed below. These gates do not
+  readback under the pre-retest `3fd147d` source, as detailed below. This is not a final
+  `79e480b` baseline release gate. These gates do not
   waive the failing whole-suite check or establish live provider compatibility.
 
 ## Langfuse evidence
