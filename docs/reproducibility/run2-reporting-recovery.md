@@ -86,3 +86,11 @@ scientific source inventory; original `amem_repro/reporting.py` remains byte-ide
 ```sh
 AMEM_BLK022_EVIDENCE_ROOT="$PWD/artifacts/run2/reporting-recovery/historical-fixture" .venv/bin/pytest -q
 ```
+
+The sequential recovery tests also assumed a ledger ending at p1. Their new optional
+`AMEM_RUN2_SEQUENTIAL_EVIDENCE_ROOT` only selects test evidence; assertions and production gates
+are unchanged. `sequential-fixture/manifest.json` records a clearly labelled, non-authoritative
+projection of the immutable current ledger: remove p2 rows and rewind the copied cell leaf to p1.
+All retained original rows compare exactly,1,132 logical/1,133 attempts/USD2.370010 including
+unknown454; never use this derived fixture as actual spending/phase evidence. Original ledger bytes
+remain unchanged. Run the complete suite with both evidence-root variables set.

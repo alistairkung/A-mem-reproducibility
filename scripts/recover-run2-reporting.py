@@ -17,6 +17,7 @@ APPROVAL_FILES = frozenset({
     'amem_repro/manifests.py', 'pyproject.toml', 'uv.lock',
     'scripts/recover-run2-reporting.py', 'scripts/verify-run2-reporting-offline.py',
     'tests/test_reporting_recovery.py',
+    'tests/test_run2_sequential_financial.py',
     'artifacts/run2/reporting-recovery/preservation-before.json',
     'artifacts/run2/reporting-recovery/offline-payload-proof.json',
     'artifacts/run2/reporting-recovery/full-offline-suite.log',
