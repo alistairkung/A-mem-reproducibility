@@ -268,6 +268,7 @@ class OpenRouterController:
                  'endpoint':BASE_URL+'/chat/completions','documented_model_version':MODEL,
                  'temperature':temperature,'max_tokens':limit,'thinking':'not-applicable',
                  'provider_contract_policy':'strict-original-v1','output':None,'usage':None,
+                 'campaign_cost_policy':'openrouter-ledger-v1',
                  'error_type':None,'attempts':[],'raw_schema_valid':False,
                  'validation_copy_schema_valid':False,'compatibility_deviation':None}
         started = time.perf_counter()
