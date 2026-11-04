@@ -4,13 +4,14 @@ Import with PYTHONPATH=<worktree>:<worktree>/tests:/private/tmp. The supplied
 root is the worktree. Failures are relative to this phase's decision count.
 No helper-created fake checkpoint or fake receipt bypasses production functions.
 """
-import copy,json
+import copy,json,hashlib
 from contextlib import ExitStack
 from pathlib import Path
 from unittest.mock import patch
 import httpx,numpy as np
 from amem_repro.gpt4omini_campaign import execute_phase
-from amem_repro.openrouter import cell_store,CampaignLedger,SCIENTIFIC_BINDING,MODEL
+from amem_repro.openrouter import (cell_store,cell_key,cell_parts,CELL_ORDER,ABLATION_POLICY,
+                                  CampaignLedger,SCIENTIFIC_BINDING,MODEL,save_new)
 from amem_repro.config import fingerprint,source_fingerprint
 from amem_repro.measurements import TokenCounter
 from amem_repro.observability import LangfuseObserver
@@ -21,19 +22,56 @@ from test_observability import Client
 from test_scoring import dependencies
 
 
+def seed_predecessors(ledger, key):
+    """Labelled offline financial prerequisites, never copied scientific memory."""
+    previous=CELL_ORDER[:CELL_ORDER.index(key)]
+    seals={}
+    save_new(ledger.root/'fixture.json',{'synthetic_offline_ancestry':True})
+    evidence_hash=hashlib.sha256((ledger.root/'fixture.json').read_bytes()).hexdigest()
+    for index,prior in enumerate(previous):
+        conversation,condition=cell_parts(prior)
+        auth={'approved':True,'binding':{**ledger.binding,'conversation_id':conversation,'condition':condition},
+              'phase':'synthetic-'+prior,'kind':'baseline','condition':condition,'conversation':conversation}
+        seal=fingerprint({'synthetic_completed_predecessor':prior});seals[prior]=seal
+        with ledger.transaction() as db:
+            db.execute('INSERT INTO phases VALUES (?,?,NULL,?,?)',
+                       (auth['phase'],json.dumps(auth,sort_keys=True),'complete',seal))
+            history=ledger.access_snapshot(db)
+        files={}
+        for axis in ('spec','standards'):
+            p=ledger.root/'outcomes'/prior/f'acceptance-{axis}.json'
+            save_new(p,{'synthetic':True,'evidence_files':{'fixture.json':evidence_hash}})
+            files[str(p.relative_to(ledger.root))]=hashlib.sha256(p.read_bytes()).hexdigest()
+        certificate={'accepted_cells':list(previous[:index+1]),'phase_seals':dict(seals),
+                     'next_cell':CELL_ORDER[index+1],'affordable':True,
+                     'ledger_prefix_sha256':fingerprint(history),'files':files}
+        path=ledger.root/'outcomes'/prior/'frontier.json'
+        save_new(path,certificate)
+        if prior=='conv-50':
+            path=path.with_name('ablation-frontier.json');save_new(path,certificate)
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def run_actual_phase(directory, *, root, phase='p0', ledger=None, parent=None,
                      fail_decisions=None, summary_fault=False, on_request=None,
                      approval_updates=None, import_verify=None, cloud_client=None,
-                     real_cloud=False, runtime_assets=False, conversation='conv-44'):
+                     real_cloud=False, runtime_assets=False, conversation='conv-44',condition='full'):
     root=Path(root).resolve();directory=Path(directory).resolve();directory.mkdir(parents=True,exist_ok=True)
     binding={**SCIENTIFIC_BINDING,'source_sha256':fingerprint(source_fingerprint(root)),
-             'condition':'full','population':'fallback','manifest_sha256':fingerprint(json.loads((root/'manifests/fallback.json').read_text())),
+             'condition':condition,'population':'fallback','manifest_sha256':fingerprint(json.loads((root/'manifests/fallback.json').read_text())),
              'repetition':0,'conversation_id':conversation,'provider_contract_policy':'strict-original-v1'}
+    fresh=ledger is None
     ledger=ledger or CampaignLedger(directory/'budget.sqlite',campaign_root=directory,binding=binding)
-    approval={'approved':True,'binding':binding,'phase':phase,'kind':'baseline','condition':'full','conversation':conversation}
+    key=cell_key(conversation,condition)
+    approval={'approved':True,'binding':binding,'phase':phase,'kind':'baseline','condition':condition,'conversation':conversation}
+    if condition!='full':approval['ablation_policy']=ABLATION_POLICY
+    if fresh and key!='conv-44':
+        approval['previous_acceptance_sha256']=seed_predecessors(ledger,key)
+    elif parent and key!='conv-44':
+        approval['previous_acceptance_sha256']=json.loads((cell_store(directory,key)/'runs'/parent['phase']/'approval.json').read_text())['previous_acceptance_sha256']
     if parent:
         approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
-                        parent_path=str(cell_store(directory,conversation)/'runs'/parent['phase']/'phase.json'))
+                        parent_path=str(cell_store(directory,key)/'runs'/parent['phase']/'phase.json'))
     approval.update(approval_updates or {})
     module=original_memory_module()
     class Retriever(LocalRetriever):

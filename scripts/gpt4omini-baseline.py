@@ -15,8 +15,10 @@ sys.path.insert(0,str(ROOT))
 DIRECTORY=(ROOT/'artifacts/gpt4omini').resolve()
 
 
-from amem_repro.openrouter import FULL_CELLS,cell_store
+from amem_repro.openrouter import FULL_CELLS,CELL_ORDER,ABLATION_CONDITIONS,ABLATION_POLICY,cell_key,cell_store
 CELL='conv-44'
+CONDITION='full'
+KEY=CELL
 STORE=DIRECTORY
 FIRST_VERIFY=DIRECTORY/'verification/renewed'
 VERIFICATION=FIRST_VERIFY
@@ -31,6 +33,9 @@ def verify_release(release):
     if (ROOT/'artifacts/gpt4omini').absolute()!=(ROOT/'artifacts/gpt4omini').resolve():
         raise RuntimeError('Paid campaign namespace cannot alias another artifact directory')
     if release['binding']['conversation_id']!=CELL:raise RuntimeError('Approval belongs to another cell')
+    if release['binding']['condition']!=CONDITION:raise RuntimeError('Approval belongs to another condition')
+    if CONDITION!='full' and release.get('ablation_policy')!=ABLATION_POLICY:
+        raise RuntimeError('Explicit three-cell ablation grant required')
     if release.get('approved') is not True or release['binding']['campaign_id']!='amem-gpt4omini-openrouter-20261104-v1':
         raise RuntimeError('Explicit reviewed one-cell campaign approval required')
     if fingerprint(source_fingerprint(ROOT))!=release['binding']['source_sha256']:
@@ -48,7 +53,7 @@ def verify_release(release):
         review=read(VERIFICATION/f'baseline-{axis}-review.json')
         if review.get('verdict')!='pass' or review.get('reviewed_commit')!=release['reviewed_commit']:
             raise RuntimeError('Baseline independent review is not bound to this release')
-    verify_prior()
+    verify_prior(ROOT)
 
 
 def freeze(gate_path, reviewed_commit, merge_commit):
@@ -63,6 +68,8 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     if (gate.get('source_sha256')!=fingerprint(sources) or gate.get('network_llm_requests')!=0
             or any(gate.get(k) is not True for k in required)):
         raise RuntimeError('Source-bound real-runner native/cloud gate incomplete')
+    if CONDITION!='full' and gate.get('ablated_checkpoint_conditions')!=list(ABLATION_CONDITIONS):
+        raise RuntimeError('All ablation executor/cloud gates required')
     verify_inventory(Path(gate_path).parent,gate['files'])
     if gate.get('gate_script_sha256')!=hashlib.sha256((ROOT/'scripts/gpt4omini-gate.py').read_bytes()).hexdigest():
         raise RuntimeError('Executed cloud-gate script differs from this release')
@@ -83,7 +90,8 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     full=payload['results']['complete']
     if (not payload['verified'] or payload['source_sha256']!=fingerprint(sources)
             or payload['script_sha256']!=hashlib.sha256((ROOT/'scripts/gpt4omini-reporting-proof.py').read_bytes()).hexdigest()
-            or (full['items'],full['scores'],full['original_qa_associations'])!=(316,4494,158)
+            or (full['items'],full['scores'],full['original_qa_associations'])!=(
+                (392,5568,196) if CONDITION!='full' else (316,4494,158))
             or full['max_batch_bytes']>=32*1024*1024 or not full['readonly_resume_has_no_additional_export_or_score']
             or not payload['results']['partial']['resume_rejected_without_additional_spans_scores_or_import']):
         raise RuntimeError('Full-size reporting integrity evidence failed')
@@ -94,19 +102,19 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
         DIRECTORY/'verification/preservation-reconciliation.json',
-        VERIFICATION/'baseline-preflight.json',VERIFICATION/'full-suite.txt' if CELL!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt',
+        VERIFICATION/'baseline-preflight.json',VERIFICATION/'full-suite.txt' if KEY!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt',
         VERIFICATION/'baseline-standards-review.json',VERIFICATION/'baseline-spec-review.json',
         VERIFICATION/'archive-equivalence.json',
         ROOT/'scripts/gpt4omini-accept.py',ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',ROOT/'scripts/gpt4omini-reporting-proof.py',
         ROOT/'tests/gpt4omini_fixture.py',ROOT/'tests/gpt4omini_executor_fixture.py',
         ROOT/'tests/test_gpt4omini_executor.py',ROOT/'tests/test_gpt4omini_full_executor.py']
-    if CELL!='conv-44':
-        previous=list(FULL_CELLS)[list(FULL_CELLS).index(CELL)-1]
-        frontier_path=DIRECTORY/'outcomes'/previous/'frontier.json'
+    if KEY!='conv-44':
+        previous=CELL_ORDER[CELL_ORDER.index(KEY)-1]
+        frontier_path=DIRECTORY/'outcomes'/previous/('ablation-frontier.json' if KEY==CELL_ORDER[3] else 'frontier.json')
         frontier=read(frontier_path)
-        if frontier['next_cell']!=CELL or not frontier['affordable']:
+        if frontier['next_cell']!=KEY or not frontier['affordable']:
             raise RuntimeError('Predecessor acceptance or affordability failed')
-        prior_cells=list(FULL_CELLS)[:list(FULL_CELLS).index(CELL)]
+        prior_cells=CELL_ORDER[:CELL_ORDER.index(KEY)]
         from amem_repro.gpt4omini_campaign import predecessor_files,verify_accepted_cell
         for c in prior_cells:
             verify_accepted_cell(DIRECTORY,c)
@@ -122,28 +130,31 @@ def freeze(gate_path, reviewed_commit, merge_commit):
             paths.append(proof)
             for name,digest in predecessor_files(DIRECTORY,c).items():
                 files[str((DIRECTORY/name).relative_to(ROOT))]=digest
+        paths.append(frontier_path)
     for path in paths:files[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
-    suite=(VERIFICATION/'full-suite.txt' if CELL!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt').read_text()
+    suite=(VERIFICATION/'full-suite.txt' if KEY!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt').read_text()
     if not re.search(r'(?m)^\d+ passed.*$',suite) or re.search(r'\b\d+ (failed|errors)\b',suite):
         raise RuntimeError('Whole frozen-source offline suite did not pass')
     replay=read(VERIFICATION/'archive-equivalence.json')
     if replay.get('verified') is not True:raise RuntimeError('Fixed full archive equivalence gate failed')
     binding={**SCIENTIFIC_BINDING,'source_sha256':fingerprint(sources),
         'manifest_sha256':fingerprint(read(ROOT/'manifests/fallback.json')),
-        'condition':'full','conversation_id':CELL,'population':'fallback','repetition':0,
+        'condition':CONDITION,'conversation_id':CELL,'population':'fallback','repetition':0,
         'initial_checkpoint':'fresh-empty','accepted_financial_prefix':PREFIX,
         'provider_contract_policy':'strict-original-v1',
         'max_output_tokens_by_stage':stage_output_limits(OPENROUTER_CONFIG),
         'observability_policy':'run2-audit-essential-v1'}
-    release={'approved':True,'approved_by':'User three Full baselines in order; this approval covers '+CELL,
+    release={'approved':True,'approved_by':('User 5 November three conv-49 ablations; ' if CONDITION!='full'
+                else 'User three Full baselines in order; this approval covers ')+KEY,
         'approved_at':datetime.now(timezone.utc).isoformat(),'binding':binding,'files':files,
         'reviewed_commit':reviewed_commit,'merge_commit':merge_commit,
         'limits':{'cell_microusd':5000000,'usable_campaign_microusd':42000000,
                   'protected_microusd':8000000,'max_baseline_calls':2*sum(FULL_CELLS[CELL]),
-                  'max_new_langfuse_units':30000},
+                  'max_new_langfuse_units':14000 if CONDITION!='full' else 30000},
         'gate_path':str(Path(gate_path).relative_to(ROOT)),
-        'forecast':read(FIRST_VERIFY/'forecast.json') if CELL=='conv-44' else frontier['forecast']}
-    if CELL!='conv-44':
+        'forecast':read(FIRST_VERIFY/'forecast.json') if KEY=='conv-44' else frontier['forecast']}
+    if CONDITION!='full':release['ablation_policy']=ABLATION_POLICY
+    if KEY!='conv-44':
         release['previous_acceptance_sha256']=hashlib.sha256(frontier_path.read_bytes()).hexdigest()
     verify_release(release)
     save_new(STORE/'frozen/campaign-approval.json',release)
@@ -203,8 +214,8 @@ def execute():
         previous={r['probe']:r['data'] for r in prior['account_readbacks']}
         previous_cost=prior['generation']['total_cost']
         prior_path=DIRECTORY/'compatibility-v5/financial-readback-after-success.json'
-        if CELL!='conv-44':
-            previous_cell=list(FULL_CELLS)[list(FULL_CELLS).index(CELL)-1]
+        if KEY!='conv-44':
+            previous_cell=CELL_ORDER[CELL_ORDER.index(KEY)-1]
             prior_path=cell_store(DIRECTORY,previous_cell)/'reconciliation.json'
             settlement=read(prior_path)
             if not settlement['verified']:raise RuntimeError('Preceding cell reconciliation failed')
@@ -231,12 +242,13 @@ def execute():
         for sequence in range(FULL_CELLS[CELL][0]+1):
             verify_release(release)
             if ledger.unaccepted_unknowns({'retained_access_prefix':PREFIX}):raise RuntimeError('Unknown exposure forbids continuation')
-            phase=f"gpt4omini-full-{CELL.replace('-', '')}-r0-p{sequence}"
+            phase=f"gpt4omini-{CONDITION}-{CELL.replace('-', '')}-r0-p{sequence}"
             approval={'approved':True,'approved_by':release['approved_by'],
                 'approved_at':datetime.now(timezone.utc).isoformat(),'binding':release['binding'],
-                'kind':'baseline','condition':'full','conversation':CELL,'phase':phase,
+                'kind':'baseline','condition':CONDITION,'conversation':CELL,'phase':phase,
                 'release_sha256':fingerprint(release),'retained_access_prefix':PREFIX}
-            if CELL!='conv-44':approval['previous_acceptance_sha256']=release['previous_acceptance_sha256']
+            if CONDITION!='full':approval['ablation_policy']=ABLATION_POLICY
+            if KEY!='conv-44':approval['previous_acceptance_sha256']=release['previous_acceptance_sha256']
             if parent:
                 approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
                     parent_path=str(STORE/'runs'/parent['phase']/'phase.json'))
@@ -261,7 +273,7 @@ def execute():
             legacy_signatures[legacy/'.git/HEAD']=file_signature(legacy/'.git/HEAD')
             legacy_signatures[DIRECTORY/'verification/prior-preservation-authoritative-v2.json']=file_signature(
                 DIRECTORY/'verification/prior-preservation-authoritative-v2.json')
-            if CELL!='conv-44':
+            if KEY!='conv-44':
                 for name in release['files']:
                     if name.startswith('artifacts/gpt4omini/'):
                         path=(ROOT/name).resolve(); legacy_signatures[path]=file_signature(path)
@@ -277,7 +289,8 @@ def execute():
                         raise RuntimeError('Historical artifact link changed; no next paid operation')
                 units=len(observer.observations)+len({r['trace_id'] for r in observer.observations})+len(observer.scores)
                 # Retain room for all158 questions in both complete Experiments.
-                if prior_runtime_units+units+68*FULL_CELLS[CELL][1]>release['limits']['max_new_langfuse_units']:
+                reporting_units=(36 if CONDITION!='full' else 68)*FULL_CELLS[CELL][1]
+                if prior_runtime_units+units+reporting_units>release['limits']['max_new_langfuse_units']:
                     raise RuntimeError('Included-service unit allocation reached; no further paid operation')
             observer.assert_healthy=service_healthy
             try:
@@ -286,7 +299,7 @@ def execute():
             capture=read(STORE/'runs'/phase/'trace-capture.json')
             prior_runtime_units+=len(capture['observations'])+len(capture['trace_ids'])+len(capture['scores'])
             verify_release(release)
-            verify_prior()
+            verify_prior(ROOT)
             print(json.dumps({k:result[k] for k in ('phase','status','notes','questions','evolution_counter',
                 'error_type','recoverable_length_failure','budget')}),flush=True)
             if result['status'] in ('complete','degraded'):
@@ -303,9 +316,11 @@ if __name__=='__main__':
     parser.add_argument('--execute',action='store_true');parser.add_argument('--gate')
     parser.add_argument('--reviewed-commit');parser.add_argument('--merge-commit')
     parser.add_argument('--cell',choices=FULL_CELLS,default='conv-44')
+    parser.add_argument('--condition',choices=('full',*ABLATION_CONDITIONS),default='full')
     args=parser.parse_args()
-    CELL=args.cell;STORE=cell_store(DIRECTORY,CELL)
-    VERIFICATION=FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release'
+    CELL=args.cell;CONDITION=args.condition;KEY=cell_key(CELL,CONDITION);STORE=cell_store(DIRECTORY,KEY)
+    VERIFICATION=(DIRECTORY/'verification/conv49-ablation' if CONDITION!='full' else
+                  FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release')
     try:
         if args.execute:execute()
         else:freeze(args.gate,args.reviewed_commit,args.merge_commit)

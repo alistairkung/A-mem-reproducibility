@@ -1,10 +1,15 @@
 # Reproducibility blockers and resolutions
 
-Last reviewed: 4 November 2026. Scope: the FTEC5660 controlled reproduction defined in the
+Last reviewed: 5 November 2026. Scope: the FTEC5660 controlled reproduction defined in the
 [protocol](experimental-protocol.md), [decisions](decisions.md) and [tickets](implementation-tickets.md).
 This tracker records evidence and investigation history; it grants no execution or protocol-change approval.
 
 **Current GPT-4o-mini state.** All three Full baselines are accepted. BLK-025 remains mitigated on the dated OpenAI route, with three historical HTTP 403 attempts permanently reserved at US$0.058950. BLK-024 bounded reporting verified six Experiments and 558 original QA associations. No baseline provider failures or new unknown charges occurred. [Three-cell outcomes and debug diary](gpt4omini-three-full-results.md)
+
+The user now authorises exactly three fresh conv-49 ablations in the order Evolution
+Only, Neither, Linking Only. Engineering extends the existing native runner using
+the verified T7 gates; paid admission still requires offline/cloud gates, independent
+reviews and merge. [Scope and boundaries](gpt4omini-conv49-ablation.md).
 
 **Current Run2 state:** Full conv-44 is fully verified as a **Degraded completed lineage** via a
 separate reporting acceptance supplement. PR#33 merged `513b44e`; one fresh16-span import and
@@ -1019,3 +1024,21 @@ are preserved. [Release record](gpt4omini-conv44-release.md)
 ### BLK-024 and BLK-025 — three Full acceptances, 4 November 2026
 
 Native structured output, provider identity and single upstream routing were verified for all 4,620 baseline requests. All six bounded scoring Experiments passed readback. The conv-44 readback needed an additional GET for score visibility. Its inherited compatibility reservations remain open at the accepted upper bound. Earlier experiments and blocker entries retain their original status and evidence. [Results and debugging record](gpt4omini-three-full-results.md)
+
+### BLK-002 / BLK-005 / BLK-009 / BLK-019 — conv-49 ablation preparation, 5 November 2026
+
+The three authorised fresh ablations use the existing two Boolean action guards.
+The prospective runner extension keys cache, approval, per-cell spending and
+checkpoint ancestry by both condition and conversation. It preserves the three
+accepted Full builds, their exact SQL prefix and independent acceptance evidence.
+Original Full scientific execution stays on the frozen-author factory. No prompts,
+schemas, scoring, native model policy or author file changes are proposed.
+
+Pre-change 199 action/replay regressions and 62 native financial/control checks
+pass. Fresh OpenRouter account/key reads match the final Full reconciliation exactly;
+campaign exposure remains US$1.147803. The existing Core allocation conservatively
+counts 56,864 units. Three 14,000-unit phase allocations and a 1,000-unit verification
+allowance fit 100,000 included units, without overage permission. These are prospective
+controls, not completed ablation results. Full-size executor/cloud/offline checks
+and independent reviews remain mandatory before paid execution. Preserve all prior
+blocker histories; the separate DeepSeek affordability limitation is unchanged.

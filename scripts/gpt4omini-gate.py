@@ -35,7 +35,7 @@ def main(output):
     from amem_repro.observation_policy import should_export_span
     from amem_repro.observability import LangfuseObserver
     from amem_repro.config import fingerprint,source_fingerprint
-    from amem_repro.openrouter import CAMPAIGN,SCIENTIFIC_BINDING,save_new
+    from amem_repro.openrouter import CAMPAIGN,SCIENTIFIC_BINDING,ABLATION_CONDITIONS,save_new
     from amem_repro.measurements import TokenCounter
     from amem_repro.replay import memory_view
     from amem_repro.langfuse_verify import verify_observations
@@ -84,11 +84,25 @@ def main(output):
             if not parent['recoverable_length_failure'] or parent['notes']!=2*(seq+1):
                 raise RuntimeError('Actual executor checkpoint/observation gate failed')
         if ledger.totals()['attempts']!=12:raise RuntimeError('Duplicate checkpoint transmission')
+        ablated=[]
+        for condition in ABLATION_CONDITIONS:
+            leaf=None;accounting=None
+            for seq in range(3):
+                actual=run_actual_phase(output/condition,root=ROOT,phase=f'{output.name}-{condition}-p{seq}',
+                    ledger=accounting,parent=leaf,fail_decisions={1:'malformed',2:'length'},
+                    cloud_client=client,real_cloud=True,runtime_assets=True,
+                    conversation='conv-49',condition=condition)
+                leaf=actual['receipt'];accounting=actual['ledger']
+                if not leaf['recoverable_length_failure'] or (leaf['notes'],leaf['evolution_counter'])!=(2*(seq+1),0):
+                    raise RuntimeError('Ablation original fallback/checkpoint cloud gate failed')
+            if accounting.totals()['attempts']!=12:raise RuntimeError('Ablation repeated a processed request')
+            ablated.append(condition)
         result={'campaign_id':CAMPAIGN,'source_sha256':source,'real_runner':True,
             'native_contracts_verified':True,'remote_observations_verified':runtime['verified'],
             'experiments_verified':experiments['verified'],'replay_equivalence':True,
             'full_action_equivalence':True,'two_actual_checkpoint_continuations':True,
-            'network_llm_requests':0,'mock_native_completions':44*3+12,
+            'ablated_checkpoint_conditions':ablated,
+            'network_llm_requests':0,'mock_native_completions':44*3+48,
             'observability_policy':'run2-audit-essential-v1','flush_at':16,
             'runtime':runtime,'experiments':experiments,'executor_phases':phases,
             'gate_script_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),

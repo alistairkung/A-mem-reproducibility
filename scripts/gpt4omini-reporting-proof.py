@@ -57,13 +57,16 @@ def execute(fixture, output):
     before = fingerprint(views)
     policies = {row['provider_contract_policy'] for view in views.values()
                 for row in view['individual_results']}
-    if len(policies) != 1 or sorted(len(v['individual_results']) for v in views.values()) != [158, 158]:
-        raise ValueError('Expected the original two complete 158-question engineering views')
+    nqa=len(next(iter(views.values()))['individual_results'])
+    if len(policies) != 1 or nqa not in (158,196) or sorted(len(v['individual_results']) for v in views.values()) != [nqa,nqa]:
+        raise ValueError('Expected two complete 158- or 196-question engineering views')
     expected_scores = Counter((policy, row['question_id'], name, value)
                               for policy, view in views.items()
                               for row in view['individual_results']
                               for name, value in row['metrics'].items())
-    if sum(expected_scores.values()) != 4494 or len(traces) != 158:
+    nitems=2*nqa
+    nscores={158:4494,196:5568}[nqa]
+    if sum(expected_scores.values()) != nscores or len(traces) != nqa:
         raise ValueError('Original score/QA coverage differs')
 
     class Exporter(SpanExporter):
@@ -203,11 +206,11 @@ def execute(fixture, output):
                             'resume_rejected_without_additional_spans_scores_or_import': True}
                     else:
                         proof = import_results(views, context, client=cloud, traces=traces, query=cloud.query)
-                        assert proof['items'] == 316 and proof['scores'] == 4494
+                        assert proof['items'] == nitems and proof['scores'] == nscores
                         # SDK5.1's item root/score subject is the task observation.
                         roots = {f'{s.context.span_id:016x}': s for s in exporter.spans
                                  if s.name == 'experiment-item-task'}
-                        assert len(roots) == 316 and len(scores) == 4494
+                        assert len(roots) == nitems and len(scores) == nscores
                         actual = Counter()
                         for score in scores:
                             root = roots[score['subject']['id']]
@@ -224,10 +227,10 @@ def execute(fixture, output):
                         assert import_results(views, context, client=cloud, traces=traces,
                                               query=cloud.query)['verified']
                         assert counts == (cloud.calls, len(exporter.spans), len(scores))
-                        assert exporter.counts == {'experiment-item-run': 316, 'experiment-item-task': 316}
+                        assert exporter.counts == {'experiment-item-run': nitems, 'experiment-item-task': nitems}
                         assert max(exporter.sizes) < CEILING
-                        results[phase] = {'verified': True, 'items': 316, 'scores': 4494,
-                            'original_qa_associations': 158, 'reporting_traces': 316,
+                        results[phase] = {'verified': True, 'items': nitems, 'scores': nscores,
+                            'original_qa_associations': nqa, 'reporting_traces': nitems,
                             'all_metric_question_policy_values_and_score_subjects_exact': True,
                             'all_original_records_and_trace_associations_exact': True,
                             'sdk_experiment_calls': cloud.calls, 'span_counts': dict(exporter.counts),
