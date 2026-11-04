@@ -102,8 +102,12 @@ readiness is a report, not paid authority.
 
 ## Status
 
-Engineering and offline verification in progress. No model request has been sent.
-Free credential/model/credit evidence is under `artifacts/gpt4omini/verification/`.
+**Stopped on BLK-025.** The first actual compatibility completion returned HTTP403
+on4 November2026. The separately authorized updated-key check also returned403. Two physical
+requests across two consumed approvals, no automatic retry, no baseline started.
+Retain both unknown reservations, USD0.039300 total, despite account usage showing zero. All operational policies
+above remain candidates; no baseline freeze or release exists. Read the
+[verified stopping outcome](gpt4omini-openrouter-blocked-20261104.md).
 
 ## Historical regression fixture isolation
 
@@ -144,8 +148,9 @@ Shared immutable assets and historical regression inputs are read-only links.
 `prior-preservation-authoritative-v2.json` retains both earlier inventories and pins
 all1,534 older file contents. It reconciles the original tracked-source aliases
 against the independently recorded clean pre-task Git commit; the earlier partial
-snapshots and failed check remain preserved. All30 source aliases match original
-Git bytes. The driver checks this frozen legacy checkout before each phase and
+snapshots and failed check remain preserved. All44 tracked-source aliases (30 support/config and14 frozen author/runtime) and
+all61 symlink targets match the preservation anchor. The separate reconciliation
+supplement records all three earlier-snapshot deltas against original Git bytes. The driver checks this frozen legacy checkout before each phase and
 checks immutable legacy-file signatures at each work boundary. Do not advance the
 preservation checkout while the historical source aliases depend on it.
 
@@ -168,3 +173,17 @@ Verify current private authentication, exact prior ledger snapshot/raw403/proven
 reviewed source and independent Standards/Spec reviews before this one request.
 A new failure stops; even a successful access check cannot release the baseline
 while the earlier unknown exposure and outstanding release gates remain unresolved.
+
+
+### Updated-key outcome — same prohibition; no baseline release
+
+At06:49:31 UTC the new single metadata access check also returns HTTP403 with the
+same provider Terms Of Service prohibition, no generation ID/output/usage and null
+provider name. The fresh approval is consumed; no third request, continuation or
+baseline is authorized. Both terminal phases/halts and all original rows remain.
+The ledger now retains two full unknown reservations, USD0.039300 total. Read-only
+account/key reads at06:50 UTC still show USD50/zero recorded usage; individual
+charges remain unreconciled. Cell remainder USD4.960700 and usable campaign
+remainder USD41.960700 are arithmetic ceilings, not execution authority; protected
+USD8 remains untouched. BLK-025 stays Open. Read the
+[complete outcome](gpt4omini-openrouter-blocked-20261104.md).

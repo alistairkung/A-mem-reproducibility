@@ -1088,6 +1088,30 @@ Use the verified small-batch Langfuse policy and actual readback; merge outcome
 documentation and report metrics/links/spending/remaining-cell forecast afterwards.
 
 
+### Outcome — GPT-4o-mini compatibility denied; baseline not started
+
+On4 November2026 the first actual completion of the separately reviewed native
+compatibility phase returns HTTP403 with a provider Terms Of Service prohibition.
+No generation ID, model/provider identity, output or usage is returned. The sole
+phase is terminal/Incomplete on BLK-025 after one physical request, zero retries.
+The six-probe approval is consumed; no second probe, recovery, baseline or ablation
+may run. Root cause and denying entity remain unconfirmed.
+
+The isolated campaign ledger retains the full USD0.019650 unknown reservation.
+Read-only account/key evidence shows USD50 remaining/zero recorded usage, which
+cannot adjudicate an individual attempt. Preserve all raw errors/responses and
+approvals, both old campaigns and their ledgers/reservations. Independent outcome
+Standards/Spec audits confirm preservation and the safe material stop.
+
+PR#35 merged `c90d5afb5f8a41cf6da9ca1aeed5552fa4851bc5` for native provider/accounting.
+Later baseline core remains unmerged engineering, with no baseline freeze or final
+release. Outcome documentation/normal merge stays within the user's existing grant.
+No additional paid probe, access workaround, cell, top-up or contingency use is
+inferred. Provider-access clarification, request-level financial resolution and a
+fresh explicit decision are required before further transmission. Read the
+[full stopping report](gpt4omini-openrouter-blocked-20261104.md).
+
+
 ### Updated-key access check — 4 November2026
 
 After the first403 and retained USD0.019650 reservation were reported, the user
@@ -1101,3 +1125,17 @@ Verify current private authentication, exact prior ledger snapshot/raw403/proven
 reviewed source and independent Standards/Spec reviews before this one request.
 A new failure stops; even a successful access check cannot release the baseline
 while the earlier unknown exposure and outstanding release gates remain unresolved.
+
+
+### Updated-key outcome — same prohibition; no baseline release
+
+At06:49:31 UTC the new single metadata access check also returns HTTP403 with the
+same provider Terms Of Service prohibition, no generation ID/output/usage and null
+provider name. The fresh approval is consumed; no third request, continuation or
+baseline is authorized. Both terminal phases/halts and all original rows remain.
+The ledger now retains two full unknown reservations, USD0.039300 total. Read-only
+account/key reads at06:50 UTC still show USD50/zero recorded usage; individual
+charges remain unreconciled. Cell remainder USD4.960700 and usable campaign
+remainder USD41.960700 are arithmetic ceilings, not execution authority; protected
+USD8 remains untouched. BLK-025 stays Open. Read the
+[complete outcome](gpt4omini-openrouter-blocked-20261104.md).
