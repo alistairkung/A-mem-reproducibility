@@ -65,7 +65,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
             or metadata['native_contracts_verified']!=['metadata']):
         raise RuntimeError('Native compatibility coverage incomplete')
     files=dict(sources['files'])
-    paths=[Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
+    paths=[VERIFICATION/'forecast.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
         *[p for name in ('compatibility-release','compatibility-release-tail') for p in (DIRECTORY/name).rglob('*') if p.is_file()],
         DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
@@ -96,7 +96,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
                   'protected_microusd':8000000,'max_baseline_calls':1666,
                   'max_new_langfuse_units':30000},
         'gate_path':str(Path(gate_path).relative_to(ROOT)),
-        'forecast':read(DIRECTORY/'compatibility-v2/plan-v2.json')['forecast']}
+        'forecast':read(VERIFICATION/'forecast.json')}
     verify_release(release)
     save_new(DIRECTORY/'frozen/campaign-approval.json',release)
     print(json.dumps({'approved':True,'campaign':binding['campaign_id'],'source':binding['source_sha256']}))
@@ -122,11 +122,11 @@ def reconcile(client, ledger, output):
     from amem_repro.openrouter import BASE_URL,MODEL,save_new
     details=[]
     with ledger.transaction() as db:
-        rows=db.execute('SELECT provider_id,reported_cost FROM attempts WHERE state='settled' ORDER BY id').fetchall()
+        rows=db.execute("SELECT provider_id,reported_cost FROM attempts WHERE state='settled' ORDER BY id").fetchall()
     for request_id,cost in rows:
         response=client.get(BASE_URL+'/generation',params={'id':request_id})
         response.raise_for_status();data=response.json()['data']
-        if (data.get('provider_name')!='OpenAI' or data.get('model')!=MODEL
+        if (data.get('id')!=request_id or data.get('provider_name')!='OpenAI' or data.get('model')!=MODEL
                 or abs(Decimal(str(data['total_cost']))-Decimal(cost))>Decimal('0.000000001')):
             raise RuntimeError('Independent request route/charge mismatch')
         details.append(data)
