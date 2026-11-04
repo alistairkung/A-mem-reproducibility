@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 import httpx,numpy as np
 from amem_repro.gpt4omini_campaign import execute_phase
-from amem_repro.openrouter import CampaignLedger,SCIENTIFIC_BINDING,MODEL
+from amem_repro.openrouter import cell_store,CampaignLedger,SCIENTIFIC_BINDING,MODEL
 from amem_repro.config import fingerprint,source_fingerprint
 from amem_repro.measurements import TokenCounter
 from amem_repro.observability import LangfuseObserver
@@ -24,16 +24,16 @@ from test_scoring import dependencies
 def run_actual_phase(directory, *, root, phase='p0', ledger=None, parent=None,
                      fail_decisions=None, summary_fault=False, on_request=None,
                      approval_updates=None, import_verify=None, cloud_client=None,
-                     real_cloud=False, runtime_assets=False):
+                     real_cloud=False, runtime_assets=False, conversation='conv-44'):
     root=Path(root).resolve();directory=Path(directory).resolve();directory.mkdir(parents=True,exist_ok=True)
     binding={**SCIENTIFIC_BINDING,'source_sha256':fingerprint(source_fingerprint(root)),
              'condition':'full','population':'fallback','manifest_sha256':fingerprint(json.loads((root/'manifests/fallback.json').read_text())),
-             'repetition':0,'conversation_id':'conv-44','provider_contract_policy':'strict-original-v1'}
+             'repetition':0,'conversation_id':conversation,'provider_contract_policy':'strict-original-v1'}
     ledger=ledger or CampaignLedger(directory/'budget.sqlite',campaign_root=directory,binding=binding)
-    approval={'approved':True,'binding':binding,'phase':phase,'kind':'baseline','condition':'full','conversation':'conv-44'}
+    approval={'approved':True,'binding':binding,'phase':phase,'kind':'baseline','condition':'full','conversation':conversation}
     if parent:
         approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
-                        parent_path=str(directory/'runs'/parent['phase']/'phase.json'))
+                        parent_path=str(cell_store(directory,conversation)/'runs'/parent['phase']/'phase.json'))
     approval.update(approval_updates or {})
     module=original_memory_module()
     class Retriever(LocalRetriever):
