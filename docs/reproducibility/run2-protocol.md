@@ -1,5 +1,13 @@
 # Run 2 — fully observed controlled campaign
 
+Current verified baseline: **Full conv-44 is complete Degraded through the separate4 November
+reporting acceptance supplement**. [Completion and readback](run2-conv44-reporting-complete-20261104.md).
+BLK-024 is Resolved; original Incomplete phase receipts/failed import/ledger frontier stay immutable.
+BLK-009 remains Open; [cost-only alternatives](run2-ablation-affordability-20261104.md) require an
+explicit scope/budget/paid decision. No remaining cell or contingency use is authorized.
+
+The following stopping record is historical and preserved:
+
 Current stop: **all675 Full conv-44 memory turns and158 QA are locally verified, but p2 is sealed
 Incomplete on BLK-024**. Runtime1,771 observations/623 traces verify; both full-cell Experiment
 exports exceed the local64MiB OTLP batch guard and visibility fails. The original claim/IDs/halt

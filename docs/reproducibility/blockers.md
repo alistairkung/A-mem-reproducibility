@@ -1,10 +1,21 @@
 # Reproducibility blockers and resolutions
 
-Last reviewed: 3 November 2026. Scope: the FTEC5660 controlled reproduction defined in the
+Last reviewed: 4 November 2026. Scope: the FTEC5660 controlled reproduction defined in the
 [protocol](experimental-protocol.md), [decisions](decisions.md) and [tickets](implementation-tickets.md).
 This tracker records evidence and investigation history; it grants no execution or protocol-change approval.
 
-**Current Run2 stop:** PR#31 merged as `66d3ffa`; the single authorized p2 collected all675
+**Current Run2 state:** Full conv-44 is fully verified as a **Degraded completed lineage** via a
+separate reporting acceptance supplement. PR#33 merged `513b44e`; one fresh16-span import and
+actual readback verify316 question/view items/4,494 exact scores. Runtime5,097 observations/1,336
+traces verify across all three phases. All675 notes/158 questions, original Incomplete receipts,
+failed claims/partial scores, both ledgers and1,741 historical files remain unchanged. BLK-024 is
+Resolved. Run2USD4.166489 includes unknown454/fullUSD0.324404 reservation; no new model cost or
+Langfuse overage. BLK-009 remains Open: original scope pointUSD48.235144 provider cost exceedsUSD42
+before service fees. No remaining paid cell, population/order change or contingency use is authorized.
+Read [verified completion](run2-conv44-reporting-complete-20261104.md) and
+[cost-only alternatives](run2-ablation-affordability-20261104.md).
+
+**Historical collection/export stop:** PR#31 merged as `66d3ffa`; the single authorized p2 collected all675
 notes/counter673 and158 QA, but the sealed phase is **Incomplete** on BLK-024: Langfuse dropped
 both oversized Experiment span batches and Experiment visibility did not verify. All1,771 runtime
 observations/623 traces verify; original import claim/IDs/receipt/halt are preserved. P2 added534
@@ -51,7 +62,7 @@ Read [the current observation/recovery release](run2-observation-policy.md).
 | [BLK-021](#blk-021) | Run2 ledger path can alias immutable Run1 accounting | Resolved | Run2 storage isolation | Verified715-test suite, independent audits and preserved red/green proofs |
 | [BLK-022](#blk-022) | HTTP200 body-read failure leaves an unknown charge after a successful SDK retry | Mitigated | Run2 Full conv-44 lineage | [Full reservation retained through p2](run2-conv44-collected-export-blocked-20261103.md) |
 | [BLK-023](#blk-023) | Langfuse project credential exposed in a tool snapshot | Resolved | Secure Run2 observability/continuation | Replacement authentication/readback; original pair absent |
-| [BLK-024](#blk-024) | Full-cell Experiment export exceeds local OTLP batch size | Open | Run2 Full conv-44 final reporting/release | [Dropped batches and offline characterization](run2-conv44-collected-export-blocked-20261103.md#langfuse-runtime-verified-experiments-not-verified) |
+| [BLK-024](#blk-024) | Full-cell Experiment export exceeds local OTLP batch size | Resolved | Run2 Full conv-44 reporting | [Exact recovered readback and acceptance](run2-conv44-reporting-complete-20261104.md) |
 
 **Run1 final status (3 November 2026):** PR#22 merged as `5ddc96e` after613 offline tests/92 subtests
 and clear independent Standards/Spec reviews. The single authorized second conv-44 continuation
@@ -714,7 +725,7 @@ are unavailable unless an experiment receipt supplies them.
 
 - **ID:** BLK-024
 - **Title:** Full-cell Experiment export exceeds local OTLP batch size.
-- **Status:** Open
+- **Status:** Resolved
 - **First observed:** 2026-11-03, Run2 Full conv-44 p2 final saved-result Experiment export after all675 notes/158 QA were collected.
 - **Category:** Infrastructure
 - **Expected behaviour:** Both frozen scoring views import all158 question results into Langfuse Experiments and verify readback before phase acceptance, without altering local evidence or model behaviour.
@@ -726,8 +737,8 @@ are unavailable unless an experiment receipt supplies them.
 - **Resolution attempts:**
   - 2026-11-03: preserve the sole import claim/IDs, two exporter warnings, all readbacks and sealed failure. Diagnose earlier CLI abort as timeout/empty stdout, not truncated JSON. No additional model request or import.
   - 2026-11-03, offline only: actual SDK/exporter with saved views and blocked network compares default vs16-span batches. Both emit632 spans/316 roots/4,494 score callbacks and retain each original record exactly. Default has two oversized batches;16-span batches produce40 batches, largest9,060,149B, zero above64MiB. Evidence: `artifacts/run2-fallback-recovery/export-characterization/{characterize.py,results.json,run.log}`. This is not a production change, live import or successful remote verification.
-- **Final resolution or limitation:** Open. The narrow prospective batching remedy has offline evidence, but cloud partial-write reconciliation, an explicit reporting-only identity/re-import decision and independent acceptance verification remain necessary. Preserve the original Incomplete phase/claim/halt; no more LLM calls are needed to repair reporting.
-- **Verification:** Independent state/scoring/financial audits verify all675 notes/158 predictions, exact source/ancestry,534 p2 requests and conservativeUSD4.166489 total. Runtime cloud proof verifies1,771 observations; Experiment visibility remains unverified. Offline batch characterization proves smaller serialized batches only; it does not resolve partial writes or authorize automatic recovery.
+- **Final resolution or limitation:** Resolved on4 November2026 by the separately authorized one-shot16-span recovery and exact actual readback:316 question/view items,4,494 scores,316 reporting traces and158 original QA trace associations. Original partial writes/failed import/Incomplete phase remain immutable; acceptance is a separate Degraded lineage supplement. Initial Experiment-filter score reads were corrected through explicit item trace IDs, with independent reviews and59 focused tests; no second ingestion or model call. See [verified completion](run2-conv44-reporting-complete-20261104.md).
+- **Verification:**4 November2026 exact cloud readback verifies316 question/view items,4,494 score IDs/names/values/subjects,316 reporting traces and158 original QA trace associations. The separate completion verifier rechecks675 turns/158 QA, all sealed receipts, all1,741 historical file hashes andUSD4.166489 exposure with unknown454/full reservation unchanged. Fresh runtime5,097 observations/1,336 traces and original strict IO proof hashes pass. Original pre-recovery failures and offline-only evidence remain preserved in the dated attempts below.
 - **Research significance:** A small end-to-end tracing fixture does not establish full-benchmark export scalability. Successful local scoring, runtime ingestion, SDK-returned Experiment IDs and verified remote Experiment completeness are separate facts; reporting failure must remain visible without discarding sound scientific evidence.
 
 ### BLK-024 — 4 November2026 authorized reporting-only attempt
@@ -749,3 +760,24 @@ returns0, while explicit score IDs and trace IDs return identical expected sampl
 Retain the consumed claim, SDK return, both failed read attempts and diagnostic evidence. Narrow
 read-only correction uses bounded explicit item trace filters; no re-ingestion or model client.
 Status remains Open until exact actual readback passes. See [live correction](run2-reporting-recovery.md#live-readback-correction--consumed-import-reads-only).
+
+### BLK-024 — 4 November2026 verified resolution
+
+PR#33 merged `513b44e` after809 tests/92 subtests and independent Standards/Spec reviews. Consumed
+recovery `run2-full-conv-44-reporting-recovery-20261104-v1` creates corrected `0bb2cccf10432f3d`
+and historical `b1402704f1fb57e3`. After the separately reviewed read-only filter correction,
+actual readback verifies316 items/4,494 scores/316 traces with exact IDs/subjects/values/provenance.
+The separate Degraded acceptance supplement rechecks675 turns/158 QA, all original receipt/inventory
+hashes, the1,741-file preservation snapshot, fresh runtime5,097 observations/1,336 traces and original
+strict proofs. Exposure remainsUSD4.166489 with unknown454/fullUSD0.324404 retained. Billing shows
+exactly5,442 new reporting units andUSD0 draft usage fee. No ingestion/model execution repeated.
+
+### BLK-009 — 4 November2026 measured forecast and alternatives
+
+Status remains Open. Independent cost-only reviews confirm nine remaining ablationsUSD36.176358
+plus two missing Full baselinesUSD7.892297; all-scope provider pointUSD48.235144 plus normal service
+USD2.526080–3.485360 exceedsUSD42 planned, before protectedUSD8. Proposed balanced conv-44/49 four-arm
+scope isUSD31.819960 provider point, normal serviceUSD0 forecast; combined growth/retry/unknown/
+checkpoint stressUSD49.330258 including protectedUSD8. One-conversation four-arm and narrower
+published three-arm alternatives are documented. Per-cellUSD5 still binds. No scope/order/budget or
+paid-phase authorization is inferred. See [analysis](run2-ablation-affordability-20261104.md).

@@ -1,7 +1,7 @@
 # Run2 reporting-only recovery
 
 4 November2026. Authorized scope: [latest decision](decisions.md#authorization--blk-024-reporting-only-recovery-and-cost-reforecast).
-BLK-024 remains Open until actual recovery readback passes. No model execution is authorized.
+BLK-024 is now Resolved by [actual readback and the separate Degraded acceptance](run2-conv44-reporting-complete-20261104.md). The engineering and execution diary below preserves prior gates. No model execution is authorized.
 
 ## Implementation boundary
 
@@ -124,3 +124,9 @@ requires the existing claim and passes `client=None`; the missing-claim path rej
 Evidence: `score-filter-diagnostic/{proof.json,langfuse-readback-*.json}`,
 `trace-scoped-readback-tests.log` and the original failed-attempt snapshots. BLK-024 remains Open
 until the corrected actual readback verifies every expected result.
+
+Final reconciliation passes:316 items/4,494 exact scores/316 reporting traces; original158 QA trace
+associations retained. `lineage-completion.json` verifies675 notes/158 QA, all receipts and1,741 old
+file hashes withUSD4.166489 exposure unchanged. Both readback reviews PASS on `f90d775`;59 focused
+tests pass after the read-only correction. Current billing delta5,442 units/USD0 draft usage fee.
+The original approval/claim is consumed and unchanged; no second ingestion or model request.

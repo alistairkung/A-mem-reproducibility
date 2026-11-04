@@ -1025,3 +1025,35 @@ or new service charges. A separate verified supplement may classify the complete
 it cannot rewrite the original Incomplete receipt or release a paid frontier. Reforecast all nine
 ablations plus the two missing Full baselines, with scope alternatives requiring a new user decision.
 See [recovery specification and evidence](run2-reporting-recovery.md).
+
+### Outcome — Run2 conv-44 reporting complete; affordability decision remains open
+
+On4 November2026 PR#33 merged normally as `513b44e11ff846035add3b5aefe32043cbd960a6` after809 tests/
+92 subtests (17 expected warnings) and independent Standards/Spec PASS. Original scientific source
+fingerprint remains `fc5fc67e0a0276948b1c8ac38ec4bbd0fab2fa09b44badc4c2a517cee3503fa7`.
+The sole reporting claim `run2-full-conv-44-reporting-recovery-20261104-v1` is consumed. Both scoring
+views preserve158 questions each; new Experiment IDs are corrected `0bb2cccf10432f3d` and historical
+`b1402704f1fb57e3`. Original4,494 orphan scores and failed IDs/claim/receipt remain unchanged.
+
+Readback first caught indexing lag, then a score endpoint Experiment-filter discrepancy. Explicit
+score IDs/trace IDs match; a separately independently reviewed59-test correction reads bounded item
+trace IDs, with no ingestion client or modified consumed approval. Actual complete readback verifies
+316 items/4,494 scores/316 reporting traces, all identities/values/subjects and original158 QA traces.
+Runtime5,097 observations/1,336 traces and original strict proofs also verify. A separately sealed
+lineage supplement classifies675 notes/158 QA **Degraded**, preserving original p0/p1/p2 Incomplete
+receipts/halt and ledger frontier. No model request, evaluator rerun or scientific change occurred.
+Corrected overallF1/BLEU-1 are54.06%/48.37%; historical42.05%/36.24%; adversarial correctness27/35.
+
+BLK-024 is Resolved. All1,741 historical files, Run1USD8.530133 and Run2 ledger are unchanged. Run2
+knownUSD3.842085 +unknown454/fullUSD0.324404 =USD4.166489; cell remainderUSD0.833511, plannedUSD42
+remainderUSD37.833511, protectedUSD8 untouched. Reporting adds5,442 included Langfuse units; current
+draft usage chargeUSD0, no overage commitment. The read-only recovery creates no new model charge.
+
+BLK-009 stays Open. Nine ablations costUSD36.176358, plusUSD7.892297 for two missing Full baselines;
+provider pointUSD48.235144 exceedsUSD42 before serviceUSD2.526080–3.485360. Cost-only balanced
+conv-44/49 four-condition proposalUSD31.819960 provider and combined stressUSD49.330258 including
+protectedUSD8 retains more comparisons; individualUSD5 caps still bind. One-conversation four-arm
+and narrower published three-arm alternatives are also recorded. No smaller population/order,
+budget revision, later paid cell, extra recovery or contingency use is authorized here. The outcome
+PR/normal merge is within the existing explicit user grant. See [completion](run2-conv44-reporting-complete-20261104.md)
+and [affordability](run2-ablation-affordability-20261104.md).
