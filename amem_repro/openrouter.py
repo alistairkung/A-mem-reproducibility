@@ -78,6 +78,7 @@ class CampaignLedger:
             raise BudgetStop('Campaign scientific binding differs from the authorized identity')
         self.failed = False
         self.claimed = {}
+        self.guards = {}
         self._file_identity=None
         self._root_identity=None
         encoded=json.dumps(SCIENTIFIC_BINDING,sort_keys=True)
@@ -130,6 +131,79 @@ class CampaignLedger:
         finally:
             db.close()
 
+    @staticmethod
+    def access_snapshot(db, exclude_phase=None):
+        """Exact prior financial history; retained rows are never rewritten."""
+        return {
+            'phases': [list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid')
+                       if r[0] != exclude_phase],
+            'attempts': [list(r) for r in db.execute('SELECT * FROM attempts ORDER BY id')
+                         if r[1] != exclude_phase],
+            'halts': [list(r) for r in db.execute('SELECT * FROM halts ORDER BY phase')
+                      if r[0] != exclude_phase],
+        }
+
+    def _access_retest(self, db, approval, *, exclude_phase=None):
+        """Narrow new user grant: one metadata access check after the retained403.
+
+        This cannot release baseline execution or adjudicate the prior charge.
+        The original terminal phase/halt/unknown reservation remain authoritative.
+        """
+        grant = approval.get('access_retest', {})
+        snapshot = self.access_snapshot(db, exclude_phase)
+        phases, attempts, halts = (snapshot[k] for k in ('phases','attempts','halts'))
+        expected = {'updated-key-one-probe-20261104-v1': 1,
+                    'third-access-one-probe-20261104-v1': 2,
+                    'final-third-key-one-probe-20261104-v1': 3}.get(grant.get('policy'))
+        if (expected is None
+                or approval.get('kind') != 'compatibility'
+                or approval.get('limits',{}).get('max_physical_calls') != 1
+                or grant.get('retained_snapshot') != snapshot
+                or len(phases) != expected or len(attempts) != expected or len(halts) != expected):
+            raise BudgetStop('Exact one-probe updated-key authorization required')
+        if (approval.get('parent') != phases[-1][0]
+                or approval.get('parent_seal') != phases[-1][4]
+                or not isinstance(grant.get('request_sha256'),str)
+                or len(grant['request_sha256']) != 64):
+            raise BudgetStop('Retained denial parent or exact request changed')
+        for index, (previous, attempt) in enumerate(zip(phases, attempts)):
+            prior_approval = json.loads(previous[1])
+            if (previous[3] != 'terminal' or not previous[4]
+                    or prior_approval.get('kind') != 'compatibility'
+                    or any(prior_approval.get('binding',{}).get(k) != v
+                           for k,v in SCIENTIFIC_BINDING.items())
+                    or attempt[0] != index+1
+                    or attempt[1] != previous[0] or attempt[2] != 'metadata'
+                    or attempt[4:7] != [19650,19650,'reserved']
+                    or attempt[9] is not None or attempt[10] is not None
+                    or previous[0] not in {h[0] for h in halts}
+                    or grant['request_sha256'] != attempt[3]
+                    or previous[2] != (phases[index-1][0] if index else None)
+                    or (index and prior_approval.get('parent_seal') != phases[index-1][4])):
+                raise BudgetStop('Retained denial lineage changed')
+
+    def retained_prefix(self, db, approval):
+        """Recognize only the four sealed access phases covered by the user's decision."""
+        if 'retained_access_prefix' not in approval:
+            return set()
+        digest = approval['retained_access_prefix']
+        counts = {'5383b7402a3bf9a59837312a80e14d67cbcd2033ca88175f0b345cbcb68229c6':4,
+                  '3b3bb2e36098b84f5881e65079a23943427ea3276216f731adb0d590a37a32f1':5}
+        if digest not in counts:
+            raise BudgetStop('Unknown financial decision')
+        count = counts[digest]
+        phases = [list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid LIMIT ?', (count,))]
+        ids = [p[0] for p in phases]
+        prefix = {
+            'phases': phases,
+            'attempts': [list(r) for r in db.execute(
+                "SELECT * FROM attempts WHERE phase IN (" + ",".join("?" for _ in ids) + ") ORDER BY id", ids)],
+            'halts': [list(r) for r in db.execute('SELECT * FROM halts ORDER BY phase') if r[0] in ids],
+        }
+        if approval['retained_access_prefix'] != digest or fingerprint(prefix) != digest:
+            raise BudgetStop('Accepted financial history changed')
+        return {p[0] for p in prefix['phases']}
+
     def claim(self, approval):
         if (approval.get('approved') is not True or approval.get('binding') != self.binding
                 or approval.get('kind') not in ('compatibility', 'baseline')
@@ -139,14 +213,19 @@ class CampaignLedger:
         parent = approval.get('parent')
         with self.transaction() as db:
             rows = db.execute('SELECT id,approval,state,seal FROM phases ORDER BY rowid').fetchall()
-            if any(row[2] not in ('complete','recoverable') for row in rows):
+            retest = bool(approval.get('access_retest'))
+            if retest:
+                self._access_retest(db, approval)
+            retained = self.retained_prefix(db, approval)
+            rows = [row for row in rows if row[0] not in retained]
+            if not retest and any(row[2] not in ('complete','recoverable') for row in rows):
                 raise BudgetStop('An earlier phase is unfinished or terminal')
             same = [r for r in rows if json.loads(r[1])['kind'] == approval['kind']]
-            if parent:
+            if parent and not retest:
                 if (not same or same[-1][0] != parent or same[-1][2] != 'recoverable'
                         or not same[-1][3] or approval.get('parent_seal') != same[-1][3]):
                     raise BudgetStop('Continuation must own the last sealed recoverable parent')
-            elif same:
+            elif same and not retest:
                 raise BudgetStop('A fresh root cannot repeat a consumed campaign phase')
             db.execute('INSERT INTO phases VALUES (?,?,?,\'running\',NULL)',
                        (phase,json.dumps(approval,sort_keys=True),parent))
@@ -167,12 +246,22 @@ class CampaignLedger:
                 if (not row or row[1] != 'running' or phase not in self.claimed
                         or json.loads(row[0])!=self.claimed[phase]):
                     raise BudgetStop('Phase is not an active one-shot owner')
-                if db.execute('SELECT COUNT(*) FROM halts').fetchone()[0]:
-                    raise BudgetStop('A terminal campaign failure forbids further transmissions')
                 approval = json.loads(row[0])
+                retest = bool(approval.get('access_retest'))
+                retained = self.retained_prefix(db, approval)
+                if retest:
+                    self._access_retest(db, approval, exclude_phase=phase)
+                    if (db.execute('SELECT COUNT(*) FROM halts WHERE phase=?',(phase,)).fetchone()[0]
+                            or stage != 'metadata'
+                            or fingerprint(request) != approval['access_retest']['request_sha256']
+                            or db.execute('SELECT COUNT(*) FROM attempts WHERE phase=?',(phase,)).fetchone()[0]):
+                        raise BudgetStop('Updated-key access grant permits one exact metadata request')
+                elif any(r[0] not in retained for r in db.execute('SELECT phase FROM halts')):
+                    raise BudgetStop('A terminal campaign failure forbids further transmissions')
+                if phase in self.guards:self.guards[phase](db)
                 if approval['binding'] != self.binding:
                     raise BudgetStop('Immutable approval changed')
-                if db.execute("SELECT COUNT(*) FROM attempts WHERE state!='settled'").fetchone()[0]:
+                if not retest and any(r[0] not in retained for r in db.execute("SELECT phase FROM attempts WHERE state!='settled'")):
                     raise BudgetStop('Unknown financial exposure; no further transmission')
                 spent, count = db.execute('SELECT COALESCE(SUM(charge),0),COUNT(*) FROM attempts').fetchone()
                 kind = approval['kind']
@@ -190,6 +279,11 @@ class CampaignLedger:
         except BaseException:
             self.failed = True
             raise BudgetStop('Financial admission failed; no transmission permitted') from None
+
+    def set_guard(self, phase, guard):
+        if phase not in self.claimed or phase in self.guards:
+            raise BudgetStop('Admission guard must bind exactly once to the claimed owner')
+        self.guards[phase]=guard
 
     def settle(self, attempt, response, output_limit):
         try:
@@ -233,6 +327,12 @@ class CampaignLedger:
             if changed != 1:
                 raise BudgetStop('Phase has already been sealed')
         return seal
+
+    def unaccepted_unknowns(self, approval):
+        with self.transaction() as db:
+            retained = self.retained_prefix(db, approval)
+            return sum(phase not in retained for (phase,) in
+                       db.execute("SELECT phase FROM attempts WHERE state!='settled'"))
 
     def totals(self):
         with self.transaction() as db:
@@ -278,7 +378,11 @@ class OpenRouterController:
             attempt, reserve = self.ledger.reserve(self.phase,stage,body)
             save_new(self.journal/f'{attempt:06d}-request.json',body)
             event['budget_logical_id'] = attempt
+            event['attempts']=[{'attempt':1,'status_code':None,'error_type':None,
+                'request_body':body,'response_body':None,'usage':None,
+                'budget_attempt_id':attempt,'reservation_microusd':reserve}]
             raw = self.client.post(BASE_URL+'/chat/completions',json=body)
+            event['attempts'][0]['status_code']=raw.status_code
             # Preserve exact bytes as well as parsed objects, without headers/secrets.
             path = self.journal/f'{attempt:06d}-response.bin'
             with path.open('xb') as stream:
@@ -327,6 +431,8 @@ class OpenRouterController:
         except BaseException as error:
             event['error_type']=type(error).__name__
             event['error_message']=str(error)
+            if event['attempts']:
+                event['attempts'][0].update(error_type=type(error).__name__,error_message=str(error))
             self.ledger.stop(self.phase,event['error_type'])
             raise BudgetStop('Provider/validation/control failure; no further paid request') from None
         finally:

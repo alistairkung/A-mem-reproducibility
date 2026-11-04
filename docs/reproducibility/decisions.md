@@ -1220,3 +1220,24 @@ failure or release a baseline. Original memory/question processing remains0/675 
 0/158; no baseline metric or Langfuse Experiment exists. The final one-request grant
 is consumed; no fifth POST, baseline, ablation or old-charge settlement is inferred.
 Read [the verified access supplement](gpt4omini-third-key-access-verified-20261104.md).
+
+### Renewed Full / conv-44 authorization and financial decision
+
+The user accepted US$0.058950 as the permanent upper bound for attempts 1–3.
+Count it against both the cumulative US$0.25 compatibility allowance and the
+US$5 cell cap. Their individual charges remain unknown. Any new unknown stops
+execution. Attempt 4 remains individually reconciled. The separate testing
+offset is US$0.011651. This grant covers the remaining native compatibility
+checks and one fresh Full / conv-44 baseline after all release gates pass.
+
+### Three Full baselines in order
+
+The user expanded the grant to fresh Full builds on conv-44, conv-49 and conv-50,
+in that order, totalling 1,752 turns and 558 questions. Each cell requires an
+individually frozen approval and a conservative US$5 cap. All compatibility
+exposure belongs to conv-44. The campaign ceiling is US$50 with US$8 protected.
+Advance after independent scientific, cloud and financial verification and a fresh
+whole-study forecast. No ablation execution or automatic top-up is authorized.
+Preserve the already accepted US$0.058950 historical upper bound. An unexplained
+new billing difference, genuine new unknown or missing required evidence stops the
+paid frontier. Reporting recovery uses saved results only.

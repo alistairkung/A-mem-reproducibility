@@ -102,13 +102,10 @@ readiness is a report, not paid authority.
 
 ## Status
 
-**Metadata access verified with the third key.** The fourth, separately approved
-POST succeeds with exact dated model/OpenAI provider and original strict schema.
-BLK-025 is Mitigated only at this access boundary. Preserve all three earlier403
-receipts and USD0.058950 unknown reservations. This one request costs USD0.00006765;
-campaign conservative exposure is USD0.059018. No baseline freeze/release exists.
-The remaining live contracts/caps, financial boundary and full test/review gates are
-outstanding. Read the [verified supplement](gpt4omini-third-key-access-verified-20261104.md).
+The renewed grant and explicit old-charge upper-bound decision are recorded in
+[decisions](decisions.md). All four contracts passed live compatibility. The
+measured forecast and required source-bound gates are in the
+[Full / conv-44 release record](gpt4omini-conv44-release.md).
 
 ## Historical regression fixture isolation
 
