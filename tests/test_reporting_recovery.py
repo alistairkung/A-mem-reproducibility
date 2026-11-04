@@ -147,7 +147,8 @@ def test_local_experiment_score_filter_can_be_empty_but_explicit_traces_verify(t
     def query(resource,options):
         if resource=='scores' and 'experiment-id' in options:
             return {'status':200,'body':{'data':[], 'meta':{'truncated':False}}}
-        if resource=='scores':assert len(options['trace-id'].split(','))<=50
+        if resource=='scores' and 'trace-id' in options:
+            assert len(options['trace-id'].split(','))<=50
         return original_query(resource,options)
     cloud.query=query
     assert run()['score_count']==632
