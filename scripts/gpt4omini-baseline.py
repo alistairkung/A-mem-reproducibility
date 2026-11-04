@@ -65,7 +65,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
             or metadata['native_contracts_verified']!=['metadata']):
         raise RuntimeError('Native compatibility coverage incomplete')
     files=dict(sources['files'])
-    paths=[VERIFICATION/'forecast.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
+    paths=[VERIFICATION/'forecast.json',VERIFICATION/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
         *[p for name in ('compatibility-release','compatibility-release-tail') for p in (DIRECTORY/name).rglob('*') if p.is_file()],
         DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
@@ -126,7 +126,9 @@ def reconcile(client, ledger, output):
     for request_id,cost in rows:
         response=client.get(BASE_URL+'/generation',params={'id':request_id})
         response.raise_for_status();data=response.json()['data']
-        if (data.get('id')!=request_id or data.get('provider_name')!='OpenAI' or data.get('model')!=MODEL
+        hops=data.get('provider_responses') or []
+        if (len(hops)!=1 or hops[0].get('status')!=200 or hops[0].get('provider_name')!='OpenAI'
+                or hops[0].get('model_permaslug')!=MODEL or data.get('id')!=request_id or data.get('provider_name')!='OpenAI' or data.get('model')!=MODEL
                 or abs(Decimal(str(data['total_cost']))-Decimal(cost))>Decimal('0.000000001')):
             raise RuntimeError('Independent request route/charge mismatch')
         details.append(data)
