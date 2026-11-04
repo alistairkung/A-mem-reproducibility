@@ -61,6 +61,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     files=dict(sources['files'])
     paths=[Path(gate_path),DIRECTORY/'compatibility-v2/receipt.json',DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
+        DIRECTORY/'verification/preservation-reconciliation.json',
         DIRECTORY/'verification/baseline-preflight.json',DIRECTORY/'verification/baseline-full-suite.txt',
         DIRECTORY/'verification/baseline-standards-review.json',DIRECTORY/'verification/baseline-spec-review.json',
         DIRECTORY/'verification/archive-equivalence.json',

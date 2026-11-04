@@ -105,6 +105,8 @@ def execute():
         raise RuntimeError('Compatibility launcher differs from reviewed commit')
     if fingerprint(read(OUTPUT.parent/'verification/prior-preservation-authoritative-v2.json'))!=approval.get('preservation_sha256'):
         raise RuntimeError('Approved historical preservation evidence changed')
+    if fingerprint(read(OUTPUT.parent/'verification/preservation-reconciliation.json'))!=approval.get('preservation_reconciliation_sha256'):
+        raise RuntimeError('Approved original-source reconciliation evidence changed')
     verify_prior()
     values=dotenv_values(ROOT/'.env');key=values.get('OPENROUTER_API_KEY')
     if not key:raise RuntimeError('Private OpenRouter credential missing')
