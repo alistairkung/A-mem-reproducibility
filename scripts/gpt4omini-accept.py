@@ -10,16 +10,16 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from amem_repro.config import fingerprint
-from amem_repro.openrouter import CampaignLedger,FULL_CELLS,cell_store,save_new
+from amem_repro.openrouter import CampaignLedger,FULL_CELLS,CELL_ORDER,cell_parts,approval_cell,cell_store,save_new
 
 def read(p):return json.loads(p.read_bytes())
 
-def seal(campaign,cell,org_units):
+def seal(campaign,cell,org_units,*,ablation=False):
     from amem_repro.gpt4omini_campaign import verify_accepted_cell
     from scripts.gpt4omini_finance import verify_accepted_finances
     verify_accepted_cell(campaign,cell)
     verify_accepted_finances(campaign,cell)
-    order=list(FULL_CELLS)
+    order=list(CELL_ORDER if ablation else FULL_CELLS)
     accepted=order[:order.index(cell)+1]
     out=campaign/'outcomes'/cell
     store=cell_store(campaign,cell)
@@ -27,7 +27,9 @@ def seal(campaign,cell,org_units):
     if any(r['accepted'] is not True or r['verdict']!='pass' for r in reviews) or len({r['phase'] for r in reviews})!=1:
         raise ValueError('Independent scientific and financial acceptance required')
     phase=reviews[0]['phase'];record=read(store/'runs'/phase/'phase.json')
-    if record['binding']['conversation_id']!=cell or record['status'] not in ('degraded','complete'):
+    conversation,condition=cell_parts(cell)
+    if (record['binding']['conversation_id']!=conversation or record['binding']['condition']!=condition
+            or record['status'] not in ('degraded','complete')):
         raise ValueError('Foreign or incomplete phase')
     finance=read(store/'reconciliation.json')
     if not finance['verified']:raise ValueError('Financial reconciliation incomplete')
@@ -35,6 +37,8 @@ def seal(campaign,cell,org_units):
         history=CampaignLedger.access_snapshot(db)
         seals={};rates={}
         for c in accepted:
+            verify_accepted_cell(campaign,c)
+            verify_accepted_finances(campaign,c)
             cell_reviews=read(campaign/'outcomes'/c/'acceptance-spec.json')
             end=cell_reviews['phase']
             seals[c]=db.execute("SELECT seal FROM phases WHERE id=? AND state='complete'",(end,)).fetchone()[0]
@@ -42,18 +46,21 @@ def seal(campaign,cell,org_units):
                 raise ValueError('Original phase seal differs')
             rows=db.execute("""SELECT a.stage,COUNT(*),SUM(a.charge) FROM attempts a JOIN phases p ON a.phase=p.id
                 WHERE json_extract(p.approval,'$.kind')='baseline' AND
-                json_extract(p.approval,'$.conversation')=? AND a.state='settled' GROUP BY a.stage""",(c,)).fetchall()
-            if sum(r[1] for r in rows)!=2*sum(FULL_CELLS[c]):raise ValueError('Incomplete settled baseline')
+                json_extract(p.approval,'$.conversation')=? AND json_extract(p.approval,'$.condition')=?
+                AND a.state='settled' GROUP BY a.stage""",cell_parts(c)).fetchall()
+            if sum(r[1] for r in rows)!=2*sum(FULL_CELLS[cell_parts(c)[0]]):raise ValueError('Incomplete settled baseline')
             for stage,n,cost in rows:
                 rates[stage]=max(rates.get(stage,Decimal(0)),Decimal(cost)/n/1000000)
     costs={c:sum(rate*(turns if s in ('metadata','shared_decision') else questions)
                  for s,rate in rates.items()) for c,(turns,questions) in FULL_CELLS.items()}
-    next_cells=order[len(accepted):];future=sum(costs[c] for c in next_cells)+3*sum(costs.values())
+    next_cells=order[len(accepted):]
+    future=sum(costs[cell_parts(c)[0]] for c in next_cells)+(0 if ablation else 3*sum(costs.values()))
     spent=Decimal(finance['accounting']['conservative_microusd'])/1000000
     # Plan up to 16K units per remaining cell, with marginal Core pricing.
-    service_fee=max(Decimal(0),Decimal(org_units+16000*(len(next_cells)+9)-100000)*8/100000)
-    affordable=(spent+2*future+service_fee<=42 and all(2*costs[c]<=5 for c in next_cells)
-                and (not next_cells or org_units+32500<=100000))
+    service_units=org_units+(13500*len(next_cells)+2500 if ablation else 16000*(len(next_cells)+9))
+    service_fee=max(Decimal(0),Decimal(service_units-100000)*8/100000)
+    affordable=(spent+2*future+service_fee<=42 and all(2*costs[cell_parts(c)[0]]<=5 for c in next_cells)
+                and (service_units<=100000 if ablation else (not next_cells or org_units+32500<=100000)))
     files={}
     paths=[store/'reconciliation.json',*store.glob('generation-readback-*'),store/'runs',store/'cache',store/'frozen',
            out/'acceptance-spec.json',out/'acceptance-standards.json']
@@ -66,11 +73,14 @@ def seal(campaign,cell,org_units):
             'cell_model_scenario_usd':{c:str(v) for c,v in costs.items()},'nine_ablation_usd':str(3*sum(costs.values())),
             'model_total_usd':str(spent+future),'model_and_service_double_remaining_sensitivity_usd':str(spent+2*future+service_fee),
             'service_fee_scenario_usd':str(service_fee),'org_units_conservative':org_units,'remaining_contingency_usd':8}}
-    save_new(out/'frontier.json',result)
+    result['forecast']['remaining_authorised_model_usd']=str(future)
+    result['forecast']['service_capacity_scenario_units']=service_units
+    save_new(out/('ablation-frontier.json' if ablation and cell=='conv-50' else 'frontier.json'),result)
     return result
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--cell',required=True,choices=FULL_CELLS)
+    parser=argparse.ArgumentParser();parser.add_argument('--cell',required=True,choices=CELL_ORDER)
+    parser.add_argument('--ablation',action='store_true')
     parser.add_argument('--org-units',type=int,required=True);args=parser.parse_args()
-    result=seal((ROOT/'artifacts/gpt4omini').resolve(),args.cell,args.org_units)
+    result=seal((ROOT/'artifacts/gpt4omini').resolve(),args.cell,args.org_units,ablation=args.ablation)
     print(json.dumps({k:v for k,v in result.items() if k!='files'}))

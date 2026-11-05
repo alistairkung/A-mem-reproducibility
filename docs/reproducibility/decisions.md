@@ -1255,3 +1255,30 @@ configuration applies. [Full baseline record](gpt4omini-full-baselines.md)
 ### 4 November 2026 — three Full GPT-4o-mini cells accepted
 
 The three-cell grant is consumed. Independent Standards and Spec reviews accepted conv-44 as Degraded through its compatibility history, conv-49 as Clean and conv-50 as Clean. All 558 predictions are reported under both scoring policies. The final ledger records US$1.08658530 in identified model charges and US$1.147803 in conservative exposure. US$8 remains protected. The nine remaining ablation cells require separate authorization. [Combined results and accepted financial record](gpt4omini-three-full-results.md)
+
+### 5 November 2026 — three conv-49 ablations authorised
+
+The user explicitly authorises end-to-end engineering, testing, independent
+Standards/Spec review, normal implementation merge, three paid fresh conv-49
+cells and independently reviewed outcome-documentation merge, without routine
+intermediate approvals. Order: Evolution Only, Neither, Linking Only, each on
+509 original turns and all 196 original questions. The accepted Full baseline
+is unchanged. This supersedes the earlier proposed ablation order for this grant.
+
+Only the two verified T7 action gates vary. Preserve the dated GPT-4o-mini/OpenAI
+route, native schemas, frozen temperatures/output limits, retrieval k=10, five
+construction neighbours, original counters/consolidation/stale index and both
+scoring views. Shared decisions remain generated in every arm. Each requires
+independent fresh memory/cache and a source-bound immutable financial approval
+after mandatory offline/cloud gates, independent reviews and normal merge.
+
+Opening conservative exposure US$1.147803 is retained. Each new cell including
+supported recovery has a US$5 cap; exactly three additional cells, US$50 campaign
+ceiling, US$42 planned allocation and protected US$8. Reforecast after each accepted
+cell; no contingency, extra conversation or repeated completed condition. Retain
+the previously accepted historical reservation; any new unknown exposure stops.
+Original malformed-decision fallback and exact-state output-exhaustion recovery
+are authorised within the same cell cap, with raw outputs and Degraded status.
+Unsupported failures or scientific/financial/provenance/critical-observation
+problems stop. Reviewed reporting-only recovery may use saved outputs, never
+paid inference reruns. [Full specification](gpt4omini-conv49-ablation.md).

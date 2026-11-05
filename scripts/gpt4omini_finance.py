@@ -87,12 +87,12 @@ def verify_accepted_finances(campaign,cell):
     import hashlib
     import sqlite3
     from amem_repro.config import fingerprint
-    from amem_repro.openrouter import FULL_CELLS,cell_store
+    from amem_repro.openrouter import CELL_ORDER,cell_store,approval_cell
     store=cell_store(campaign,cell)
-    accepted=set(list(FULL_CELLS)[:list(FULL_CELLS).index(cell)+1])
+    accepted=set(CELL_ORDER[:CELL_ORDER.index(cell)+1])
     review=json.loads((campaign/'outcomes'/cell/'acceptance-standards.json').read_bytes())
     with sqlite3.connect((campaign/'budget.sqlite').resolve().as_uri()+'?mode=ro',uri=True) as db:
-        phases=[list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid') if json.loads(r[1])['conversation'] in accepted]
+        phases=[list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid') if approval_cell(json.loads(r[1])) in accepted]
         ids={r[0] for r in phases}
         snapshot={'phases':phases,'attempts':[list(r) for r in db.execute('SELECT * FROM attempts ORDER BY id') if r[1] in ids],
                   'halts':[list(r) for r in db.execute('SELECT * FROM halts ORDER BY phase') if r[0] in ids]}

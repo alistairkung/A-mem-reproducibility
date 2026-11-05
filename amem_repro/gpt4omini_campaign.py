@@ -16,7 +16,8 @@ from .artifacts import CacheStore, build_identity, snapshot_memory, restore_memo
 from .budget import BudgetStop
 from .config import OPENROUTER_CONFIG, fingerprint, source_fingerprint, stage_output_limits
 from .evolution_fallback import verify_fallback_state
-from .openrouter import FULL_CELLS, cell_store, CAMPAIGN, CampaignLedger, OpenRouterController, save_new
+from .openrouter import (FULL_CELLS, CELL_ORDER, cell_key, cell_parts, approval_cell,
+                         cell_store, CAMPAIGN, CampaignLedger, OpenRouterController, save_new)
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT/'artifacts/gpt4omini'
@@ -67,7 +68,8 @@ def admission_guard(approval, ledger, root):
             or fingerprint(read(manifest))!=approval['binding']['manifest_sha256']):
         raise BudgetStop('Frozen dataset or selection changed')
     protected.update({data:file_signature(data),manifest:file_signature(manifest)})
-    previous=list(FULL_CELLS)[:list(FULL_CELLS).index(approval['conversation'])]
+    key=approval_cell(approval)
+    previous=CELL_ORDER[:CELL_ORDER.index(key)]
     for cell in previous:
         certificate=ledger.root/'outcomes'/cell/'frontier.json'
         files=predecessor_files(ledger.root,cell)
@@ -135,16 +137,20 @@ def verify_accepted_cell(campaign, cell):
     import sqlite3
     from base64 import b64decode
     store=cell_store(campaign,cell)
+    conversation,condition=cell_parts(cell)
     with sqlite3.connect((campaign/'budget.sqlite').as_uri()+'?mode=ro',uri=True) as db:
         phases=db.execute("""SELECT id,seal FROM phases WHERE json_extract(approval,'$.kind')='baseline'
-                           AND json_extract(approval,'$.conversation')=? ORDER BY rowid""",(cell,)).fetchall()
+                           AND json_extract(approval,'$.conversation')=?
+                           AND json_extract(approval,'$.condition')=? ORDER BY rowid""",(conversation,condition)).fetchall()
     if not phases: raise BudgetStop('No prior collection')
     for phase,seal in phases:
         directory=store/'runs'/phase
         record=read(directory/'phase.json')
         if fingerprint(record)!=seal: raise BudgetStop('Prior scientific receipt differs from ledger')
         verify_inventory(directory,record['files'])
-    if record['status'] not in ('complete','degraded') or record['binding']['conversation_id']!=cell:
+    if (record['status'] not in ('complete','degraded')
+            or record['binding']['conversation_id']!=conversation
+            or record['binding']['condition']!=condition):
         raise BudgetStop('Predecessor scientific collection incomplete')
     cache=read(directory/'cache-proof.json')
     verify_inventory(campaign/cache['directory'],cache['files'])
@@ -222,7 +228,8 @@ class FallbackGuard:
 def checkpoint_from(parent_path, ledger, binding, *, root=ROOT):
     """Verify the full immutable ancestry, exact state and the next original turn."""
     cell=binding['conversation_id']
-    store=cell_store(ledger.root,cell)
+    condition=binding['condition']
+    store=cell_store(ledger.root,cell_key(cell,condition))
     nturns,_=FULL_CELLS[cell]
     path=Path(parent_path).resolve()
     lineage=[];seen=set();parent=None
@@ -259,7 +266,7 @@ def checkpoint_from(parent_path, ledger, binding, *, root=ROOT):
         event=json.loads(line)
         if event['type']=='failure':failures.append(event)
     return {'state':state,'failures':failures,'lineage':{'policy':'gpt4omini-exact-state-v1',
-            'campaign_id':CAMPAIGN,'condition':'full','parent_run_id':parent['phase'],
+            'campaign_id':CAMPAIGN,'condition':condition,'parent_run_id':parent['phase'],
             'ancestors':lineage,'next_turn_id':conversation['turn_ids'][len(prefix)] if len(prefix)<nturns else None}}
 
 
@@ -267,6 +274,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                   root=ROOT, memory_module=None, scorer=None):
     """Run one immutable root/child; cloud verification is required before sealing."""
     from .author import make_agent_factory, _load_memory
+    from .actions import make_action_agent_factory, action_configuration
     from .runner import run_manifest
     from .scoring import AuthorScorer, rescore_records
     from .langfuse_verify import verify_observations
@@ -275,8 +283,10 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
     scorer=scorer or AuthorScorer(root)
     binding=approval['binding']
     cell=approval['conversation']
-    if binding['conversation_id']!=cell:raise BudgetStop('Cell identity differs from source-bound approval')
-    store=cell_store(ledger.root,cell)
+    condition=approval['condition']
+    if binding['conversation_id']!=cell or binding['condition']!=condition:
+        raise BudgetStop('Cell identity differs from source-bound approval')
+    store=cell_store(ledger.root,cell_key(cell,condition))
     nturns,nqa=FULL_CELLS[cell]
     if fingerprint(source_fingerprint(root))!=binding['source_sha256']:
         raise BudgetStop('Source changed since reviewed phase freeze')
@@ -305,7 +315,8 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         observer.assert_healthy()
         if ledger.unaccepted_unknowns(approval):raise BudgetStop('Unknown financial exposure')
     agent_factory=make_agent_factory(root,controller_factory=factory,memory_module=memory,
-                                     token_counter=token_counter)
+                                     token_counter=token_counter) if condition=='full' else make_action_agent_factory(
+        root,condition=condition,controller_factory=factory,memory_module=memory,token_counter=token_counter)
     agents=[]
     def tracked_factory(**kwargs):
         agent=agent_factory(**kwargs)
@@ -315,11 +326,14 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
             if restored!=checkpoint['state']:raise BudgetStop('Exact checkpoint restoration failed')
         agents.append(agent)
         return agent
+    if condition!='full':
+        tracked_factory._repro_condition=condition
+        tracked_factory._repro_action_configuration=action_configuration(condition)
     error=None;summary=None;failure=None
     try:
         summary=run_manifest(root/'data/locomo10.json',read(root/'manifests/fallback.json'),
             copy.deepcopy(OPENROUTER_CONFIG),output_dir=output,cache_root=store/'cache',
-            source_hashes=source_fingerprint(root),condition='full',agent_factory=tracked_factory,
+            source_hashes=source_fingerprint(root),condition=condition,agent_factory=tracked_factory,
             scorer=scorer,observer=observer,run_id=phase,conversation_ids=[cell],
             boundary_check=boundary,evolution_guard=guard,checkpoint=checkpoint,
             execution_type='checkpoint_recovery' if checkpoint else 'fresh_build')
@@ -360,8 +374,9 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         conversation=next(c for c in start['manifest']['conversations'] if c['original_id']==cell)
         identity=build_identity(OPENROUTER_CONFIG,conversation,start['manifest']['dataset_sha256'],
                                 start['source_hashes'],provider_contract_policy='strict-original-v1')
-        identity.update(condition='full',memory_actions={'strengthen':True,'update_neighbor':True},
-                        action_policy='released-action-boundaries-v1',action_implementation='frozen-author',
+        identity.update(condition=condition,memory_actions=action_configuration(condition),
+                        action_policy='released-action-boundaries-v1',
+                        action_implementation='frozen-author' if condition=='full' else 't7-action-gates',
                         evolution_failure_policy=guard.policy_id)
         if checkpoint:identity['checkpoint']=checkpoint['lineage']
         saved=CacheStore(store/'cache').load(identity)
@@ -388,7 +403,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                 if [r['question_id'] for r in results]!=[q['question_id'] for q in conversation['questions']]:
                     raise BudgetStop('Ordered benchmark questions differ')
                 with ledger.transaction() as db:
-                    count=db.execute("SELECT COUNT(*) FROM attempts a JOIN phases p ON a.phase=p.id WHERE json_extract(p.approval,'$.kind')='baseline' AND json_extract(p.approval,'$.conversation')=? AND a.state='settled'",(cell,)).fetchone()[0]
+                    count=db.execute("SELECT COUNT(*) FROM attempts a JOIN phases p ON a.phase=p.id WHERE json_extract(p.approval,'$.kind')='baseline' AND json_extract(p.approval,'$.conversation')=? AND json_extract(p.approval,'$.condition')=? AND a.state='settled'",(cell,condition)).fetchone()[0]
                 if count!=2*(nturns+nqa):raise BudgetStop('Full baseline original request count differs')
             receipt['experiments']=import_results(views,context,client=observer.client,
                                                 traces=original_qa_traces(capture))
