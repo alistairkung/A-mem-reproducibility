@@ -16,8 +16,15 @@ from gpt4omini_fixture import ROOT
 
 @pytest.mark.parametrize('condition', ('full', *ABLATION_CONDITIONS))
 @pytest.mark.parametrize('conversation,turns,questions', [('conv-49',509,196),('conv-50',568,204),('conv-44',675,158)])
-def test_complete_native_coverage_and_isolated_actions(tmp_path, condition, conversation, turns, questions):
-    result=run_actual_phase(tmp_path,root=ROOT,conversation=conversation,condition=condition)
+def test_complete_native_coverage_and_isolated_actions(tmp_path, condition, conversation, turns, questions, monkeypatch):
+    updates={}
+    if conversation=='conv-44' and condition!='full':
+        # The synthetic ledger does not contain the historical OpenRouter IDs.
+        # Exercise the real classification branch with its production approval flag.
+        updates['retained_access_prefix']='synthetic-financial-history'
+        monkeypatch.setattr(CampaignLedger, 'retained_prefix', lambda self,db,approval:set())
+    result=run_actual_phase(tmp_path,root=ROOT,conversation=conversation,condition=condition,
+                            approval_updates=updates)
     receipt=result['receipt']
     assert (receipt['status'],receipt['notes'],receipt['questions'],receipt['evolution_counter'])==('complete',turns,questions,turns)
     output=cell_store(tmp_path,cell_key(conversation,condition))/'runs/p0'

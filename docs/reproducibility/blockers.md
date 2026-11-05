@@ -369,6 +369,15 @@ are unavailable unless an experiment receipt supplies them.
 - **Verification:** Release784 tests/92 subtests, independent financial audit and immutable ledger reconcileUSD3.842085 settled plusUSD0.324404 unknown/full-reserved. `artifacts/run2-fallback-recovery/measured-stage-cost-sensitivity.json` uses675 metadata/675 decisions/158 queries/158 answers, and separately recordsUSD44.068655 remaining11-cell proxy cost. The current official forecast remains preserved as an Incomplete-frontier/Run1-proxy view; neither estimate is an upper bound.
 - **Research significance:** Construction, QA, retries and failed attempts all consume budget; controlling spending and estimating scientific study feasibility are separate problems.
 
+5 November 2026, six-cell GPT expansion: review of `9e7d76f` found the
+service health check could run after a single valid decision emitted 14,002
+units into the offline mock sink (BLK-009). An alternate gate directory also
+allowed an unreserved repeat. The original first cloud verification used 1,118
+units. Preserve its independent readback and allocation. Require a single
+campaign-wide remaining verification claim, per-emission admission, and a fresh
+capacity reading when starting each cell. Offline reproductions are held under
+`artifacts/gpt4omini/verification/six-cell-expansion-preflight/`.
+
 ## BLK-010
 
 - **ID:** BLK-010
@@ -1063,6 +1072,12 @@ charge persist. Add all-four-condition actual-executor regressions; independent
 re-review and refreshed source-bound suite/replay/cloud evidence precede payment.
 Earlier preliminary verification files remain preserved and cannot release the
 corrected source. Provider reliability remains a mitigated limitation.
+
+5 November 2026, expansion classification: the `9e7d76f` offline conv-44
+ablation finished all 675 notes and 158 questions with no inference or scoring
+failure, but inherited the historical Full compatibility degradation (BLK-025).
+The corrected reporting predicate attributes the retained denials only to
+Full / conv-44. All three unknown reservations remain in campaign accounting.
 
 ## BLK-026
 

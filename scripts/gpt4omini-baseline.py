@@ -112,7 +112,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         VERIFICATION/'baseline-preflight.json',VERIFICATION/'full-suite.txt' if KEY!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt',
         VERIFICATION/'baseline-standards-review.json',VERIFICATION/'baseline-spec-review.json',
         VERIFICATION/'archive-equivalence.json',
-        ROOT/'scripts/gpt4omini-accept.py',ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',ROOT/'scripts/gpt4omini-reporting-proof.py',
+        ROOT/'scripts/gpt4omini_service.py',ROOT/'scripts/gpt4omini-accept.py',ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',ROOT/'scripts/gpt4omini-reporting-proof.py',
         ROOT/'tests/gpt4omini_fixture.py',ROOT/'tests/gpt4omini_executor_fixture.py',
         ROOT/'tests/test_gpt4omini_executor.py',ROOT/'tests/test_gpt4omini_full_executor.py']
     if KEY!='conv-44':
@@ -253,6 +253,13 @@ def execute():
                 or not {'temperature','response_format','structured_outputs','max_tokens'}<=set(provider['supported_parameters'])):
             raise RuntimeError('Frozen provider route/pricing/capabilities changed')
         save_new(STORE/'frozen/route-before-baseline.json',endpoint.json())
+        if KEY in EXPANSION_CELLS:
+            capacity_path=DIRECTORY/release['forecast']['capacity_path']
+            if hashlib.sha256(capacity_path.read_bytes()).hexdigest()!=release['forecast']['capacity_sha256']:
+                raise RuntimeError('Cell capacity evidence changed before launch')
+            elapsed=(datetime.now(timezone.utc)-datetime.fromisoformat(read(capacity_path)['observed_at'])).total_seconds()
+            if not 0<=elapsed<=3600:
+                raise RuntimeError('Cell capacity reading expired before launch')
         parent=None;prior_runtime_units=0
         for sequence in range(FULL_CELLS[CELL][0]+1):
             verify_release(release)
@@ -268,10 +275,20 @@ def execute():
                 approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
                     parent_path=str(STORE/'runs'/parent['phase']/'phase.json'))
             save_new(STORE/'frozen'/(phase+'-approval.json'),approval)
+            from scripts.gpt4omini_service import ServiceUnits, bind_score_meter, bounded_filter, MeteredRuntimeClient
+            span_filter = should_export_span
+            runtime_meter = export_meter = None
+            if KEY in EXPANSION_CELLS:
+                remaining_units = CELL_SERVICE_UNITS - prior_runtime_units
+                runtime_meter = ServiceUnits(remaining_units - 36*FULL_CELLS[CELL][1])
+                export_meter = ServiceUnits(remaining_units)
+                span_filter = bounded_filter(should_export_span, export_meter)
             cloud=Langfuse(public_key=os.environ['LANGFUSE_PUBLIC_KEY'],secret_key=os.environ['LANGFUSE_SECRET_KEY'],
-                base_url='https://cloud.langfuse.com',flush_at=16,should_export_span=should_export_span,
+                base_url='https://cloud.langfuse.com',flush_at=16,should_export_span=span_filter,
                 environment='amem-gpt4omini',release=release['binding']['source_sha256'])
-            observer=LangfuseObserver(cloud,{**release['binding'],'run_id':phase,
+            if export_meter: original_score_task = bind_score_meter(cloud, export_meter)
+            runtime_client=MeteredRuntimeClient(cloud,runtime_meter) if runtime_meter else cloud
+            observer=LangfuseObserver(runtime_client,{**release['binding'],'run_id':phase,
                 'execution_mode':'paid-gpt4omini-baseline','parent_run_id':parent['phase'] if parent else None})
             original_healthy=observer.assert_healthy
             from amem_repro.gpt4omini_campaign import file_signature
@@ -294,6 +311,8 @@ def execute():
                         path=(ROOT/name).resolve(); legacy_signatures[path]=file_signature(path)
             def service_healthy():
                 original_healthy()
+                if export_meter and (export_meter.exhausted or runtime_meter.exhausted):
+                    raise RuntimeError('Service allocation exhausted')
                 if any(file_signature(path)!=signature for path,signature in legacy_signatures.items()):
                     raise RuntimeError('Historical evidence changed; no next paid operation')
                 for path,(target,stat) in legacy_links.items():
@@ -310,9 +329,19 @@ def execute():
             observer.assert_healthy=service_healthy
             try:
                 result=execute_phase(approval,ledger,observer=observer,client=client,token_counter=counter,root=ROOT)
-            finally:cloud.shutdown()
+            finally:
+                cloud.shutdown()
+                if export_meter:
+                    cloud._resources.add_score_task = original_score_task
+                    save_new(STORE/'service'/f'{phase}.json',{
+                        'maximum_units':export_meter.limit,'admitted_units':export_meter.spent,
+                        'runtime_units_admitted':runtime_meter.spent,
+                        'stopped':export_meter.exhausted or runtime_meter.exhausted})
+            if export_meter and (export_meter.exhausted or runtime_meter.exhausted):
+                raise RuntimeError('Service limit reached; no continuation')
             capture=read(STORE/'runs'/phase/'trace-capture.json')
-            prior_runtime_units+=len(capture['observations'])+len(capture['trace_ids'])+len(capture['scores'])
+            prior_runtime_units += max(len(capture['observations'])+len(capture['trace_ids'])+len(capture['scores']),
+                                       export_meter.spent if export_meter else 0)
             verify_release(release)
             verify_prior(ROOT)
             print(json.dumps({k:result[k] for k in ('phase','status','notes','questions','evolution_counter',
@@ -334,7 +363,7 @@ if __name__=='__main__':
     parser.add_argument('--condition',choices=('full',*ABLATION_CONDITIONS),default='full')
     args=parser.parse_args()
     CELL=args.cell;CONDITION=args.condition;KEY=cell_key(CELL,CONDITION);STORE=cell_store(DIRECTORY,KEY)
-    VERIFICATION=(DIRECTORY/'verification/six-cell-expansion' if KEY in EXPANSION_CELLS else DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
+    VERIFICATION=(DIRECTORY/'verification/six-cell-release-v2' if KEY in EXPANSION_CELLS else DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
                   FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release')
     try:
         if args.execute:execute()
