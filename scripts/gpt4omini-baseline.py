@@ -216,11 +216,14 @@ def execute():
                          'tiktoken o200k_base; hosted prompt overhead unverified; API usage authoritative',version('tiktoken'))
     if (STORE/'cache').exists() or (STORE/'runs').exists():
         raise RuntimeError('Fresh baseline requires an unused primary cache and run namespace')
-    ledger=CampaignLedger(DIRECTORY/'budget.sqlite',campaign_root=DIRECTORY,binding=release['binding'])
+    from scripts.gpt4omini_service import ObservedCampaignLedger
+    ledger_type = ObservedCampaignLedger if KEY in EXPANSION_CELLS else CampaignLedger
+    ledger=ledger_type(DIRECTORY/'budget.sqlite',campaign_root=DIRECTORY,binding=release['binding'])
     key=os.environ['OPENROUTER_API_KEY']
     if hashlib.sha256(key.encode()).hexdigest()!=read(DIRECTORY/'compatibility-v5/private-credential-binding.json')['sha256']:
         raise RuntimeError('Verified provider credential changed')
-    with httpx.Client(headers={'Authorization':'Bearer '+key},timeout=120,
+    from contextlib import ExitStack
+    with ExitStack() as lifecycle, httpx.Client(headers={'Authorization':'Bearer '+key},timeout=120,
                       transport=httpx.HTTPTransport(retries=0),follow_redirects=False) as client:
         client._amem_credential=key
         from scripts.gpt4omini_finance import compare, snapshot, reconcile
@@ -260,6 +263,16 @@ def execute():
             elapsed=(datetime.now(timezone.utc)-datetime.fromisoformat(read(capacity_path)['observed_at'])).total_seconds()
             if not 0<=elapsed<=3600:
                 raise RuntimeError('Cell capacity reading expired before launch')
+        from scripts.gpt4omini_service import ServiceUnits, bind_score_meter, bounded_filter, MeteredRuntimeClient
+        export_meter = ServiceUnits(CELL_SERVICE_UNITS) if KEY in EXPANSION_CELLS else None
+        span_filter = bounded_filter(should_export_span, export_meter) if export_meter else should_export_span
+        cloud=Langfuse(public_key=os.environ['LANGFUSE_PUBLIC_KEY'],secret_key=os.environ['LANGFUSE_SECRET_KEY'],
+            base_url='https://cloud.langfuse.com',flush_at=16,should_export_span=span_filter,
+            environment='amem-gpt4omini',release=release['binding']['source_sha256'])
+        if export_meter:
+            original_score_task = bind_score_meter(cloud,export_meter)
+            lifecycle.callback(setattr,cloud._resources,'add_score_task',original_score_task)
+        lifecycle.callback(cloud.shutdown)
         parent=None;prior_runtime_units=0
         for sequence in range(FULL_CELLS[CELL][0]+1):
             verify_release(release)
@@ -275,18 +288,10 @@ def execute():
                 approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
                     parent_path=str(STORE/'runs'/parent['phase']/'phase.json'))
             save_new(STORE/'frozen'/(phase+'-approval.json'),approval)
-            from scripts.gpt4omini_service import ServiceUnits, bind_score_meter, bounded_filter, MeteredRuntimeClient
-            span_filter = should_export_span
-            runtime_meter = export_meter = None
-            if KEY in EXPANSION_CELLS:
-                remaining_units = CELL_SERVICE_UNITS - prior_runtime_units
-                runtime_meter = ServiceUnits(remaining_units - 36*FULL_CELLS[CELL][1])
-                export_meter = ServiceUnits(remaining_units)
-                span_filter = bounded_filter(should_export_span, export_meter)
-            cloud=Langfuse(public_key=os.environ['LANGFUSE_PUBLIC_KEY'],secret_key=os.environ['LANGFUSE_SECRET_KEY'],
-                base_url='https://cloud.langfuse.com',flush_at=16,should_export_span=span_filter,
-                environment='amem-gpt4omini',release=release['binding']['source_sha256'])
-            if export_meter: original_score_task = bind_score_meter(cloud, export_meter)
+            runtime_meter = None
+            previously_exported = export_meter.spent if export_meter else 0
+            if export_meter:
+                runtime_meter = ServiceUnits(CELL_SERVICE_UNITS - previously_exported - 36*FULL_CELLS[CELL][1])
             runtime_client=MeteredRuntimeClient(cloud,runtime_meter) if runtime_meter else cloud
             observer=LangfuseObserver(runtime_client,{**release['binding'],'run_id':phase,
                 'execution_mode':'paid-gpt4omini-baseline','parent_run_id':parent['phase'] if parent else None})
@@ -309,10 +314,13 @@ def execute():
                 for name in release['files']:
                     if name.startswith('artifacts/gpt4omini/'):
                         path=(ROOT/name).resolve(); legacy_signatures[path]=file_signature(path)
-            def service_healthy():
+            def observation_health():
                 original_healthy()
                 if export_meter and (export_meter.exhausted or runtime_meter.exhausted):
                     raise RuntimeError('Service allocation exhausted')
+            if export_meter: ledger.observe_phase(phase, observation_health)
+            def service_healthy():
+                observation_health()
                 if any(file_signature(path)!=signature for path,signature in legacy_signatures.items()):
                     raise RuntimeError('Historical evidence changed; no next paid operation')
                 for path,(target,stat) in legacy_links.items():
@@ -330,18 +338,17 @@ def execute():
             try:
                 result=execute_phase(approval,ledger,observer=observer,client=client,token_counter=counter,root=ROOT)
             finally:
-                cloud.shutdown()
+                cloud.flush()
                 if export_meter:
-                    cloud._resources.add_score_task = original_score_task
                     save_new(STORE/'service'/f'{phase}.json',{
-                        'maximum_units':export_meter.limit,'admitted_units':export_meter.spent,
+                        'maximum_units':export_meter.limit-previously_exported,'admitted_units':export_meter.spent-previously_exported,
                         'runtime_units_admitted':runtime_meter.spent,
                         'stopped':export_meter.exhausted or runtime_meter.exhausted})
             if export_meter and (export_meter.exhausted or runtime_meter.exhausted):
                 raise RuntimeError('Service limit reached; no continuation')
             capture=read(STORE/'runs'/phase/'trace-capture.json')
             prior_runtime_units += max(len(capture['observations'])+len(capture['trace_ids'])+len(capture['scores']),
-                                       export_meter.spent if export_meter else 0)
+                                       export_meter.spent - previously_exported if export_meter else 0)
             verify_release(release)
             verify_prior(ROOT)
             print(json.dumps({k:result[k] for k in ('phase','status','notes','questions','evolution_counter',

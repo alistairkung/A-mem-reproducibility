@@ -1,4 +1,7 @@
 """Bound trace, observation and score emissions for the GPT expansion."""
+from amem_repro.openrouter import CampaignLedger, BudgetStop
+
+
 class ServiceUnits:
     """Admission meter shared by all exporter and score-worker threads in one service allocation."""
     def __init__(self, limit):
@@ -52,3 +55,15 @@ class MeteredRuntimeClient:
 
     def __getattr__(self, name):
         return getattr(self.client, name)
+
+class ObservedCampaignLedger(CampaignLedger):
+    """Check tracing after the generation starts and before reserving its request."""
+    def observe_phase(self, phase, check):
+        self.observed_phase = phase
+        self.check_observations = check
+
+    def reserve(self, phase, stage, request):
+        if getattr(self, 'observed_phase', None) != phase:
+            raise BudgetStop('No observation admission for this expansion phase')
+        self.check_observations()
+        return super().reserve(phase, stage, request)

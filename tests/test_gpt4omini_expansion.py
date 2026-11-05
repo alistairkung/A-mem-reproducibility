@@ -47,3 +47,18 @@ def test_failed_gate_consumes_same_claim_for_all_output_names(tmp_path):
     assert gate['reserve_gate'](tmp_path,tmp_path/'first').limit==1382
     with pytest.raises(FileExistsError):
         gate['reserve_gate'](tmp_path,tmp_path/'second')
+
+
+def test_latched_observation_failure_prevents_even_financial_admission(tmp_path):
+    import pytest
+    from scripts.gpt4omini_service import ObservedCampaignLedger, ServiceUnits
+    from amem_repro.openrouter import SCIENTIFIC_BINDING
+    ledger = ObservedCampaignLedger(tmp_path/'budget.sqlite', campaign_root=tmp_path, binding=SCIENTIFIC_BINDING)
+    meter = ServiceUnits(1)
+    def check():
+        if meter.exhausted:raise RuntimeError('critical span missing')
+    ledger.observe_phase('paid', check)
+    with pytest.raises(RuntimeError):meter.admit('trace')
+    with pytest.raises(RuntimeError, match='critical span missing'):
+        ledger.reserve('paid', 'metadata', {})
+    assert ledger.totals()['attempts']==0
