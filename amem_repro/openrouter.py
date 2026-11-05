@@ -28,21 +28,42 @@ BASE_URL = OPENROUTER_CONFIG['model']['base_url']
 FULL_CELLS = {'conv-44':(675,158), 'conv-49':(509,196), 'conv-50':(568,204)}
 ABLATION_CONDITIONS = ('evolution_only', 'neither', 'linking_only')
 ABLATION_POLICY = 'gpt4omini-conv49-four-condition-20261105-v1'
-CELL_ORDER = (*FULL_CELLS, *(f'{condition}-conv-49' for condition in ABLATION_CONDITIONS))
+ACCEPTED_ORDER = (*FULL_CELLS, *(f'{condition}-conv-49' for condition in ABLATION_CONDITIONS))
+
+EXPANSION_CELLS = tuple(f'{condition}-{conversation}' for condition in ABLATION_CONDITIONS
+                        for conversation in ('conv-50', 'conv-44'))
+CELL_ORDER = (*ACCEPTED_ORDER, *EXPANSION_CELLS)
+EXPANSION_POLICY = 'gpt4omini-six-cell-expansion-20261105-v1'
+CELL_SERVICE_UNITS = 13_500
+# MicroUSD per unit at the first Core overage tier. Reserve as if every unit is billable.
+SERVICE_UNIT_MICROUSD = 80
+CELL_SERVICE_RESERVE = CELL_SERVICE_UNITS * SERVICE_UNIT_MICROUSD
+PROGRAM_SERVICE_RESERVE = (6 * CELL_SERVICE_UNITS + 2_500) * SERVICE_UNIT_MICROUSD
+
+
+def ablation_policy(key):
+    return EXPANSION_POLICY if key in EXPANSION_CELLS else ABLATION_POLICY
+
+
+def predecessor_filename(key):
+    if key == EXPANSION_CELLS[0]:
+        return 'expansion-frontier.json'
+    return 'ablation-frontier.json' if key == ACCEPTED_ORDER[3] else 'frontier.json'
 
 
 def cell_key(conversation, condition='full'):
     if condition == 'full' and conversation in FULL_CELLS:
         return conversation
-    if condition in ABLATION_CONDITIONS and conversation == 'conv-49':
+    if condition in ABLATION_CONDITIONS and conversation in FULL_CELLS:
         return f'{condition}-{conversation}'
     raise BudgetStop('Unapproved condition/conversation')
 
 
 def cell_parts(key):
     for condition in ABLATION_CONDITIONS:
-        if key == f'{condition}-conv-49':
-            return 'conv-49', condition
+        for conversation in FULL_CELLS:
+            if key == f'{condition}-{conversation}':
+                return conversation, condition
     if key in FULL_CELLS:
         return key, 'full'
     raise BudgetStop('Unapproved cell identity')
@@ -241,7 +262,7 @@ class CampaignLedger:
         if cell=='conv-44':return
         previous=list(CELL_ORDER[:CELL_ORDER.index(cell)])
         seal=approval.get('previous_acceptance_sha256')
-        path=self.root/'outcomes'/previous[-1]/('ablation-frontier.json' if cell==CELL_ORDER[3] else 'frontier.json')
+        path=self.root/'outcomes'/previous[-1]/predecessor_filename(cell)
         if path.is_symlink() or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=seal:
             raise BudgetStop('Missing verified predecessor acceptance')
         cert=json.loads(path.read_bytes())
@@ -270,7 +291,7 @@ class CampaignLedger:
             raise BudgetStop('Explicit exact campaign/cell approval required')
         cell=approval_cell(approval)
         if approval['condition']!='full' and (
-                approval.get('ablation_policy')!=ABLATION_POLICY
+                approval.get('ablation_policy')!=ablation_policy(cell)
                 or approval['binding'].get('condition')!=approval['condition']
                 or approval['binding'].get('conversation_id')!=approval['conversation']):
             raise BudgetStop('Exact authorised ablation binding required')
@@ -342,7 +363,12 @@ class CampaignLedger:
                     JOIN phases p ON p.id=a.phase WHERE json_extract(p.approval,'$.conversation')=?
                     AND json_extract(p.approval,'$.condition')=?""",(cell,approval['condition'])).fetchone()
                 campaign_cap=15_000_000 if approval['condition']=='full' else 1_147_803+15_000_000
-                if (cell_spent+reserve > 5_000_000 or spent+reserve > campaign_cap or spent+reserve > 42_000_000
+                cell_cap=5_000_000
+                if approval_cell(approval) in EXPANSION_CELLS:
+                    cell_cap -= CELL_SERVICE_RESERVE
+                    campaign_cap = min(42_000_000-PROGRAM_SERVICE_RESERVE,
+                                       2_032_817 + 6*cell_cap)
+                if (cell_spent+reserve > cell_cap or spent+reserve > campaign_cap or spent+reserve > 42_000_000
                         or (kind=='compatibility' and kind_spent+reserve > 250_000)
                         or (kind=='compatibility' and kind_count>=8)
                         or (kind=='baseline' and baseline_count>=2*sum(FULL_CELLS[cell]))):

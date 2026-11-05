@@ -2,6 +2,7 @@
 import argparse
 from decimal import Decimal
 import hashlib
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sqlite3
@@ -10,16 +11,16 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from amem_repro.config import fingerprint
-from amem_repro.openrouter import CampaignLedger,FULL_CELLS,CELL_ORDER,cell_parts,approval_cell,cell_store,save_new
+from amem_repro.openrouter import CampaignLedger,FULL_CELLS,CELL_ORDER,ACCEPTED_ORDER,EXPANSION_CELLS,PROGRAM_SERVICE_RESERVE,cell_parts,approval_cell,cell_store,save_new
 
 def read(p):return json.loads(p.read_bytes())
 
-def seal(campaign,cell,org_units,*,ablation=False):
+def seal(campaign,cell,org_units,*,ablation=False,expansion=False):
     from amem_repro.gpt4omini_campaign import verify_accepted_cell
     from scripts.gpt4omini_finance import verify_accepted_finances
     verify_accepted_cell(campaign,cell)
     verify_accepted_finances(campaign,cell)
-    order=list(CELL_ORDER if ablation else FULL_CELLS)
+    order=list(CELL_ORDER if expansion else ACCEPTED_ORDER if ablation else FULL_CELLS)
     accepted=order[:order.index(cell)+1]
     out=campaign/'outcomes'/cell
     store=cell_store(campaign,cell)
@@ -61,9 +62,28 @@ def seal(campaign,cell,org_units,*,ablation=False):
     service_fee=max(Decimal(0),Decimal(service_units-100000)*8/100000)
     affordable=(spent+2*future+service_fee<=42 and all(2*costs[cell_parts(c)[0]]<=5 for c in next_cells)
                 and (service_units<=100000 if ablation else (not next_cells or org_units+32500<=100000)))
+    if expansion:
+        if not ablation or cell not in (ACCEPTED_ORDER[-1], *EXPANSION_CELLS) or org_units < 88674:
+            raise ValueError('Expansion requires verified service usage and the accepted six-cell prefix')
+        affordable = (spent + 2*future + PROGRAM_SERVICE_RESERVE/Decimal(1000000) <= 42
+                      and all(2*costs[cell_parts(c)[0]] + Decimal('1.08') <= 5 for c in next_cells))
+    capacity_path = None
+    if expansion:
+        capacity_path = out/'expansion-capacity.json'
+        capacity = read(capacity_path)
+        observed = datetime.fromisoformat(capacity['observed_at'])
+        age = (datetime.now(timezone.utc)-observed).total_seconds()
+        if (capacity.get('verified') is not True or capacity.get('accepted_cell') != cell
+                or capacity.get('plan') != 'Core' or capacity.get('included_units') != 100000
+                or Decimal(capacity['marginal_usd_per_100k']) != 8
+                or capacity['org_units_conservative'] != org_units or not 0 <= age <= 3600
+                or org_units < max(capacity['observed_units'],capacity['metered_units_lower_bound'])
+                or capacity.get('phase_sha256') != hashlib.sha256((store/'runs'/phase/'phase.json').read_bytes()).hexdigest()):
+            raise ValueError('Fresh phase-bound organization capacity proof required')
     files={}
     paths=[store/'reconciliation.json',*store.glob('generation-readback-*'),store/'runs',store/'cache',store/'frozen',
            out/'acceptance-spec.json',out/'acceptance-standards.json']
+    if capacity_path: paths.append(capacity_path)
     for path in paths:
         for f in ([path] if path.is_file() else path.rglob('*')):
             if f.is_file():files[str(f.relative_to(campaign))]=hashlib.file_digest(f.open('rb'),'sha256').hexdigest()
@@ -75,12 +95,16 @@ def seal(campaign,cell,org_units,*,ablation=False):
             'service_fee_scenario_usd':str(service_fee),'org_units_conservative':org_units,'remaining_contingency_usd':8}}
     result['forecast']['remaining_authorised_model_usd']=str(future)
     result['forecast']['service_capacity_scenario_units']=service_units
-    save_new(out/('ablation-frontier.json' if ablation and cell=='conv-50' else 'frontier.json'),result)
+    if expansion:
+        result['forecast']['program_service_reserve_microusd']=PROGRAM_SERVICE_RESERVE
+        result['forecast']['capacity_path']=str(capacity_path.relative_to(campaign))
+        result['forecast']['capacity_sha256']=files[result['forecast']['capacity_path']]
+    save_new(out/('expansion-frontier.json' if expansion and cell==ACCEPTED_ORDER[-1] else 'ablation-frontier.json' if ablation and cell=='conv-50' else 'frontier.json'),result)
     return result
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--cell',required=True,choices=CELL_ORDER)
-    parser.add_argument('--ablation',action='store_true')
+    parser.add_argument('--expansion',action='store_true');parser.add_argument('--ablation',action='store_true')
     parser.add_argument('--org-units',type=int,required=True);args=parser.parse_args()
-    result=seal((ROOT/'artifacts/gpt4omini').resolve(),args.cell,args.org_units,ablation=args.ablation)
+    result=seal((ROOT/'artifacts/gpt4omini').resolve(),args.cell,args.org_units,ablation=args.ablation,expansion=args.expansion)
     print(json.dumps({k:v for k,v in result.items() if k!='files'}))

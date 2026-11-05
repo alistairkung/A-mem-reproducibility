@@ -86,23 +86,24 @@ def main(output):
         if ledger.totals()['attempts']!=12:raise RuntimeError('Duplicate checkpoint transmission')
         ablated=[]
         for condition in ABLATION_CONDITIONS:
-            leaf=None;accounting=None
-            for seq in range(3):
-                actual=run_actual_phase(output/condition,root=ROOT,phase=f'{output.name}-{condition}-p{seq}',
-                    ledger=accounting,parent=leaf,fail_decisions={3:'malformed',4:'length'},
-                    cloud_client=client,real_cloud=True,runtime_assets=True,
-                    conversation='conv-49',condition=condition)
-                leaf=actual['receipt'];accounting=actual['ledger']
-                if not leaf['recoverable_length_failure'] or (leaf['notes'],leaf['evolution_counter'])!=(4*(seq+1),2*(seq+1)):
-                    raise RuntimeError('Ablation original fallback/checkpoint cloud gate failed')
-            if accounting.totals()['attempts']!=24:raise RuntimeError('Ablation repeated a processed request')
-            ablated.append(condition)
+            for conversation in ('conv-50','conv-44'):
+                leaf=None;accounting=None
+                for seq in range(3):
+                    actual=run_actual_phase(output/condition/conversation,root=ROOT,phase=f'{output.name}-{condition}-{conversation}-p{seq}',
+                        ledger=accounting,parent=leaf,fail_decisions={3:'malformed',4:'length'},
+                        cloud_client=client,real_cloud=True,runtime_assets=True,
+                        conversation=conversation,condition=condition)
+                    leaf=actual['receipt'];accounting=actual['ledger']
+                    if not leaf['recoverable_length_failure'] or (leaf['notes'],leaf['evolution_counter'])!=(4*(seq+1),2*(seq+1)):
+                        raise RuntimeError('Ablation original fallback/checkpoint cloud gate failed')
+                if accounting.totals()['attempts']!=24:raise RuntimeError('Ablation repeated a processed request')
+                ablated.append(f'{condition}-{conversation}')
         result={'campaign_id':CAMPAIGN,'source_sha256':source,'real_runner':True,
             'native_contracts_verified':True,'remote_observations_verified':runtime['verified'],
             'experiments_verified':experiments['verified'],'replay_equivalence':True,
             'full_action_equivalence':True,'two_actual_checkpoint_continuations':True,
-            'ablated_checkpoint_conditions':ablated,
-            'network_llm_requests':0,'mock_native_completions':44*3+84,
+            'ablated_checkpoint_conditions':list(ABLATION_CONDITIONS),'expansion_checkpoint_cells':ablated,
+            'network_llm_requests':0,'mock_native_completions':44*3+12+6*24,
             'observability_policy':'run2-audit-essential-v1','flush_at':16,
             'runtime':runtime,'experiments':experiments,'executor_phases':phases,
             'gate_script_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),

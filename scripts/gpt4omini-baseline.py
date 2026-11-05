@@ -15,7 +15,7 @@ sys.path.insert(0,str(ROOT))
 DIRECTORY=(ROOT/'artifacts/gpt4omini').resolve()
 
 
-from amem_repro.openrouter import FULL_CELLS,CELL_ORDER,ABLATION_CONDITIONS,ABLATION_POLICY,cell_key,cell_store
+from amem_repro.openrouter import FULL_CELLS,CELL_ORDER,ABLATION_CONDITIONS,CELL_SERVICE_UNITS,CELL_SERVICE_RESERVE,PROGRAM_SERVICE_RESERVE,EXPANSION_CELLS,ablation_policy,predecessor_filename,cell_key,cell_store
 CELL='conv-44'
 CONDITION='full'
 KEY=CELL
@@ -34,12 +34,17 @@ def verify_release(release):
         raise RuntimeError('Paid campaign namespace cannot alias another artifact directory')
     if release['binding']['conversation_id']!=CELL:raise RuntimeError('Approval belongs to another cell')
     if release['binding']['condition']!=CONDITION:raise RuntimeError('Approval belongs to another condition')
-    if CONDITION!='full' and release.get('ablation_policy')!=ABLATION_POLICY:
+    if CONDITION!='full' and release.get('ablation_policy')!=ablation_policy(KEY):
         raise RuntimeError('Explicit three-cell ablation grant required')
     if release.get('approved') is not True or release['binding']['campaign_id']!='amem-gpt4omini-openrouter-20261104-v1':
         raise RuntimeError('Explicit reviewed one-cell campaign approval required')
     if fingerprint(source_fingerprint(ROOT))!=release['binding']['source_sha256']:
         raise RuntimeError('Frozen campaign source changed')
+    if KEY in EXPANSION_CELLS:
+        if (release['limits'].get('max_new_langfuse_units') != CELL_SERVICE_UNITS
+                or release['limits'].get('service_reserve_microusd') != CELL_SERVICE_RESERVE
+                or release['forecast'].get('program_service_reserve_microusd') != PROGRAM_SERVICE_RESERVE):
+            raise RuntimeError('Expansion service allocation differs from reviewed policy')
     verify_inventory(ROOT,release['files'])
     for name,digest in release['files'].items():
         if name.startswith('artifacts/'):
@@ -70,6 +75,8 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         raise RuntimeError('Source-bound real-runner native/cloud gate incomplete')
     if CONDITION!='full' and gate.get('ablated_checkpoint_conditions')!=list(ABLATION_CONDITIONS):
         raise RuntimeError('All ablation executor/cloud gates required')
+    if KEY in EXPANSION_CELLS and gate.get('expansion_checkpoint_cells')!=list(EXPANSION_CELLS):
+        raise RuntimeError('All six expansion checkpoint gates required')
     verify_inventory(Path(gate_path).parent,gate['files'])
     if gate.get('gate_script_sha256')!=hashlib.sha256((ROOT/'scripts/gpt4omini-gate.py').read_bytes()).hexdigest():
         raise RuntimeError('Executed cloud-gate script differs from this release')
@@ -86,18 +93,18 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     evidence=read(DIRECTORY/'compatibility-v5/final-access-acceptance.json')
     if hashlib.sha256(original_finance.read_bytes()).hexdigest()!=evidence['files'][str(original_finance.relative_to(DIRECTORY))]:
         raise RuntimeError('Original reconciled account snapshot changed')
-    payload=read(VERIFICATION/'full-size-export.json')
+    payload=read(VERIFICATION/(f'full-size-{CELL}.json' if KEY in EXPANSION_CELLS else 'full-size-export.json'))
     full=payload['results']['complete']
     if (not payload['verified'] or payload['source_sha256']!=fingerprint(sources)
             or payload['script_sha256']!=hashlib.sha256((ROOT/'scripts/gpt4omini-reporting-proof.py').read_bytes()).hexdigest()
             or (full['items'],full['scores'],full['original_qa_associations'])!=(
-                (392,5568,196) if CONDITION!='full' else (316,4494,158))
+                {'conv-50':(408,5804,204),'conv-44':(316,4494,158)}[CELL] if KEY in EXPANSION_CELLS else (392,5568,196) if CONDITION!='full' else (316,4494,158))
             or full['max_batch_bytes']>=32*1024*1024 or not full['readonly_resume_has_no_additional_export_or_score']
             or not payload['results']['partial']['resume_rejected_without_additional_spans_scores_or_import']):
         raise RuntimeError('Full-size reporting integrity evidence failed')
     verify_inventory(ROOT,read(DIRECTORY/'compatibility-release-tail/approval.json')['query_evidence'])
     files=dict(sources['files'])
-    paths=[FIRST_VERIFY/'programme-cost-plan.json',VERIFICATION/'full-size-export.json',VERIFICATION/'capacity-refresh.json',FIRST_VERIFY/'forecast.json',FIRST_VERIFY/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
+    paths=[FIRST_VERIFY/'programme-cost-plan.json',VERIFICATION/(f'full-size-{CELL}.json' if KEY in EXPANSION_CELLS else 'full-size-export.json'),VERIFICATION/'capacity-refresh.json',FIRST_VERIFY/'forecast.json',FIRST_VERIFY/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
         *[p for name in ('compatibility-release','compatibility-release-tail') for p in (DIRECTORY/name).rglob('*') if p.is_file()],
         DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
@@ -110,7 +117,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         ROOT/'tests/test_gpt4omini_executor.py',ROOT/'tests/test_gpt4omini_full_executor.py']
     if KEY!='conv-44':
         previous=CELL_ORDER[CELL_ORDER.index(KEY)-1]
-        frontier_path=DIRECTORY/'outcomes'/previous/('ablation-frontier.json' if KEY==CELL_ORDER[3] else 'frontier.json')
+        frontier_path=DIRECTORY/'outcomes'/previous/predecessor_filename(KEY)
         frontier=read(frontier_path)
         if frontier['next_cell']!=KEY or not frontier['affordable']:
             raise RuntimeError('Predecessor acceptance or affordability failed')
@@ -130,6 +137,13 @@ def freeze(gate_path, reviewed_commit, merge_commit):
             paths.append(proof)
             for name,digest in predecessor_files(DIRECTORY,c).items():
                 files[str((DIRECTORY/name).relative_to(ROOT))]=digest
+        if KEY in EXPANSION_CELLS:
+            capacity_path=DIRECTORY/'outcomes'/previous/'expansion-capacity.json'
+            if hashlib.sha256(capacity_path.read_bytes()).hexdigest()!=frontier['forecast']['capacity_sha256']:
+                raise RuntimeError('Expansion capacity proof changed')
+            age=(datetime.now(timezone.utc)-datetime.fromisoformat(read(capacity_path)['observed_at'])).total_seconds()
+            if not 0<=age<=3600:raise RuntimeError('Expansion capacity proof expired')
+            paths.append(capacity_path)
         paths.append(frontier_path)
     for path in paths:files[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
     suite=(VERIFICATION/'full-suite.txt' if KEY!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt').read_text()
@@ -144,7 +158,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         'provider_contract_policy':'strict-original-v1',
         'max_output_tokens_by_stage':stage_output_limits(OPENROUTER_CONFIG),
         'observability_policy':'run2-audit-essential-v1'}
-    release={'approved':True,'approved_by':('User 5 November three conv-49 ablations; ' if CONDITION!='full'
+    release={'approved':True,'approved_by':('User 5 November six-cell expansion; ' if KEY in EXPANSION_CELLS else 'User 5 November three conv-49 ablations; ' if CONDITION!='full'
                 else 'User three Full baselines in order; this approval covers ')+KEY,
         'approved_at':datetime.now(timezone.utc).isoformat(),'binding':binding,'files':files,
         'reviewed_commit':reviewed_commit,'merge_commit':merge_commit,
@@ -153,9 +167,10 @@ def freeze(gate_path, reviewed_commit, merge_commit):
                   'max_new_langfuse_units':13500 if CONDITION!='full' else 30000},
         'gate_path':str(Path(gate_path).relative_to(ROOT)),
         'forecast':read(FIRST_VERIFY/'forecast.json') if KEY=='conv-44' else frontier['forecast']}
-    if CONDITION!='full':release['ablation_policy']=ABLATION_POLICY
+    if CONDITION!='full':release['ablation_policy']=ablation_policy(KEY)
     if KEY!='conv-44':
         release['previous_acceptance_sha256']=hashlib.sha256(frontier_path.read_bytes()).hexdigest()
+    if KEY in EXPANSION_CELLS:release['limits']['service_reserve_microusd']=CELL_SERVICE_RESERVE
     verify_release(release)
     save_new(STORE/'frozen/campaign-approval.json',release)
     print(json.dumps({'approved':True,'campaign':binding['campaign_id'],'source':binding['source_sha256']}))
@@ -247,7 +262,7 @@ def execute():
                 'approved_at':datetime.now(timezone.utc).isoformat(),'binding':release['binding'],
                 'kind':'baseline','condition':CONDITION,'conversation':CELL,'phase':phase,
                 'release_sha256':fingerprint(release),'retained_access_prefix':PREFIX}
-            if CONDITION!='full':approval['ablation_policy']=ABLATION_POLICY
+            if CONDITION!='full':approval['ablation_policy']=ablation_policy(KEY)
             if KEY!='conv-44':approval['previous_acceptance_sha256']=release['previous_acceptance_sha256']
             if parent:
                 approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
@@ -319,7 +334,7 @@ if __name__=='__main__':
     parser.add_argument('--condition',choices=('full',*ABLATION_CONDITIONS),default='full')
     args=parser.parse_args()
     CELL=args.cell;CONDITION=args.condition;KEY=cell_key(CELL,CONDITION);STORE=cell_store(DIRECTORY,KEY)
-    VERIFICATION=(DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
+    VERIFICATION=(DIRECTORY/'verification/six-cell-expansion' if KEY in EXPANSION_CELLS else DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
                   FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release')
     try:
         if args.execute:execute()

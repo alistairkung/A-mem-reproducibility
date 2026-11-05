@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 import httpx,numpy as np
 from amem_repro.gpt4omini_campaign import execute_phase
-from amem_repro.openrouter import (cell_store,cell_key,cell_parts,CELL_ORDER,ABLATION_POLICY,
+from amem_repro.openrouter import (cell_store,cell_key,cell_parts,CELL_ORDER,ablation_policy,predecessor_filename,
                                   CampaignLedger,SCIENTIFIC_BINDING,MODEL,save_new)
 from amem_repro.config import fingerprint,source_fingerprint
 from amem_repro.measurements import TokenCounter
@@ -47,8 +47,9 @@ def seed_predecessors(ledger, key):
                      'ledger_prefix_sha256':fingerprint(history),'files':files}
         path=ledger.root/'outcomes'/prior/'frontier.json'
         save_new(path,certificate)
-        if prior=='conv-50':
-            path=path.with_name('ablation-frontier.json');save_new(path,certificate)
+        name=predecessor_filename(CELL_ORDER[index+1])
+        if path.name!=name:
+            path=path.with_name(name);save_new(path,certificate)
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
@@ -64,7 +65,7 @@ def run_actual_phase(directory, *, root, phase='p0', ledger=None, parent=None,
     ledger=ledger or CampaignLedger(directory/'budget.sqlite',campaign_root=directory,binding=binding)
     key=cell_key(conversation,condition)
     approval={'approved':True,'binding':binding,'phase':phase,'kind':'baseline','condition':condition,'conversation':conversation}
-    if condition!='full':approval['ablation_policy']=ABLATION_POLICY
+    if condition!='full':approval['ablation_policy']=ablation_policy(cell_key(conversation,condition))
     if fresh and key!='conv-44':
         approval['previous_acceptance_sha256']=seed_predecessors(ledger,key)
     elif parent and key!='conv-44':
