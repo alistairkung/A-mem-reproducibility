@@ -56,3 +56,6 @@ Evolution Only condition is additional. Review and normally merge final outcomes
 Historical Full and DeepSeek receipts, approvals, caches, ledgers and research
 evidence remain immutable. All work runs in the isolated GPT checkout, preserving
 the original research checkout at `b8b3656` for its historical source aliases.
+
+Completed 5 November 2026. All three new cells passed independent acceptance as
+Clean. See the [four-condition results and matched question scores](gpt4omini-conv49-four-condition-results.md).

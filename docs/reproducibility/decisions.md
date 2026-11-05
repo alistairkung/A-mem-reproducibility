@@ -1282,3 +1282,19 @@ are authorised within the same cell cap, with raw outputs and Degraded status.
 Unsupported failures or scientific/financial/provenance/critical-observation
 problems stop. Reviewed reporting-only recovery may use saved outputs, never
 paid inference reruns. [Full specification](gpt4omini-conv49-ablation.md).
+
+### 5 November 2026 — four conv-49 conditions accepted; grant consumed
+
+Both independent reviews accepted Evolution Only, Neither and Linking Only as Clean.
+Each processed all 509 turns and 196 questions in a fresh memory build. Full remains
+the unchanged, accepted reference. Both remote scoring Experiments and all original
+question associations verified in every cell. The matched corrected F1 / BLEU-1
+interaction is −0.31 / −1.36 percentage points on this conversation.
+
+The three new cells added US$0.885014 conservative exposure. Final GPT-4o-mini
+campaign exposure is US$2.032817, including the prior US$0.058950 unknown-charge
+reservation; identified charges are US$1.96951635. Prepaid credit is US$48.01883265,
+the US$8 reserve is intact, and Langfuse overage is US$0. BLK-026 was mitigated
+by independently reviewed billing GETs without repeating inference. All three
+approvals are consumed. No additional cell, repetition or service overage is
+authorized. [Results, published question scores and receipts](gpt4omini-conv49-four-condition-results.md)
