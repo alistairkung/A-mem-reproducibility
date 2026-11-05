@@ -1298,3 +1298,18 @@ the US$8 reserve is intact, and Langfuse overage is US$0. BLK-026 was mitigated
 by independently reviewed billing GETs without repeating inference. All three
 approvals are consumed. No additional cell, repetition or service overage is
 authorized. [Results, published question scores and receipts](gpt4omini-conv49-four-condition-results.md)
+
+### 5 November 2026 — extend the matched GPT-4o-mini study to 558 questions
+
+The user authorizes implementation, independent review and normal merge, then
+six fresh cells in order: Evolution Only / conv-50 and conv-44, Neither / conv-50
+and conv-44, then Linking Only / conv-50 and conv-44. Use the conv-49 frozen
+science and existing fallback/checkpoint rules; each cell requires its own verified
+approvals, fresh memory/cache, complete cloud readback, cost reconciliation and
+independent acceptance. Preserve the six previously accepted cells and all old
+approvals, ledgers and receipts. No repetition or additional model is authorized.
+The US$50 ceiling, US$42 usable and US$8 protected remain. The user authorizes
+necessary, measured and durably bounded incremental Langfuse fees within US$42.
+Reserve service costs before inference and include the cell share within US$5.
+The consolidated report and its ordinary merge after independent review are
+authorized. The final coursework PDF and recorded presentation are out of scope.

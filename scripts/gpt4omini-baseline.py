@@ -15,7 +15,7 @@ sys.path.insert(0,str(ROOT))
 DIRECTORY=(ROOT/'artifacts/gpt4omini').resolve()
 
 
-from amem_repro.openrouter import FULL_CELLS,CELL_ORDER,ABLATION_CONDITIONS,ABLATION_POLICY,cell_key,cell_store
+from amem_repro.openrouter import FULL_CELLS,CELL_ORDER,ABLATION_CONDITIONS,CELL_SERVICE_UNITS,CELL_SERVICE_RESERVE,PROGRAM_SERVICE_RESERVE,EXPANSION_CELLS,ablation_policy,predecessor_filename,cell_key,cell_store
 CELL='conv-44'
 CONDITION='full'
 KEY=CELL
@@ -34,12 +34,17 @@ def verify_release(release):
         raise RuntimeError('Paid campaign namespace cannot alias another artifact directory')
     if release['binding']['conversation_id']!=CELL:raise RuntimeError('Approval belongs to another cell')
     if release['binding']['condition']!=CONDITION:raise RuntimeError('Approval belongs to another condition')
-    if CONDITION!='full' and release.get('ablation_policy')!=ABLATION_POLICY:
+    if CONDITION!='full' and release.get('ablation_policy')!=ablation_policy(KEY):
         raise RuntimeError('Explicit three-cell ablation grant required')
     if release.get('approved') is not True or release['binding']['campaign_id']!='amem-gpt4omini-openrouter-20261104-v1':
         raise RuntimeError('Explicit reviewed one-cell campaign approval required')
     if fingerprint(source_fingerprint(ROOT))!=release['binding']['source_sha256']:
         raise RuntimeError('Frozen campaign source changed')
+    if KEY in EXPANSION_CELLS:
+        if (release['limits'].get('max_new_langfuse_units') != CELL_SERVICE_UNITS
+                or release['limits'].get('service_reserve_microusd') != CELL_SERVICE_RESERVE
+                or release['forecast'].get('program_service_reserve_microusd') != PROGRAM_SERVICE_RESERVE):
+            raise RuntimeError('Expansion service allocation differs from reviewed policy')
     verify_inventory(ROOT,release['files'])
     for name,digest in release['files'].items():
         if name.startswith('artifacts/'):
@@ -70,6 +75,8 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         raise RuntimeError('Source-bound real-runner native/cloud gate incomplete')
     if CONDITION!='full' and gate.get('ablated_checkpoint_conditions')!=list(ABLATION_CONDITIONS):
         raise RuntimeError('All ablation executor/cloud gates required')
+    if KEY in EXPANSION_CELLS and gate.get('expansion_checkpoint_cells')!=list(EXPANSION_CELLS):
+        raise RuntimeError('All six expansion checkpoint gates required')
     verify_inventory(Path(gate_path).parent,gate['files'])
     if gate.get('gate_script_sha256')!=hashlib.sha256((ROOT/'scripts/gpt4omini-gate.py').read_bytes()).hexdigest():
         raise RuntimeError('Executed cloud-gate script differs from this release')
@@ -86,18 +93,18 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     evidence=read(DIRECTORY/'compatibility-v5/final-access-acceptance.json')
     if hashlib.sha256(original_finance.read_bytes()).hexdigest()!=evidence['files'][str(original_finance.relative_to(DIRECTORY))]:
         raise RuntimeError('Original reconciled account snapshot changed')
-    payload=read(VERIFICATION/'full-size-export.json')
+    payload=read(VERIFICATION/(f'full-size-{CELL}.json' if KEY in EXPANSION_CELLS else 'full-size-export.json'))
     full=payload['results']['complete']
     if (not payload['verified'] or payload['source_sha256']!=fingerprint(sources)
             or payload['script_sha256']!=hashlib.sha256((ROOT/'scripts/gpt4omini-reporting-proof.py').read_bytes()).hexdigest()
             or (full['items'],full['scores'],full['original_qa_associations'])!=(
-                (392,5568,196) if CONDITION!='full' else (316,4494,158))
+                {'conv-50':(408,5804,204),'conv-44':(316,4494,158)}[CELL] if KEY in EXPANSION_CELLS else (392,5568,196) if CONDITION!='full' else (316,4494,158))
             or full['max_batch_bytes']>=32*1024*1024 or not full['readonly_resume_has_no_additional_export_or_score']
             or not payload['results']['partial']['resume_rejected_without_additional_spans_scores_or_import']):
         raise RuntimeError('Full-size reporting integrity evidence failed')
     verify_inventory(ROOT,read(DIRECTORY/'compatibility-release-tail/approval.json')['query_evidence'])
     files=dict(sources['files'])
-    paths=[FIRST_VERIFY/'programme-cost-plan.json',VERIFICATION/'full-size-export.json',VERIFICATION/'capacity-refresh.json',FIRST_VERIFY/'forecast.json',FIRST_VERIFY/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
+    paths=[FIRST_VERIFY/'programme-cost-plan.json',VERIFICATION/(f'full-size-{CELL}.json' if KEY in EXPANSION_CELLS else 'full-size-export.json'),VERIFICATION/'capacity-refresh.json',FIRST_VERIFY/'forecast.json',FIRST_VERIFY/'provider-audit.json',Path(gate_path),DIRECTORY/'compatibility-v5/final-access-acceptance.json',DIRECTORY/'compatibility-v5/financial-readback-after-success.json',DIRECTORY/'compatibility-v5/private-credential-binding.json',
         *[p for name in ('compatibility-release','compatibility-release-tail') for p in (DIRECTORY/name).rglob('*') if p.is_file()],
         DIRECTORY/'compatibility-v2/plan-v2.json',
         DIRECTORY/'verification/prior-preservation-authoritative-v2.json',
@@ -105,12 +112,12 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         VERIFICATION/'baseline-preflight.json',VERIFICATION/'full-suite.txt' if KEY!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt',
         VERIFICATION/'baseline-standards-review.json',VERIFICATION/'baseline-spec-review.json',
         VERIFICATION/'archive-equivalence.json',
-        ROOT/'scripts/gpt4omini-accept.py',ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',ROOT/'scripts/gpt4omini-reporting-proof.py',
+        ROOT/'scripts/gpt4omini_service.py',ROOT/'scripts/gpt4omini-accept.py',ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',ROOT/'scripts/gpt4omini-reporting-proof.py',
         ROOT/'tests/gpt4omini_fixture.py',ROOT/'tests/gpt4omini_executor_fixture.py',
         ROOT/'tests/test_gpt4omini_executor.py',ROOT/'tests/test_gpt4omini_full_executor.py']
     if KEY!='conv-44':
         previous=CELL_ORDER[CELL_ORDER.index(KEY)-1]
-        frontier_path=DIRECTORY/'outcomes'/previous/('ablation-frontier.json' if KEY==CELL_ORDER[3] else 'frontier.json')
+        frontier_path=DIRECTORY/'outcomes'/previous/predecessor_filename(KEY)
         frontier=read(frontier_path)
         if frontier['next_cell']!=KEY or not frontier['affordable']:
             raise RuntimeError('Predecessor acceptance or affordability failed')
@@ -130,6 +137,13 @@ def freeze(gate_path, reviewed_commit, merge_commit):
             paths.append(proof)
             for name,digest in predecessor_files(DIRECTORY,c).items():
                 files[str((DIRECTORY/name).relative_to(ROOT))]=digest
+        if KEY in EXPANSION_CELLS:
+            capacity_path=DIRECTORY/'outcomes'/previous/'expansion-capacity.json'
+            if hashlib.sha256(capacity_path.read_bytes()).hexdigest()!=frontier['forecast']['capacity_sha256']:
+                raise RuntimeError('Expansion capacity proof changed')
+            age=(datetime.now(timezone.utc)-datetime.fromisoformat(read(capacity_path)['observed_at'])).total_seconds()
+            if not 0<=age<=3600:raise RuntimeError('Expansion capacity proof expired')
+            paths.append(capacity_path)
         paths.append(frontier_path)
     for path in paths:files[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
     suite=(VERIFICATION/'full-suite.txt' if KEY!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt').read_text()
@@ -144,7 +158,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         'provider_contract_policy':'strict-original-v1',
         'max_output_tokens_by_stage':stage_output_limits(OPENROUTER_CONFIG),
         'observability_policy':'run2-audit-essential-v1'}
-    release={'approved':True,'approved_by':('User 5 November three conv-49 ablations; ' if CONDITION!='full'
+    release={'approved':True,'approved_by':('User 5 November six-cell expansion; ' if KEY in EXPANSION_CELLS else 'User 5 November three conv-49 ablations; ' if CONDITION!='full'
                 else 'User three Full baselines in order; this approval covers ')+KEY,
         'approved_at':datetime.now(timezone.utc).isoformat(),'binding':binding,'files':files,
         'reviewed_commit':reviewed_commit,'merge_commit':merge_commit,
@@ -153,9 +167,10 @@ def freeze(gate_path, reviewed_commit, merge_commit):
                   'max_new_langfuse_units':13500 if CONDITION!='full' else 30000},
         'gate_path':str(Path(gate_path).relative_to(ROOT)),
         'forecast':read(FIRST_VERIFY/'forecast.json') if KEY=='conv-44' else frontier['forecast']}
-    if CONDITION!='full':release['ablation_policy']=ABLATION_POLICY
+    if CONDITION!='full':release['ablation_policy']=ablation_policy(KEY)
     if KEY!='conv-44':
         release['previous_acceptance_sha256']=hashlib.sha256(frontier_path.read_bytes()).hexdigest()
+    if KEY in EXPANSION_CELLS:release['limits']['service_reserve_microusd']=CELL_SERVICE_RESERVE
     verify_release(release)
     save_new(STORE/'frozen/campaign-approval.json',release)
     print(json.dumps({'approved':True,'campaign':binding['campaign_id'],'source':binding['source_sha256']}))
@@ -201,11 +216,14 @@ def execute():
                          'tiktoken o200k_base; hosted prompt overhead unverified; API usage authoritative',version('tiktoken'))
     if (STORE/'cache').exists() or (STORE/'runs').exists():
         raise RuntimeError('Fresh baseline requires an unused primary cache and run namespace')
-    ledger=CampaignLedger(DIRECTORY/'budget.sqlite',campaign_root=DIRECTORY,binding=release['binding'])
+    from scripts.gpt4omini_service import ObservedCampaignLedger
+    ledger_type = ObservedCampaignLedger if KEY in EXPANSION_CELLS else CampaignLedger
+    ledger=ledger_type(DIRECTORY/'budget.sqlite',campaign_root=DIRECTORY,binding=release['binding'])
     key=os.environ['OPENROUTER_API_KEY']
     if hashlib.sha256(key.encode()).hexdigest()!=read(DIRECTORY/'compatibility-v5/private-credential-binding.json')['sha256']:
         raise RuntimeError('Verified provider credential changed')
-    with httpx.Client(headers={'Authorization':'Bearer '+key},timeout=120,
+    from contextlib import ExitStack
+    with ExitStack() as lifecycle, httpx.Client(headers={'Authorization':'Bearer '+key},timeout=120,
                       transport=httpx.HTTPTransport(retries=0),follow_redirects=False) as client:
         client._amem_credential=key
         from scripts.gpt4omini_finance import compare, snapshot, reconcile
@@ -238,6 +256,23 @@ def execute():
                 or not {'temperature','response_format','structured_outputs','max_tokens'}<=set(provider['supported_parameters'])):
             raise RuntimeError('Frozen provider route/pricing/capabilities changed')
         save_new(STORE/'frozen/route-before-baseline.json',endpoint.json())
+        if KEY in EXPANSION_CELLS:
+            capacity_path=DIRECTORY/release['forecast']['capacity_path']
+            if hashlib.sha256(capacity_path.read_bytes()).hexdigest()!=release['forecast']['capacity_sha256']:
+                raise RuntimeError('Cell capacity evidence changed before launch')
+            elapsed=(datetime.now(timezone.utc)-datetime.fromisoformat(read(capacity_path)['observed_at'])).total_seconds()
+            if not 0<=elapsed<=3600:
+                raise RuntimeError('Cell capacity reading expired before launch')
+        from scripts.gpt4omini_service import ServiceUnits, bind_score_meter, bounded_filter, MeteredRuntimeClient
+        export_meter = ServiceUnits(CELL_SERVICE_UNITS) if KEY in EXPANSION_CELLS else None
+        span_filter = bounded_filter(should_export_span, export_meter) if export_meter else should_export_span
+        cloud=Langfuse(public_key=os.environ['LANGFUSE_PUBLIC_KEY'],secret_key=os.environ['LANGFUSE_SECRET_KEY'],
+            base_url='https://cloud.langfuse.com',flush_at=16,should_export_span=span_filter,
+            environment='amem-gpt4omini',release=release['binding']['source_sha256'])
+        if export_meter:
+            original_score_task = bind_score_meter(cloud,export_meter)
+            lifecycle.callback(setattr,cloud._resources,'add_score_task',original_score_task)
+        lifecycle.callback(cloud.shutdown)
         parent=None;prior_runtime_units=0
         for sequence in range(FULL_CELLS[CELL][0]+1):
             verify_release(release)
@@ -247,16 +282,18 @@ def execute():
                 'approved_at':datetime.now(timezone.utc).isoformat(),'binding':release['binding'],
                 'kind':'baseline','condition':CONDITION,'conversation':CELL,'phase':phase,
                 'release_sha256':fingerprint(release),'retained_access_prefix':PREFIX}
-            if CONDITION!='full':approval['ablation_policy']=ABLATION_POLICY
+            if CONDITION!='full':approval['ablation_policy']=ablation_policy(KEY)
             if KEY!='conv-44':approval['previous_acceptance_sha256']=release['previous_acceptance_sha256']
             if parent:
                 approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
                     parent_path=str(STORE/'runs'/parent['phase']/'phase.json'))
             save_new(STORE/'frozen'/(phase+'-approval.json'),approval)
-            cloud=Langfuse(public_key=os.environ['LANGFUSE_PUBLIC_KEY'],secret_key=os.environ['LANGFUSE_SECRET_KEY'],
-                base_url='https://cloud.langfuse.com',flush_at=16,should_export_span=should_export_span,
-                environment='amem-gpt4omini',release=release['binding']['source_sha256'])
-            observer=LangfuseObserver(cloud,{**release['binding'],'run_id':phase,
+            runtime_meter = None
+            previously_exported = export_meter.spent if export_meter else 0
+            if export_meter:
+                runtime_meter = ServiceUnits(CELL_SERVICE_UNITS - previously_exported - 36*FULL_CELLS[CELL][1])
+            runtime_client=MeteredRuntimeClient(cloud,runtime_meter) if runtime_meter else cloud
+            observer=LangfuseObserver(runtime_client,{**release['binding'],'run_id':phase,
                 'execution_mode':'paid-gpt4omini-baseline','parent_run_id':parent['phase'] if parent else None})
             original_healthy=observer.assert_healthy
             from amem_repro.gpt4omini_campaign import file_signature
@@ -277,8 +314,13 @@ def execute():
                 for name in release['files']:
                     if name.startswith('artifacts/gpt4omini/'):
                         path=(ROOT/name).resolve(); legacy_signatures[path]=file_signature(path)
-            def service_healthy():
+            def observation_health():
                 original_healthy()
+                if export_meter and (export_meter.exhausted or runtime_meter.exhausted):
+                    raise RuntimeError('Service allocation exhausted')
+            if export_meter: ledger.observe_phase(phase, observation_health)
+            def service_healthy():
+                observation_health()
                 if any(file_signature(path)!=signature for path,signature in legacy_signatures.items()):
                     raise RuntimeError('Historical evidence changed; no next paid operation')
                 for path,(target,stat) in legacy_links.items():
@@ -295,9 +337,18 @@ def execute():
             observer.assert_healthy=service_healthy
             try:
                 result=execute_phase(approval,ledger,observer=observer,client=client,token_counter=counter,root=ROOT)
-            finally:cloud.shutdown()
+            finally:
+                cloud.flush()
+                if export_meter:
+                    save_new(STORE/'service'/f'{phase}.json',{
+                        'maximum_units':export_meter.limit-previously_exported,'admitted_units':export_meter.spent-previously_exported,
+                        'runtime_units_admitted':runtime_meter.spent,
+                        'stopped':export_meter.exhausted or runtime_meter.exhausted})
+            if export_meter and (export_meter.exhausted or runtime_meter.exhausted):
+                raise RuntimeError('Service limit reached; no continuation')
             capture=read(STORE/'runs'/phase/'trace-capture.json')
-            prior_runtime_units+=len(capture['observations'])+len(capture['trace_ids'])+len(capture['scores'])
+            prior_runtime_units += max(len(capture['observations'])+len(capture['trace_ids'])+len(capture['scores']),
+                                       export_meter.spent - previously_exported if export_meter else 0)
             verify_release(release)
             verify_prior(ROOT)
             print(json.dumps({k:result[k] for k in ('phase','status','notes','questions','evolution_counter',
@@ -319,7 +370,7 @@ if __name__=='__main__':
     parser.add_argument('--condition',choices=('full',*ABLATION_CONDITIONS),default='full')
     args=parser.parse_args()
     CELL=args.cell;CONDITION=args.condition;KEY=cell_key(CELL,CONDITION);STORE=cell_store(DIRECTORY,KEY)
-    VERIFICATION=(DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
+    VERIFICATION=(DIRECTORY/'verification/six-cell-release-v2' if KEY in EXPANSION_CELLS else DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
                   FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release')
     try:
         if args.execute:execute()

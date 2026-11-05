@@ -407,7 +407,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                 if count!=2*(nturns+nqa):raise BudgetStop('Full baseline original request count differs')
             receipt['experiments']=import_results(views,context,client=observer.client,
                                                 traces=original_qa_traces(capture))
-            receipt['status']='degraded' if post_scoring_failures or checkpoint or (cell=='conv-44' and approval.get('retained_access_prefix')) else summary['status']
+            receipt['status']='degraded' if post_scoring_failures or checkpoint or (cell=='conv-44' and condition=='full' and approval.get('retained_access_prefix')) else summary['status']
             save_new(output/'final-memory.json',state)
             # Cloud work must not conceal a changed cache/source after initial validation.
             if CacheStore(store/'cache').load(identity)!=state:

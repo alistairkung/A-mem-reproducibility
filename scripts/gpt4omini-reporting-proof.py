@@ -58,14 +58,14 @@ def execute(fixture, output):
     policies = {row['provider_contract_policy'] for view in views.values()
                 for row in view['individual_results']}
     nqa=len(next(iter(views.values()))['individual_results'])
-    if len(policies) != 1 or nqa not in (158,196) or sorted(len(v['individual_results']) for v in views.values()) != [nqa,nqa]:
-        raise ValueError('Expected two complete 158- or 196-question engineering views')
+    if len(policies) != 1 or nqa not in (158,196,204) or sorted(len(v['individual_results']) for v in views.values()) != [nqa,nqa]:
+        raise ValueError('Expected two complete original-conversation engineering views')
     expected_scores = Counter((policy, row['question_id'], name, value)
                               for policy, view in views.items()
                               for row in view['individual_results']
                               for name, value in row['metrics'].items())
     nitems=2*nqa
-    nscores={158:4494,196:5568}[nqa]
+    nscores={158:4494,196:5568,204:5804}[nqa]
     if sum(expected_scores.values()) != nscores or len(traces) != nqa:
         raise ValueError('Original score/QA coverage differs')
 

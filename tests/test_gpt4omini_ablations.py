@@ -15,22 +15,30 @@ from gpt4omini_fixture import ROOT
 
 
 @pytest.mark.parametrize('condition', ('full', *ABLATION_CONDITIONS))
-def test_complete_native_conv49_preserves_coverage_and_isolates_actions(tmp_path, condition):
-    result=run_actual_phase(tmp_path,root=ROOT,conversation='conv-49',condition=condition)
+@pytest.mark.parametrize('conversation,turns,questions', [('conv-49',509,196),('conv-50',568,204),('conv-44',675,158)])
+def test_complete_native_coverage_and_isolated_actions(tmp_path, condition, conversation, turns, questions, monkeypatch):
+    updates={}
+    if conversation=='conv-44' and condition!='full':
+        # The synthetic ledger does not contain the historical OpenRouter IDs.
+        # Exercise the real classification branch with its production approval flag.
+        updates['retained_access_prefix']='synthetic-financial-history'
+        monkeypatch.setattr(CampaignLedger, 'retained_prefix', lambda self,db,approval:set())
+    result=run_actual_phase(tmp_path,root=ROOT,conversation=conversation,condition=condition,
+                            approval_updates=updates)
     receipt=result['receipt']
-    assert (receipt['status'],receipt['notes'],receipt['questions'],receipt['evolution_counter'])==('complete',509,196,509)
-    output=cell_store(tmp_path,cell_key('conv-49',condition))/'runs/p0'
+    assert (receipt['status'],receipt['notes'],receipt['questions'],receipt['evolution_counter'])==('complete',turns,questions,turns)
+    output=cell_store(tmp_path,cell_key(conversation,condition))/'runs/p0'
     state=read(output/'final-memory.json')
     events=[json.loads(line) for line in (output/'events.jsonl').read_text().splitlines()]
     manifest=expand_manifest(ROOT/'data/locomo10.json',read(ROOT/'manifests/fallback.json'))
-    selected=next(c for c in manifest['conversations'] if c['original_id']=='conv-49')
+    selected=next(c for c in manifest['conversations'] if c['original_id']==conversation)
     assert [o['turn_id'] for o in state['outcomes']]==selected['turn_ids']
     views=read(output/'scoring-views.json')
     for view in views.values():
         assert [r['question_id'] for r in view['individual_results']]==[q['question_id'] for q in selected['questions']]
-    assert len(result['requests'])==1410
+    assert len(result['requests'])==2*(turns+questions)
     stage_counts=Counter(e['stage'] for e in events if e['type']=='generation')
-    assert stage_counts=={'metadata':509,'shared_decision':509,'query_keywords':196,'answer':196}
+    assert stage_counts=={'metadata':turns,'shared_decision':turns,'query_keywords':questions,'answer':questions}
     attributes=[n['attributes'] for n in state['notes']]
     flags=action_configuration(condition)
     assert any(n['links'] for n in attributes)==flags['strengthen']
@@ -39,7 +47,7 @@ def test_complete_native_conv49_preserves_coverage_and_isolates_actions(tmp_path
     if condition=='linking_only':assert all(n['tags']==['linked'] for n in attributes)
     if condition=='evolution_only':assert attributes[-1]['tags']==['tag']
     actions=Counter(e['action'] for e in events if e['type']=='local_action')
-    assert actions=={k:509 for k,v in flags.items() if v}
+    assert actions=={k:turns for k,v in flags.items() if v}
     cache=read(output/'cache-proof.json')
     identity=read(tmp_path/cache['directory']/'identity.json')
     assert identity['condition']==condition and identity['memory_actions']==flags
@@ -48,16 +56,17 @@ def test_complete_native_conv49_preserves_coverage_and_isolates_actions(tmp_path
 
 
 @pytest.mark.parametrize('condition', ABLATION_CONDITIONS)
-def test_native_ablations_restore_twice_and_retain_author_fallback(tmp_path, condition):
+@pytest.mark.parametrize('conversation', ('conv-49','conv-50','conv-44'))
+def test_native_ablations_restore_twice_and_retain_author_fallback(tmp_path, condition, conversation):
     prior=None;ledger=None
     for sequence in range(3):
-        result=run_actual_phase(tmp_path,root=ROOT,conversation='conv-49',condition=condition,
+        result=run_actual_phase(tmp_path,root=ROOT,conversation=conversation,condition=condition,
             phase=f'p{sequence}',ledger=ledger,parent=prior,fail_decisions={1:'malformed',2:'length'})
         prior=result['receipt'];ledger=result['ledger']
         assert prior['recoverable_length_failure'] and prior['notes']==2*(sequence+1)
         assert prior['evolution_counter']==0 and prior['questions']==0
     assert ledger.totals()['attempts']==12
-    path=cell_store(tmp_path,cell_key('conv-49',condition))/'runs/p2/phase.json'
+    path=cell_store(tmp_path,cell_key(conversation,condition))/'runs/p2/phase.json'
     checkpoint=checkpoint_from(path,ledger,prior['binding'],root=ROOT)
     assert checkpoint['lineage']['condition']==condition
     assert len(checkpoint['state']['outcomes'])==6
