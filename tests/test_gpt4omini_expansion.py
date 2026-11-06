@@ -18,7 +18,7 @@ def test_expansion_begins_after_consumed_terminal_frontier():
 
 def test_entire_program_fits_even_if_every_reserved_service_unit_is_billed():
     assert CELL_SERVICE_RESERVE == 1_080_000
-    assert PROGRAM_SERVICE_RESERVE == 6_680_000
+    assert PROGRAM_SERVICE_RESERVE == 6_769_440
     assert 2_032_817 + 6*(5_000_000-CELL_SERVICE_RESERVE) + PROGRAM_SERVICE_RESERVE < 42_000_000
 
 
