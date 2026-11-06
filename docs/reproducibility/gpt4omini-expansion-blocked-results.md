@@ -1,5 +1,7 @@
 # GPT-4o-mini expansion on LoCoMo: eight accepted cells and one reporting stop
 
+Implementation: [PR #44](https://github.com/alistairkung/A-mem-reproducibility/pull/44). Outcome record: [PR #45](https://github.com/alistairkung/A-mem-reproducibility/pull/45). Evidence date: 6 November 2026 (Hong Kong).
+
 Evolution Only passed independent acceptance on both additional conversations. Full and Evolution Only now have comparable results for all 558 original questions. Full averaged 36.91% F1 and 32.81% BLEU-1, versus 35.86% and 32.29% for Evolution Only. Full led on both metrics on conv-50. On conv-44 it gained F1 but lost BLEU-1, and on conv-49 it scored slightly lower on both. These differences describe one stochastic build per cell.
 
 Neither / conv-50 collected every turn and answer but failed exact Langfuse score verification. The frozen order stops there. Eight cells are independently accepted, one is Incomplete and three are unstarted. Full four-condition contrasts and the interaction across all three conversations therefore remain unavailable. The [four-condition conv-49 results](gpt4omini-conv49-four-condition-results.md) remain the accepted comparison for that conversation.
@@ -142,7 +144,9 @@ The service upper bounds apply US$8 per 100,000 units even to units covered by t
 
 Model exposure plus the full marginal service bound totals **US$5.648645**, leaving **US$36.351355** of the US$42 planned allocation. The US$8 contingency remains protected. Applying the prior highest-stage model forecasts to the three unstarted cells gives US$1.17239286 model costs; doubling that scenario and reserving 13,500 service units per remaining cell gives a whole-campaign bound of **US$11.233431**. This is a planning sensitivity, not a replacement for per-cell admission. Funding is sufficient under that scenario; BLK-027 blocks execution.
 
-The post-pause request-level financial close is pending. The original read-only process was unavailable on resume. Its 10,161 saved successful generation lookups were preserved and independently validated; a separately reviewed GET-only continuation must verify the remaining 3,448 settled generation IDs and closing account/key movement. It cannot transmit inference, write the ledger or accept the scientific cell.
+The post-pause financial close verified all **13,609 settled generation IDs**, their native usage, single OpenAI route and exact costs. Neither / conv-50 increased account usage, key usage and identified campaign charges by exactly **US$0.31590645**, with zero unexplained movement or credit adjustment. Closing prepaid credit was **US$47.02974780** and the key allowance remaining was **US$47.04139880**.
+
+The original read-only process was unavailable after the user-requested pause. Its 10,161 successful generation lookups were preserved and independently validated. A separately reviewed GET-only continuation copied that prefix byte-for-byte, verified the remaining 3,448 settled generation IDs and read the closing account/key state. Every new generation lookup returned HTTP 200 without retry. It made no inference requests or ledger writes and did not accept the scientific cell. The terminal phase remains Incomplete. The immutable closing receipt is `cells/neither-conv-50/reconciliation.json`, SHA-256 `177aefd21f532f39d85fd1ec75000e29102dc53c93ff7be592b65d0a7457e12a`; the original pause record, helper, plan, two pre-execution reviews and both journals remain preserved under the cell and outcome directories.
 
 ## Reproducibility and remaining work
 
