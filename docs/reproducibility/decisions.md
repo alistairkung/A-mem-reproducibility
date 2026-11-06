@@ -1313,3 +1313,38 @@ necessary, measured and durably bounded incremental Langfuse fees within US$42.
 Reserve service costs before inference and include the cell share within US$5.
 The consolidated report and its ordinary merge after independent review are
 authorized. The final coursework PDF and recorded presentation are out of scope.
+
+### 6 November 2026 — six-cell expansion stopped on exact score readback
+
+Evolution Only / conv-50 and conv-44 independently passed as Clean. Neither /
+conv-50 collected 568 turns and all 204 original answers but sealed Incomplete
+on BLK-027. Its two Experiment runs each returned a native numeric BLEU-4
+value one binary64 step below the saved author score for conv-50:qa:76.
+Independent raw readbacks and offline rescoring confirmed the discrepancy.
+Retain the terminal phase, original Experiment IDs and every charge. The
+current exact-value policy bars release of Neither / conv-44 and the two
+Linking Only cells. No tolerance, repetition or re-import is approved by this
+record. A reviewed reporting-only correction that proves exact native
+readback remains within the user's grant. Any change to the acceptance rule
+requires a separate explicit decision. [Inventory, matched results and costs](gpt4omini-expansion-blocked-results.md)
+
+### 6 November 2026 — resumed financial close; scientific stop retained
+
+The user requested a pause and then explicitly resumed work. No inference ran
+during the pause or the resumed financial close. The suspended read-only process
+was no longer available; an independently reviewed GET-only continuation retained
+all 10,161 saved lookups and verified the remaining 3,448 settled generations.
+The unchanged ledger, source, terminal phase and original journal were bound to
+the recovery. All 13,609 settled generation IDs reconcile exactly, with no new
+unknown, adjustment or unexplained account/key movement. Prepaid credit is
+US$47.02974780. Model conservative exposure is US$3.024165, including the old
+US$0.058950 reservation. Measured incremental service at the full marginal rate
+is bounded by US$2.624480; combined exposure is US$5.648645 and US$36.351355 of
+the planned allocation remains. The service invoice shows US$1.42 draft usage,
+separate from the existing US$29 subscription. The US$8 reserve is untouched.
+
+A fresh post-pause read still shows both BLK-027 score discrepancies. Neither /
+conv-50 remains Incomplete; the remaining three cells are unstarted. This
+financial close does not release the paid frontier, relax exact-value checks,
+consume an additional inference approval or authorize a repetition. The outcome
+documentation records the partial study under the existing reviewed-merge grant.
