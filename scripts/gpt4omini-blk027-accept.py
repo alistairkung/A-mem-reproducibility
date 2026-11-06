@@ -13,15 +13,14 @@ sys.path.insert(0, str(ROOT))
 
 from amem_repro.blk027 import (
     CELL, PHASE, POLICY, SUPPLEMENT, pinned_inputs, read, sha, require, verify_remote,
+    verify_merged_review,
 )
 from amem_repro.config import fingerprint, source_fingerprint
 from amem_repro.openrouter import save_new
 
 
 def verify_release(campaign, reviewed_commit, merge_commit):
-    for commit in (reviewed_commit, merge_commit):
-        subprocess.run(['git', 'merge-base', '--is-ancestor', commit, 'HEAD'],
-                       cwd=ROOT, check=True, capture_output=True)
+    verify_merged_review(ROOT, reviewed_commit, merge_commit)
     verification = campaign/'verification/blk027-release'
     sources = source_fingerprint(ROOT)
     for axis in ('spec', 'standards'):

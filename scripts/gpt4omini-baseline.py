@@ -52,8 +52,12 @@ def verify_release(release):
         blob=subprocess.check_output(['git','show',release['reviewed_commit']+':'+name],cwd=ROOT)
         if hashlib.sha256(blob).hexdigest()!=digest:
             raise RuntimeError('Frozen runtime file differs from reviewed Git bytes')
-    for commit in (release['reviewed_commit'],release['merge_commit']):
-        subprocess.run(['git','merge-base','--is-ancestor',commit,'HEAD'],cwd=ROOT,check=True,capture_output=True)
+    if KEY in ('neither-conv-44', 'linking_only-conv-50', 'linking_only-conv-44'):
+        from amem_repro.blk027 import verify_merged_review
+        verify_merged_review(ROOT, release['reviewed_commit'], release['merge_commit'])
+    else:
+        for commit in (release['reviewed_commit'],release['merge_commit']):
+            subprocess.run(['git','merge-base','--is-ancestor',commit,'HEAD'],cwd=ROOT,check=True,capture_output=True)
     for axis in ('standards','spec'):
         review=read(VERIFICATION/f'baseline-{axis}-review.json')
         if review.get('verdict')!='pass' or review.get('reviewed_commit')!=release['reviewed_commit']:

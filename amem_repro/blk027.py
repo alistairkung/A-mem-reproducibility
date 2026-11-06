@@ -44,6 +44,19 @@ def require(value, message):
         raise VerificationError(message)
 
 
+def verify_merged_review(root, reviewed_commit, merge_commit):
+    """Require a normal merge whose reviewed feature head is its second parent."""
+    import subprocess
+    subprocess.run(['git', 'merge-base', '--is-ancestor', merge_commit, 'HEAD'],
+                   cwd=root, check=True, capture_output=True)
+    subprocess.run(['git', 'merge-base', '--is-ancestor', reviewed_commit, merge_commit],
+                   cwd=root, check=True, capture_output=True)
+    parents = subprocess.check_output(
+        ['git', 'show', '-s', '--format=%P', merge_commit], cwd=root, text=True).split()
+    require(len(parents) == 2 and parents[1] == reviewed_commit,
+            'Normal merge must contain the exact independently reviewed head')
+
+
 def pinned_inputs(campaign):
     from .gpt4omini_campaign import verify_inventory
     policy = rules()
@@ -187,9 +200,10 @@ def verify_supplement(campaign, *, evidence=True):
         import subprocess
         require(fingerprint(value['verification_source']) == value['verification_source_sha256'],
                 'Verification source fingerprint changed')
-        for commit in (value['reviewed_commit'], value['merge_commit']):
-            subprocess.run(['git','merge-base','--is-ancestor',commit,'HEAD'],cwd=ROOT,
-                           check=True,capture_output=True)
+        verify_merged_review(ROOT, value['reviewed_commit'], value['merge_commit'])
+        require(set(value['verifier_scripts']) ==
+                {'scripts/gpt4omini-blk027-accept.py', 'scripts/safe_service_audit.py'},
+                'Supplement omitted a reviewed verifier script')
         for name,digest in {**value['verification_source']['files'], **value['verifier_scripts']}.items():
             blob = subprocess.check_output(['git','show',value['reviewed_commit']+':'+name],cwd=ROOT)
             require(hashlib.sha256(blob).hexdigest()==digest, 'Supplement verifier was not reviewed')
@@ -201,7 +215,8 @@ def verify_supplement(campaign, *, evidence=True):
                     and review['source_sha256']==value['verification_source_sha256'],
                     'Supplement release review changed')
         _, directory, _ = pinned_inputs(campaign)
-        require(set(policy['artifact_files']) | {value['readback_proof'], value['cache_proof']}
+        require(set(policy['artifact_files']) | {value['readback_proof'], value['cache_proof'],
+                'verification/blk027-release/full-suite.txt'}
                 <= value['files'].keys(), 'Supplement omitted protected evidence')
         verify_inventory(campaign, value['files'])
         proof = read(campaign/value['readback_proof'])

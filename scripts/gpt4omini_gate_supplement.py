@@ -4,9 +4,19 @@ import hashlib
 import json
 import subprocess
 
+from amem_repro.blk027 import verify_merged_review
 from amem_repro.config import fingerprint, source_fingerprint
 from amem_repro.openrouter import BLK027_GATE_UNITS, PROGRAM_SERVICE_RESERVE, save_new
 from scripts.gpt4omini_service import ServiceUnits
+
+
+GATE_RUNTIME_FILES = (
+    'scripts/gpt4omini-gate.py', 'scripts/gpt4omini_gate_supplement.py',
+    'scripts/gpt4omini_service.py', 'tests/gpt4omini_fixture.py',
+    'tests/gpt4omini_executor_fixture.py', 'tests/test_foundation.py',
+    'tests/test_scoring.py', 'tests/test_observability.py',
+    'tests/observability_fixture.py',
+)
 
 
 def reserve(root, output):
@@ -21,9 +31,7 @@ def reserve(root, output):
             or plan['source_sha256'] != fingerprint(source_fingerprint(root))
             or output.parent != directory or output.name != plan['output']):
         raise RuntimeError('Unapproved additional cloud verification')
-    for commit in (plan['reviewed_commit'], plan['merge_commit']):
-        subprocess.run(['git','merge-base','--is-ancestor',commit,'HEAD'],cwd=root,
-                       check=True,capture_output=True)
+    verify_merged_review(root, plan['reviewed_commit'], plan['merge_commit'])
     for axis in ('standards','spec'):
         review = read(directory/f'baseline-{axis}-review.json')
         if (review['verdict'] != 'pass' or review['reviewed_commit'] != plan['reviewed_commit']
@@ -34,11 +42,11 @@ def reserve(root, output):
         if path.resolve() != path or not path.is_file() or sha(path) != digest:
             raise RuntimeError('Bound gate funding/source/evidence changed')
     for name,digest in {**source_fingerprint(root)['files'],
-                        **{n:h for n,h in plan['files'].items() if n.startswith('scripts/')}}.items():
+                        **{n:h for n,h in plan['files'].items() if not n.startswith('artifacts/')}}.items():
         blob = subprocess.check_output(['git','show',plan['reviewed_commit']+':'+name],cwd=root)
         if hashlib.sha256(blob).hexdigest()!=digest:
             raise RuntimeError('Cloud verifier differs from reviewed Git bytes')
-    required = {'scripts/gpt4omini-gate.py', 'scripts/gpt4omini_gate_supplement.py',
+    required = set(GATE_RUNTIME_FILES) | {
                 'artifacts/gpt4omini/budget.sqlite',
                 'artifacts/gpt4omini/verification/six-cell-expansion/final-cloud-verification-claim.json',
                 'artifacts/gpt4omini/verification/six-cell-expansion/six-cell-final-2b65f2e/receipt.json'}

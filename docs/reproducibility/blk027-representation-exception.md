@@ -45,3 +45,9 @@ fresh runtime/Experiment readback and separate acceptance supplement, then curre
 financial and service capacity checks. Resume Neither / conv-44, Linking Only /
 conv-50 and Linking Only / conv-44 in that order. Stop on any new mismatch or
 unsupported failure; this decision does not authorise a wider numerical policy.
+
+Independent review additionally requires all gate service/fixture dependencies to
+match reviewed Git bytes, and requires the exact reviewed head to be the second
+parent of the normal merge. These checks apply before any new cloud admission,
+supplement acceptance or remaining paid release. All other historical release
+paths retain their original rules.
