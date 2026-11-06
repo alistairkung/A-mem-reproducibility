@@ -1348,3 +1348,26 @@ conv-50 remains Incomplete; the remaining three cells are unstarted. This
 financial close does not release the paid frontier, relax exact-value checks,
 consume an additional inference approval or authorize a repetition. The outcome
 documentation records the partial study under the existing reviewed-merge grant.
+
+### 6 November 2026 — two-identity BLK-027 representation exception
+
+The user explicitly approves only the two BLEU-4 score identities documented in
+BLK-027 for Neither / conv-50. Pin the question, both policies, score/item/trace
+identities and exact local/remote binary64 values. The only accepted differing
+representation is the independently observed adjacent lower value. Every other
+score, including all primary F1/BLEU-1 values, retains exact equality. No general
+tolerance, scorer change, inference repeat or re-import is authorised.
+
+Preserve the original Incomplete receipt, SQL terminal state and all saved author
+scores. Create a separately reviewed Degraded acceptance supplement after complete
+204-question, 408-item, 5,804-score, original-association, cache and financial checks.
+The user authorises focused and full offline tests, independent Standards/Spec
+review, ordinary implementation merge, acceptance, then the remaining fresh cells
+in order: Neither / conv-44, Linking Only / conv-50, Linking Only / conv-44.
+Keep all prior scientific configuration and US$5 cell / US$42 planned / US$8
+protected limits. Necessary incremental service for one fresh release verification
+is capped at 1,118 units (US$0.089440); add it to the durable programme service
+reservation without reopening either consumed gate claim. No model calls are
+permitted by that verification allocation. Stop on any new substantive mismatch,
+unsupported provider behaviour, unknown charge or provenance failure. Independently
+review and merge the complete 558-question four-condition outcome after acceptance.

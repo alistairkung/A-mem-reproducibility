@@ -38,7 +38,8 @@ CELL_SERVICE_UNITS = 13_500
 # MicroUSD per unit at the first Core overage tier. Reserve as if every unit is billable.
 SERVICE_UNIT_MICROUSD = 80
 CELL_SERVICE_RESERVE = CELL_SERVICE_UNITS * SERVICE_UNIT_MICROUSD
-PROGRAM_SERVICE_RESERVE = (6 * CELL_SERVICE_UNITS + 2_500) * SERVICE_UNIT_MICROUSD
+BLK027_GATE_UNITS = 1_118
+PROGRAM_SERVICE_RESERVE = (6 * CELL_SERVICE_UNITS + 2_500 + BLK027_GATE_UNITS) * SERVICE_UNIT_MICROUSD
 
 
 def ablation_policy(key):
@@ -272,9 +273,12 @@ class CampaignLedger:
         rows=[list(r) for r in db.execute('SELECT * FROM phases ORDER BY rowid')
               if approval_cell(json.loads(r[1]))!=cell]
         ids={r[0] for r in rows}
+        from .blk027 import retained_terminal
+        reporting_phase = retained_terminal(self.root, db, approval)
         for c in previous:
             if not any(json.loads(r[1])['kind']=='baseline' and approval_cell(json.loads(r[1]))==c
-                       and r[3]=='complete' and r[4]==cert['phase_seals'][c] for r in rows):
+                       and (r[3]=='complete' or (r[0]==reporting_phase and r[3]=='terminal'))
+                       and r[4]==cert['phase_seals'][c] for r in rows):
                 raise BudgetStop('Preceding baseline seal changed')
         history={'phases':rows,
                  'attempts':[list(r) for r in db.execute('SELECT * FROM attempts ORDER BY id') if r[1] in ids],
@@ -305,7 +309,10 @@ class CampaignLedger:
             self.check_previous_cells(db, approval)
             retained = self.retained_prefix(db, approval)
             rows = [row for row in rows if row[0] not in retained]
-            if not retest and any(row[2] not in ('complete','recoverable') for row in rows):
+            from .blk027 import retained_terminal
+            reporting_phase = retained_terminal(self.root, db, approval)
+            if not retest and any(row[2] not in ('complete','recoverable')
+                                  and row[0] != reporting_phase for row in rows):
                 raise BudgetStop('An earlier phase is unfinished or terminal')
             same = [r for r in rows if json.loads(r[1])['kind'] == approval['kind'] and approval_cell(json.loads(r[1]))==cell]
             if parent and not retest:

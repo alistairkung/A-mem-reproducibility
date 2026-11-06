@@ -52,8 +52,12 @@ def verify_release(release):
         blob=subprocess.check_output(['git','show',release['reviewed_commit']+':'+name],cwd=ROOT)
         if hashlib.sha256(blob).hexdigest()!=digest:
             raise RuntimeError('Frozen runtime file differs from reviewed Git bytes')
-    for commit in (release['reviewed_commit'],release['merge_commit']):
-        subprocess.run(['git','merge-base','--is-ancestor',commit,'HEAD'],cwd=ROOT,check=True,capture_output=True)
+    if KEY in ('neither-conv-44', 'linking_only-conv-50', 'linking_only-conv-44'):
+        from amem_repro.blk027 import verify_merged_review
+        verify_merged_review(ROOT, release['reviewed_commit'], release['merge_commit'])
+    else:
+        for commit in (release['reviewed_commit'],release['merge_commit']):
+            subprocess.run(['git','merge-base','--is-ancestor',commit,'HEAD'],cwd=ROOT,check=True,capture_output=True)
     for axis in ('standards','spec'):
         review=read(VERIFICATION/f'baseline-{axis}-review.json')
         if review.get('verdict')!='pass' or review.get('reviewed_commit')!=release['reviewed_commit']:
@@ -112,7 +116,7 @@ def freeze(gate_path, reviewed_commit, merge_commit):
         VERIFICATION/'baseline-preflight.json',VERIFICATION/'full-suite.txt' if KEY!='conv-44' else FIRST_VERIFY/'full-final-60cabea.txt',
         VERIFICATION/'baseline-standards-review.json',VERIFICATION/'baseline-spec-review.json',
         VERIFICATION/'archive-equivalence.json',
-        ROOT/'scripts/gpt4omini_service.py',ROOT/'scripts/gpt4omini-accept.py',ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_finance.py',ROOT/'scripts/gpt4omini-reporting-proof.py',
+        ROOT/'scripts/gpt4omini_service.py',ROOT/'scripts/gpt4omini-accept.py',ROOT/'scripts/gpt4omini-baseline.py',ROOT/'scripts/gpt4omini-gate.py',ROOT/'scripts/gpt4omini_gate_supplement.py',ROOT/'scripts/gpt4omini_finance.py',ROOT/'scripts/gpt4omini-reporting-proof.py',
         ROOT/'tests/gpt4omini_fixture.py',ROOT/'tests/gpt4omini_executor_fixture.py',
         ROOT/'tests/test_gpt4omini_executor.py',ROOT/'tests/test_gpt4omini_full_executor.py']
     if KEY!='conv-44':
@@ -171,6 +175,10 @@ def freeze(gate_path, reviewed_commit, merge_commit):
     if KEY!='conv-44':
         release['previous_acceptance_sha256']=hashlib.sha256(frontier_path.read_bytes()).hexdigest()
     if KEY in EXPANSION_CELLS:release['limits']['service_reserve_microusd']=CELL_SERVICE_RESERVE
+    from amem_repro.blk027 import SUCCESSORS, SUPPLEMENT, sha, verify_supplement
+    if KEY in SUCCESSORS:
+        verify_supplement(DIRECTORY)
+        release['reporting_acceptance_sha256'] = sha(DIRECTORY/SUPPLEMENT)
     verify_release(release)
     save_new(STORE/'frozen/campaign-approval.json',release)
     print(json.dumps({'approved':True,'campaign':binding['campaign_id'],'source':binding['source_sha256']}))
@@ -284,6 +292,8 @@ def execute():
                 'release_sha256':fingerprint(release),'retained_access_prefix':PREFIX}
             if CONDITION!='full':approval['ablation_policy']=ablation_policy(KEY)
             if KEY!='conv-44':approval['previous_acceptance_sha256']=release['previous_acceptance_sha256']
+            if 'reporting_acceptance_sha256' in release:
+                approval['reporting_acceptance_sha256'] = release['reporting_acceptance_sha256']
             if parent:
                 approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
                     parent_path=str(STORE/'runs'/parent['phase']/'phase.json'))
@@ -370,7 +380,7 @@ if __name__=='__main__':
     parser.add_argument('--condition',choices=('full',*ABLATION_CONDITIONS),default='full')
     args=parser.parse_args()
     CELL=args.cell;CONDITION=args.condition;KEY=cell_key(CELL,CONDITION);STORE=cell_store(DIRECTORY,KEY)
-    VERIFICATION=(DIRECTORY/'verification/six-cell-release-v2' if KEY in EXPANSION_CELLS else DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
+    VERIFICATION=(DIRECTORY/'verification/blk027-release' if KEY in ('neither-conv-44','linking_only-conv-50','linking_only-conv-44') else DIRECTORY/'verification/six-cell-release-v2' if KEY in EXPANSION_CELLS else DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
                   FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release')
     try:
         if args.execute:execute()

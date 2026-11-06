@@ -148,16 +148,24 @@ def verify_accepted_cell(campaign, cell):
         record=read(directory/'phase.json')
         if fingerprint(record)!=seal: raise BudgetStop('Prior scientific receipt differs from ledger')
         verify_inventory(directory,record['files'])
-    if (record['status'] not in ('complete','degraded')
+    supplement = None
+    if cell == 'neither-conv-50' and record['status'] == 'incomplete':
+        from .blk027 import verify_supplement
+        supplement = verify_supplement(campaign)
+    if ((record['status'] not in ('complete','degraded') and supplement is None)
             or record['binding']['conversation_id']!=conversation
             or record['binding']['condition']!=condition):
         raise BudgetStop('Predecessor scientific collection incomplete')
-    cache=read(directory/'cache-proof.json')
+    cache=read(campaign/supplement['cache_proof'] if supplement else directory/'cache-proof.json')
     verify_inventory(campaign/cache['directory'],cache['files'])
     for axis in ('spec','standards'):
         review=read(campaign/'outcomes'/cell/f'acceptance-{axis}.json')
         if review.get('accepted') is not True or review.get('verdict')!='pass' or review['phase']!=phase:
             raise BudgetStop('Predecessor independent acceptance incomplete')
+        if supplement:
+            from .blk027 import SUPPLEMENT, sha
+            if review.get('reporting_acceptance_sha256') != sha(campaign/SUPPLEMENT):
+                raise BudgetStop('Independent review did not bind the exact reporting exception')
         files=review.get('evidence_files') or review.get('evidence_sha256')
         if not files:raise BudgetStop('Missing prior independent proof digests')
         verify_inventory(campaign,{n.removeprefix('artifacts/gpt4omini/'):d for n,d in files.items()})

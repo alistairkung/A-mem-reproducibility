@@ -29,8 +29,10 @@ def seal(campaign,cell,org_units,*,ablation=False,expansion=False):
         raise ValueError('Independent scientific and financial acceptance required')
     phase=reviews[0]['phase'];record=read(store/'runs'/phase/'phase.json')
     conversation,condition=cell_parts(cell)
+    from amem_repro.blk027 import CELL as REPORTING_CELL, verify_supplement
+    supplement = verify_supplement(campaign) if cell == REPORTING_CELL and record['status']=='incomplete' else None
     if (record['binding']['conversation_id']!=conversation or record['binding']['condition']!=condition
-            or record['status'] not in ('degraded','complete')):
+            or (record['status'] not in ('degraded','complete') and supplement is None)):
         raise ValueError('Foreign or incomplete phase')
     finance=read(store/'reconciliation.json')
     if not finance['verified']:raise ValueError('Financial reconciliation incomplete')
@@ -42,7 +44,10 @@ def seal(campaign,cell,org_units,*,ablation=False,expansion=False):
             verify_accepted_finances(campaign,c)
             cell_reviews=read(campaign/'outcomes'/c/'acceptance-spec.json')
             end=cell_reviews['phase']
-            seals[c]=db.execute("SELECT seal FROM phases WHERE id=? AND state='complete'",(end,)).fetchone()[0]
+            terminal_reporting = c == REPORTING_CELL and read(cell_store(campaign,c)/'runs'/end/'phase.json')['status']=='incomplete'
+            expected_state = 'terminal' if terminal_reporting else 'complete'
+            if terminal_reporting: verify_supplement(campaign)
+            seals[c]=db.execute('SELECT seal FROM phases WHERE id=? AND state=?',(end,expected_state)).fetchone()[0]
             if seals[c]!=fingerprint(read(cell_store(campaign,c)/'runs'/end/'phase.json')):
                 raise ValueError('Original phase seal differs')
             rows=db.execute("""SELECT a.stage,COUNT(*),SUM(a.charge) FROM attempts a JOIN phases p ON a.phase=p.id
@@ -83,6 +88,7 @@ def seal(campaign,cell,org_units,*,ablation=False,expansion=False):
     files={}
     paths=[store/'reconciliation.json',*store.glob('generation-readback-*'),store/'runs',store/'cache',store/'frozen',
            out/'acceptance-spec.json',out/'acceptance-standards.json']
+    if supplement: paths.append(out/'blk027-acceptance')
     if capacity_path: paths.append(capacity_path)
     for path in paths:
         for f in ([path] if path.is_file() else path.rglob('*')):

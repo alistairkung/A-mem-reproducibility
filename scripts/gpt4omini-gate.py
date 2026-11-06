@@ -37,7 +37,7 @@ def reserve_gate(directory, output):
     return ServiceUnits(remaining)
 
 
-def main(output):
+def main(output, *, supplement=False):
     from dotenv import dotenv_values
     from amem_repro.preflight import asset_environment
     os.environ.update(asset_environment(ROOT/'artifacts/assets'))
@@ -71,7 +71,11 @@ def main(output):
     import tiktoken
     output=Path(output).resolve();output.mkdir(parents=True,exist_ok=False)
     source=fingerprint(source_fingerprint(ROOT))
-    meter=reserve_gate(ROOT/'artifacts/gpt4omini/verification/six-cell-expansion',output)
+    if supplement:
+        from scripts.gpt4omini_gate_supplement import reserve
+        meter=reserve(ROOT,output)
+    else:
+        meter=reserve_gate(ROOT/'artifacts/gpt4omini/verification/six-cell-expansion',output)
     client=Langfuse(public_key=os.environ['LANGFUSE_PUBLIC_KEY'],secret_key=os.environ['LANGFUSE_SECRET_KEY'],
         base_url=host,flush_at=16,should_export_span=bounded_filter(should_export_span,meter),environment='amem-gpt4omini-gate',release=source)
     bind_score_meter(client,meter)
@@ -148,4 +152,6 @@ def main(output):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',required=True)
-    main(parser.parse_args().output)
+    parser.add_argument('--supplement',action='store_true')
+    args=parser.parse_args()
+    main(args.output,supplement=args.supplement)
