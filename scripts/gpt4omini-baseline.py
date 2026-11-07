@@ -200,7 +200,7 @@ def environment():
     os.environ['LANGFUSE_OTEL_MAX_BATCH_SIZE_BYTES']=str(32*1024*1024)
 
 
-def execute():
+def execute(*, recovery=False):
     import httpx
     from amem_repro.config import fingerprint
     from amem_repro.openrouter import BASE_URL,MODEL,CampaignLedger,save_new
@@ -208,7 +208,22 @@ def execute():
     from amem_repro.measurements import TokenCounter
     from amem_repro.phases import _verified_receipt
     environment()
-    release=read(STORE/'frozen/campaign-approval.json');verify_release(release)
+    from amem_repro import linking44_finance as recovery_finance
+    from scripts import gpt4omini_linking44_release as recovery_release
+    from amem_repro.blk027 import sha
+    if recovery:
+        if KEY != 'linking_only-conv-44':
+            raise RuntimeError('PR #48 authorises only the last cell')
+        release = read(DIRECTORY / recovery_finance.RELEASE_PATH)
+        def verify_current():
+            recovery_release.verify_release(ROOT, release)
+        frozen = STORE / 'frozen/recovery-admission'
+    else:
+        release = read(STORE / 'frozen/campaign-approval.json')
+        def verify_current():
+            verify_release(release)
+        frozen = STORE / 'frozen'
+    verify_current()
     preflight=read(VERIFICATION/'baseline-preflight.json')
     _verified_receipt(preflight,ROOT/'artifacts/assets',ROOT)
     from scripts.safe_service_audit import check_langfuse_project_auth
@@ -222,7 +237,11 @@ def execute():
     encoding=tiktoken.get_encoding('o200k_base')
     counter=TokenCounter(lambda text:encoding.encode(text,disallowed_special=()),
                          'tiktoken o200k_base; hosted prompt overhead unverified; API usage authoritative',version('tiktoken'))
-    if (STORE/'cache').exists() or (STORE/'runs').exists():
+    if recovery:
+        runs = STORE / 'runs'
+        if (STORE / 'cache').exists() or {p.name for p in runs.iterdir()} != {recovery_finance.PARENT}:
+            raise RuntimeError('Recovery requires the exact stopped cell and unused child')
+    elif (STORE/'cache').exists() or (STORE/'runs').exists():
         raise RuntimeError('Fresh baseline requires an unused primary cache and run namespace')
     from scripts.gpt4omini_service import ObservedCampaignLedger
     ledger_type = ObservedCampaignLedger if KEY in EXPANSION_CELLS else CampaignLedger
@@ -235,23 +254,26 @@ def execute():
                       transport=httpx.HTTPTransport(retries=0),follow_redirects=False) as client:
         client._amem_credential=key
         from scripts.gpt4omini_finance import compare, snapshot, reconcile
-        account=snapshot(client,STORE/'frozen/opening-account-reads')
-        prior=read(DIRECTORY/'compatibility-v5/financial-readback-after-success.json')
-        previous={r['probe']:r['data'] for r in prior['account_readbacks']}
-        previous_cost=prior['generation']['total_cost']
-        prior_path=DIRECTORY/'compatibility-v5/financial-readback-after-success.json'
-        if KEY!='conv-44':
-            previous_cell=CELL_ORDER[CELL_ORDER.index(KEY)-1]
-            prior_path=cell_store(DIRECTORY,previous_cell)/'reconciliation.json'
-            settlement=read(prior_path)
-            if not settlement['verified']:raise RuntimeError('Preceding cell reconciliation failed')
-            previous=settlement['closing']
-            previous_cost=settlement['accounting']['reported_cost_usd']
-        known=ledger.totals()['reported_cost_usd']
-        opening={'account':account,'reported_cost_usd':known,'approval':{'retained_access_prefix':PREFIX},
-                 'previous_snapshot':str(prior_path),
-                 'movement':compare(previous,account,previous_cost,known)}
-        save_new(STORE/'frozen/account-before-baseline.json',opening)
+        account=snapshot(client,frozen/'opening-account-reads')
+        if recovery:
+            opening = recovery_finance.verify_opening(DIRECTORY, account)
+        else:
+            prior=read(DIRECTORY/'compatibility-v5/financial-readback-after-success.json')
+            previous={r['probe']:r['data'] for r in prior['account_readbacks']}
+            previous_cost=prior['generation']['total_cost']
+            prior_path=DIRECTORY/'compatibility-v5/financial-readback-after-success.json'
+            if KEY!='conv-44':
+                previous_cell=CELL_ORDER[CELL_ORDER.index(KEY)-1]
+                prior_path=cell_store(DIRECTORY,previous_cell)/'reconciliation.json'
+                settlement=read(prior_path)
+                if not settlement['verified']:raise RuntimeError('Preceding cell reconciliation failed')
+                previous=settlement['closing']
+                previous_cost=settlement['accounting']['reported_cost_usd']
+            known=ledger.totals()['reported_cost_usd']
+            opening={'account':account,'reported_cost_usd':known,'approval':{'retained_access_prefix':PREFIX},
+                     'previous_snapshot':str(prior_path),
+                     'movement':compare(previous,account,previous_cost,known)}
+        save_new(frozen/'account-before-baseline.json',opening)
         funds=Decimal(account['credits']['total_credits'])-Decimal(account['credits']['total_usage'])
         if not opening['movement']['verified'] or funds<13 or Decimal(account['key']['limit_remaining'])<5:
             raise RuntimeError('Prepaid funds, key limit or unaccounted movement')
@@ -263,7 +285,7 @@ def execute():
                 or Decimal(provider['pricing']['completion'])!=Decimal('.0000006')
                 or not {'temperature','response_format','structured_outputs','max_tokens'}<=set(provider['supported_parameters'])):
             raise RuntimeError('Frozen provider route/pricing/capabilities changed')
-        save_new(STORE/'frozen/route-before-baseline.json',endpoint.json())
+        save_new(frozen/'route-before-baseline.json',endpoint.json())
         if KEY in EXPANSION_CELLS:
             capacity_path=DIRECTORY/release['forecast']['capacity_path']
             if hashlib.sha256(capacity_path.read_bytes()).hexdigest()!=release['forecast']['capacity_sha256']:
@@ -272,7 +294,8 @@ def execute():
             if not 0<=elapsed<=3600:
                 raise RuntimeError('Cell capacity reading expired before launch')
         from scripts.gpt4omini_service import ServiceUnits, bind_score_meter, bounded_filter, MeteredRuntimeClient
-        export_meter = ServiceUnits(CELL_SERVICE_UNITS) if KEY in EXPANSION_CELLS else None
+        service_limit = release['limits']['max_new_langfuse_units']
+        export_meter = ServiceUnits(service_limit) if KEY in EXPANSION_CELLS else None
         span_filter = bounded_filter(should_export_span, export_meter) if export_meter else should_export_span
         cloud=Langfuse(public_key=os.environ['LANGFUSE_PUBLIC_KEY'],secret_key=os.environ['LANGFUSE_SECRET_KEY'],
             base_url='https://cloud.langfuse.com',flush_at=16,should_export_span=span_filter,
@@ -281,10 +304,11 @@ def execute():
             original_score_task = bind_score_meter(cloud,export_meter)
             lifecycle.callback(setattr,cloud._resources,'add_score_task',original_score_task)
         lifecycle.callback(cloud.shutdown)
-        parent=None;prior_runtime_units=0
-        for sequence in range(FULL_CELLS[CELL][0]+1):
-            verify_release(release)
-            if ledger.unaccepted_unknowns({'retained_access_prefix':PREFIX}):raise RuntimeError('Unknown exposure forbids continuation')
+        parent = read(DIRECTORY / recovery_finance.PARENT_PATH) if recovery else None
+        prior_runtime_units = 0
+        sequences = (1,) if recovery else range(FULL_CELLS[CELL][0]+1)
+        for sequence in sequences:
+            verify_current()
             phase=f"gpt4omini-{CONDITION}-{CELL.replace('-', '')}-r0-p{sequence}"
             approval={'approved':True,'approved_by':release['approved_by'],
                 'approved_at':datetime.now(timezone.utc).isoformat(),'binding':release['binding'],
@@ -297,11 +321,15 @@ def execute():
             if parent:
                 approval.update(parent=parent['phase'],parent_seal=fingerprint(parent),
                     parent_path=str(STORE/'runs'/parent['phase']/'phase.json'))
-            save_new(STORE/'frozen'/(phase+'-approval.json'),approval)
+            if recovery:
+                approval[recovery_finance.RELEASE_KEY] = sha(DIRECTORY / recovery_finance.RELEASE_PATH)
+            if ledger.unaccepted_unknowns(approval):
+                raise RuntimeError('Unknown exposure forbids continuation')
+            save_new(frozen/(phase+'-approval.json'),approval)
             runtime_meter = None
             previously_exported = export_meter.spent if export_meter else 0
             if export_meter:
-                runtime_meter = ServiceUnits(CELL_SERVICE_UNITS - previously_exported - 36*FULL_CELLS[CELL][1])
+                runtime_meter = ServiceUnits(service_limit - previously_exported - 36*FULL_CELLS[CELL][1])
             runtime_client=MeteredRuntimeClient(cloud,runtime_meter) if runtime_meter else cloud
             observer=LangfuseObserver(runtime_client,{**release['binding'],'run_id':phase,
                 'execution_mode':'paid-gpt4omini-baseline','parent_run_id':parent['phase'] if parent else None})
@@ -359,13 +387,14 @@ def execute():
             capture=read(STORE/'runs'/phase/'trace-capture.json')
             prior_runtime_units += max(len(capture['observations'])+len(capture['trace_ids'])+len(capture['scores']),
                                        export_meter.spent - previously_exported if export_meter else 0)
-            verify_release(release)
+            verify_current()
             verify_prior(ROOT)
             print(json.dumps({k:result[k] for k in ('phase','status','notes','questions','evolution_counter',
                 'error_type','recoverable_length_failure','budget')}),flush=True)
             if result['status'] in ('complete','degraded'):
                 _verified_receipt(preflight,ROOT/'artifacts/assets',ROOT)
-                reconcile(client,ledger,STORE/'reconciliation.json',opening)
+                close = recovery_finance.reconcile_child if recovery else reconcile
+                close(client,ledger,STORE/'reconciliation.json',opening)
                 return
             if not result['recoverable_length_failure']:raise RuntimeError('Material failure; paid frontier closed')
             parent=result
@@ -374,16 +403,40 @@ def execute():
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--execute',action='store_true');parser.add_argument('--gate')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--execute', action='store_true')
+    mode.add_argument('--prepare-reconstruction', action='store_true')
+    parser.add_argument('--gate')
     parser.add_argument('--reviewed-commit');parser.add_argument('--merge-commit')
     parser.add_argument('--cell',choices=FULL_CELLS,default='conv-44')
     parser.add_argument('--condition',choices=('full',*ABLATION_CONDITIONS),default='full')
+    parser.add_argument('--pr48-recovery', action='store_true')
     args=parser.parse_args()
     CELL=args.cell;CONDITION=args.condition;KEY=cell_key(CELL,CONDITION);STORE=cell_store(DIRECTORY,KEY)
     VERIFICATION=(DIRECTORY/'verification/blk027-release' if KEY in ('neither-conv-44','linking_only-conv-50','linking_only-conv-44') else DIRECTORY/'verification/six-cell-release-v2' if KEY in EXPANSION_CELLS else DIRECTORY/'verification/conv49-ablation-release' if CONDITION!='full' else
                   FIRST_VERIFY if CELL=='conv-44' else DIRECTORY/'verification/remaining-full-release')
+    if args.prepare_reconstruction and not args.pr48_recovery:
+        parser.error('Reconstruction requires --pr48-recovery')
     try:
-        if args.execute:execute()
+        if args.pr48_recovery:
+            if KEY != 'linking_only-conv-44':
+                raise RuntimeError('PR #48 authorises only Linking Only / conv-44')
+            from scripts import gpt4omini_linking44_release as recovery_release
+            VERIFICATION = DIRECTORY / recovery_release.DIRECTORY
+            if args.prepare_reconstruction:
+                from amem_repro.blk027 import verify_merged_review
+                from amem_repro.linking44_reconstruction import SUPPLEMENT, reconstruct
+                from amem_repro.openrouter import save_new
+                verify_merged_review(ROOT, args.reviewed_commit, args.merge_commit)
+                output = DIRECTORY / SUPPLEMENT
+                if output.exists():
+                    raise RuntimeError('The operational reconstruction is already sealed')
+                save_new(output, reconstruct(ROOT, DIRECTORY))
+            elif args.execute:
+                execute(recovery=True)
+            else:
+                recovery_release.freeze(ROOT, args.reviewed_commit, args.merge_commit)
+        elif args.execute:execute()
         else:freeze(args.gate,args.reviewed_commit,args.merge_commit)
     except BaseException as error:
         # Never print request headers, credentials, or arbitrary SDK exception text.

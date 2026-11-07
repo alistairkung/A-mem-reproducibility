@@ -133,6 +133,7 @@ class CampaignLedger:
         self.failed = False
         self.claimed = {}
         self.guards = {}
+        self.recovery_files = {}
         self._file_identity=None
         self._root_identity=None
         encoded=json.dumps(SCIENTIFIC_BINDING,sort_keys=True)
@@ -306,23 +307,32 @@ class CampaignLedger:
             retest = bool(approval.get('access_retest'))
             if retest:
                 self._access_retest(db, approval)
+            from . import linking44_finance as recovery
+            recovery_parent = None
+            if recovery.RELEASE_KEY in approval:
+                recovery_files = recovery.verify_release(self, db, approval)
+                recovery.check_parent(db)
+                recovery_parent = recovery.PARENT
             self.check_previous_cells(db, approval)
             retained = self.retained_prefix(db, approval)
             rows = [row for row in rows if row[0] not in retained]
             from .blk027 import retained_terminal
             reporting_phase = retained_terminal(self.root, db, approval)
             if not retest and any(row[2] not in ('complete','recoverable')
-                                  and row[0] != reporting_phase for row in rows):
+                                  and row[0] not in (reporting_phase, recovery_parent) for row in rows):
                 raise BudgetStop('An earlier phase is unfinished or terminal')
             same = [r for r in rows if json.loads(r[1])['kind'] == approval['kind'] and approval_cell(json.loads(r[1]))==cell]
             if parent and not retest:
-                if (not same or same[-1][0] != parent or same[-1][2] != 'recoverable'
+                if (not same or same[-1][0] != parent
+                        or same[-1][2] != ('terminal' if recovery_parent else 'recoverable')
                         or not same[-1][3] or approval.get('parent_seal') != same[-1][3]):
                     raise BudgetStop('Continuation must own the last sealed recoverable parent')
             elif same and not retest:
                 raise BudgetStop('A fresh root cannot repeat a consumed campaign phase')
             db.execute('INSERT INTO phases VALUES (?,?,?,\'running\',NULL)',
                        (phase,json.dumps(approval,sort_keys=True),parent))
+        if recovery_parent:
+            self.recovery_files[phase] = recovery_files
         self.claimed[phase]=copy.deepcopy(approval)
         return phase
 
@@ -344,6 +354,15 @@ class CampaignLedger:
                 retest = bool(approval.get('access_retest'))
                 self.check_previous_cells(db,approval)
                 retained = self.retained_prefix(db, approval)
+                from . import linking44_finance as recovery
+                owner = recovery.RELEASE_KEY in approval
+                if owner:
+                    signatures = self.recovery_files.get(phase)
+                    if (phase != recovery.CHILD or phase not in self.guards or not signatures or
+                            any(recovery.signature(p) != expected for p, expected in signatures.items())):
+                        raise BudgetStop('Child recovery ownership, guard or evidence changed')
+                    recovery.check_parent(db)
+                    recovery.admit_request(db, stage, request)
                 if retest:
                     self._access_retest(db, approval, exclude_phase=phase)
                     if (db.execute('SELECT COUNT(*) FROM halts WHERE phase=?',(phase,)).fetchone()[0]
@@ -351,12 +370,14 @@ class CampaignLedger:
                             or fingerprint(request) != approval['access_retest']['request_sha256']
                             or db.execute('SELECT COUNT(*) FROM attempts WHERE phase=?',(phase,)).fetchone()[0]):
                         raise BudgetStop('Updated-key access grant permits one exact metadata request')
-                elif any(r[0] not in retained for r in db.execute('SELECT phase FROM halts')):
+                elif any(r[0] not in retained and not (owner and r[0] == recovery.PARENT)
+                         for r in db.execute('SELECT phase FROM halts')):
                     raise BudgetStop('A terminal campaign failure forbids further transmissions')
                 if phase in self.guards:self.guards[phase](db)
                 if approval['binding'] != self.binding:
                     raise BudgetStop('Immutable approval changed')
-                if not retest and any(r[0] not in retained for r in db.execute("SELECT phase FROM attempts WHERE state!='settled'")):
+                if not retest and any(p not in retained and not (owner and p == recovery.PARENT and i == 17286)
+                        for p, i in db.execute("SELECT phase,id FROM attempts WHERE state!='settled'")):
                     raise BudgetStop('Unknown financial exposure; no further transmission')
                 spent, count = db.execute('SELECT COALESCE(SUM(charge),0),COUNT(*) FROM attempts').fetchone()
                 kind = approval['kind']
@@ -400,7 +421,10 @@ class CampaignLedger:
                 raise BudgetStop('Missing original provider generation identity')
             over_reservation=False
             with self.transaction() as db:
-                row = db.execute('SELECT state,reservation FROM attempts WHERE id=?',(attempt,)).fetchone()
+                row = db.execute('SELECT state,reservation,phase FROM attempts WHERE id=?',(attempt,)).fetchone()
+                from .linking44_finance import PARENT
+                if row and attempt == 17286 and row[2] == PARENT:
+                    raise BudgetStop('Unknown 17286 must keep its full reservation')
                 if not row or row[0] != 'reserved':
                     raise BudgetStop('Duplicate settlement')
                 over_reservation=charge>row[1]
@@ -426,6 +450,9 @@ class CampaignLedger:
     def finish(self, phase, receipt, state):
         if state not in ('complete','recoverable','terminal'):
             raise BudgetStop('Invalid terminal phase state')
+        from .linking44_finance import RELEASE_KEY
+        if RELEASE_KEY in self.claimed.get(phase, {}) and state == 'recoverable':
+            state = 'terminal'
         seal = fingerprint(receipt)
         if phase not in self.claimed:raise BudgetStop('Only the claimed phase owner can seal')
         with self.transaction() as db:
@@ -438,8 +465,14 @@ class CampaignLedger:
     def unaccepted_unknowns(self, approval):
         with self.transaction() as db:
             retained = self.retained_prefix(db, approval)
-            return sum(phase not in retained for (phase,) in
-                       db.execute("SELECT phase FROM attempts WHERE state!='settled'"))
+            from . import linking44_finance as recovery
+            owner = recovery.RELEASE_KEY in approval
+            if owner:
+                if self.claimed.get(recovery.CHILD) != approval:
+                    recovery.verify_release(self, db, approval)
+                recovery.check_parent(db)
+            return sum(phase not in retained and not (owner and phase == recovery.PARENT and i == 17286)
+                       for phase, i in db.execute("SELECT phase,id FROM attempts WHERE state!='settled'"))
 
     def totals(self):
         with self.transaction() as db:

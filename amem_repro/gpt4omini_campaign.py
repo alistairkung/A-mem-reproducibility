@@ -105,7 +105,13 @@ def admission_guard(approval, ledger, root):
             raise BudgetStop('An active leaf cannot already have a checkpoint child')
         for phase,seal,parent_path,auth in ancestors:
             row=db.execute('SELECT approval,parent,state,seal FROM phases WHERE id=?',(phase,)).fetchone()
-            if row!=(json.dumps(auth,sort_keys=True),auth.get('parent'),'recoverable',seal):
+            expected_state = 'recoverable'
+            if 'linking44_recovery_release_sha256' in approval:
+                from .linking44_reconstruction import PARENT, PARENT_SEAL
+                if phase != PARENT or seal != PARENT_SEAL:
+                    raise BudgetStop('Unapproved terminal recovery ancestor')
+                expected_state = 'terminal'
+            if row!=(json.dumps(auth,sort_keys=True),auth.get('parent'),expected_state,seal):
                 raise BudgetStop('Ancestor seal, state or approval changed')
             incoming=db.execute('SELECT id FROM phases WHERE parent=?',(phase,)).fetchall()
             expected_child=approval['phase'] if phase==approval.get('parent') else next(
@@ -306,7 +312,12 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         if (claimed_parent['phase']!=approval['parent']
                 or fingerprint(claimed_parent)!=approval.get('parent_seal')):
             raise BudgetStop('Parent path and approved immutable parent edge differ')
-    checkpoint=checkpoint_from(parent_path,ledger,binding,root=root) if parent_path else None
+    transport_recovery = 'linking44_recovery_release_sha256' in approval
+    if transport_recovery:
+        from .linking44_reconstruction import load_checkpoint
+        checkpoint = load_checkpoint(approval, ledger, root)
+    else:
+        checkpoint=checkpoint_from(parent_path,ledger,binding,root=root) if parent_path else None
     phase=ledger.claim(approval)
     ledger.set_guard(phase,admission_guard(approval,ledger,root))
     output=store/'runs'/phase
@@ -412,7 +423,9 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                     raise BudgetStop('Ordered benchmark questions differ')
                 with ledger.transaction() as db:
                     count=db.execute("SELECT COUNT(*) FROM attempts a JOIN phases p ON a.phase=p.id WHERE json_extract(p.approval,'$.kind')='baseline' AND json_extract(p.approval,'$.conversation')=? AND json_extract(p.approval,'$.condition')=? AND a.state='settled'",(cell,condition)).fetchone()[0]
-                if count!=2*(nturns+nqa):raise BudgetStop('Full baseline original request count differs')
+                # The approved no-response attempt belongs to the sealed parent.
+                expected_settled = 2 * (nturns + nqa) - int(transport_recovery)
+                if count!=expected_settled:raise BudgetStop('Full baseline original request count differs')
             receipt['experiments']=import_results(views,context,client=observer.client,
                                                 traces=original_qa_traces(capture))
             receipt['status']='degraded' if post_scoring_failures or checkpoint or (cell=='conv-44' and condition=='full' and approval.get('retained_access_prefix')) else summary['status']
@@ -425,7 +438,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                                                'files':inventory(cache_path)})
             if fingerprint(source_fingerprint(root))!=binding['source_sha256']:
                 raise BudgetStop('Reviewed source changed during reporting')
-        elif (type(failure) is RecoverableLength and guard.recoverable
+        elif (not transport_recovery and type(failure) is RecoverableLength and guard.recoverable
                 and (output/'summary.json').exists() and (output/'partial-memory.json').exists()
                 and not any(e.get('kind') in ('partial_artifact','reporting','token_measurement') for e in events)
                 and not ledger.unaccepted_unknowns(approval)):
