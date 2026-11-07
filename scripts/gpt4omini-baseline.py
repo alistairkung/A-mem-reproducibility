@@ -424,10 +424,9 @@ if __name__=='__main__':
             from scripts import gpt4omini_linking44_release as recovery_release
             VERIFICATION = DIRECTORY / recovery_release.DIRECTORY
             if args.prepare_reconstruction:
-                from amem_repro.blk027 import verify_merged_review
                 from amem_repro.linking44_reconstruction import SUPPLEMENT, reconstruct
                 from amem_repro.openrouter import save_new
-                verify_merged_review(ROOT, args.reviewed_commit, args.merge_commit)
+                recovery_release.verify_preparation(ROOT, args.reviewed_commit, args.merge_commit)
                 output = DIRECTORY / SUPPLEMENT
                 if output.exists():
                     raise RuntimeError('The operational reconstruction is already sealed')

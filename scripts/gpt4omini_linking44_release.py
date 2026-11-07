@@ -45,6 +45,24 @@ def release_files(root, old):
     return files
 
 
+def verify_preparation(root, reviewed, merge):
+    """Require the implementation merge and its two current-source reviews before sealing the note."""
+    verify_merged_review(root, reviewed, merge)
+    sources = source_fingerprint(root)
+    source = fingerprint(sources)
+    for axis in ('spec', 'standards'):
+        review = read(root / 'artifacts/gpt4omini' / DIRECTORY / f'baseline-{axis}-review.json')
+        require(review.get('verdict') == 'pass' and review.get('reviewed_commit') == reviewed
+                and review.get('source_sha256') == source, 'Both implementation reviews must match preparation')
+    files = dict(sources['files'])
+    for name in ('scripts/gpt4omini-baseline.py', 'scripts/gpt4omini_linking44_release.py'):
+        files[name] = sha(root / name)
+    for name, digest in files.items():
+        blob = subprocess.check_output(['git', 'show', reviewed + ':' + name], cwd=root)
+        require(hashlib.sha256(blob).hexdigest() == digest,
+                'Preparation source differs from the implementation merge')
+
+
 def current_capacity(capacity):
     age = (datetime.now(timezone.utc) - datetime.fromisoformat(capacity['observed_at'])).total_seconds()
     billing = capacity['snapshot']

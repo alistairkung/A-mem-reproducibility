@@ -94,5 +94,66 @@ def test_altered_supplement_cannot_be_loaded(tmp_path):
     release.write_text(json.dumps({'reconstruction_sha256': '0' * 64}))
     approval = {'phase': CHILD, 'parent': PARENT, 'parent_path': str(path),
                 'parent_seal': PARENT_SEAL, 'linking44_recovery_release_sha256': sha(release)}
-    with pytest.raises(BudgetStop, match='reconstruction or parent differs'):
+    with pytest.raises(BudgetStop, match='Recovery evidence digest changed'):
         load_checkpoint(approval, SimpleNamespace(root=tmp_path), ROOT)
+
+
+def test_earlier_investigation_merge_cannot_seal_reconstruction(tmp_path, monkeypatch):
+    import runpy
+    import sys
+    from scripts import gpt4omini_linking44_release as release
+    from amem_repro import linking44_reconstruction
+    from amem_repro import openrouter
+
+    calls = []
+    def forbidden(*args, **kwargs):
+        calls.append('premature reconstruction or write')
+        raise AssertionError('Earlier implementation merge admitted')
+
+    monkeypatch.setattr(linking44_reconstruction, 'reconstruct', forbidden)
+    monkeypatch.setattr(openrouter, 'save_new', lambda path, value: None
+                        if path.parent.name == 'driver-errors' else forbidden())
+    monkeypatch.setattr(release, 'DIRECTORY', tmp_path)
+    monkeypatch.setattr(sys, 'argv', ['gpt4omini-baseline.py', '--pr48-recovery',
+                        '--prepare-reconstruction', '--condition', 'linking_only', '--cell', 'conv-44',
+                        '--reviewed-commit', '57bc4f5d23c20613a89b39547d6470a7556602a2',
+                        '--merge-commit', '009f099a599683a6386d525a727113b4ae9aefa7'])
+    with pytest.raises(SystemExit, match='campaign stopped'):
+        runpy.run_path(str(ROOT / 'scripts/gpt4omini-baseline.py'), run_name='__main__')
+    assert calls == []
+
+
+@pytest.mark.skipif(not PARENT_FILE.exists(), reason='requires the sealed private transport incident')
+def test_loaded_checkpoint_uses_the_same_bytes_that_were_hashed(tmp_path, monkeypatch):
+    from shutil import copyfile
+    from amem_repro.config import source_fingerprint
+    from amem_repro.linking44_reconstruction import POLICY
+    path = tmp_path / PARENT_PATH
+    path.parent.mkdir(parents=True)
+    copyfile(PARENT_FILE, path)
+    state = {'marker': 'reviewed'}
+    source = fingerprint(source_fingerprint(ROOT))
+    value = {'source_sha256': source, 'state': state, 'failures': [],
+             'lineage': {'reconstruction_policy': POLICY, 'after_state_sha256': fingerprint(state)}}
+    supplement = tmp_path / SUPPLEMENT
+    supplement.parent.mkdir(parents=True)
+    supplement.write_text(json.dumps(value))
+    release = tmp_path / RELEASE_PATH
+    release.write_text(json.dumps({'reconstruction_sha256': sha(supplement)}))
+    approval = {'phase': CHILD, 'parent': PARENT, 'parent_path': str(path), 'parent_seal': PARENT_SEAL,
+                'binding': {'source_sha256': source}, 'linking44_recovery_release_sha256': sha(release)}
+    real_read = Path.read_bytes
+
+    def replace_after_read(file):
+        raw = real_read(file)
+        if file == supplement:
+            changed = copy.deepcopy(value)
+            changed['state']['marker'] = 'unreviewed'
+            changed['lineage']['after_state_sha256'] = fingerprint(changed['state'])
+            file.write_text(json.dumps(changed))
+        return raw
+
+    monkeypatch.setattr(Path, 'read_bytes', replace_after_read)
+    loaded = load_checkpoint(approval, SimpleNamespace(root=tmp_path), ROOT)
+    assert loaded['state'] == state
+    assert json.loads(real_read(supplement))['state'] != state

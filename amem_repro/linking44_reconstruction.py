@@ -121,17 +121,14 @@ def reconstruct(root, campaign):
 
 
 def load_checkpoint(approval, ledger, root):
-    from .linking44_finance import RELEASE_PATH
-    release_path = ledger.root / RELEASE_PATH
-    path = ledger.root / SUPPLEMENT
+    from .linking44_finance import RELEASE_PATH, RELEASE_KEY, bound_bytes
     require(approval['phase'] == CHILD and approval['parent'] == PARENT
             and Path(approval['parent_path']) == ledger.root / PARENT_PATH
             and sha(ledger.root / PARENT_PATH) == PARENT_HASH
-            and approval['parent_seal'] == PARENT_SEAL
-            and sha(release_path) == approval['linking44_recovery_release_sha256']
-            and path.resolve() == path and sha(path) == read(release_path)['reconstruction_sha256'],
+            and approval['parent_seal'] == PARENT_SEAL,
             'Approved reconstruction or parent differs')
-    value = read(path)
+    release = json.loads(bound_bytes(ledger.root, RELEASE_PATH, approval[RELEASE_KEY]))
+    value = json.loads(bound_bytes(ledger.root, SUPPLEMENT, release['reconstruction_sha256']))
     require(value['source_sha256'] == fingerprint(source_fingerprint(root))
             and value['source_sha256'] == approval['binding']['source_sha256']
             and fingerprint(value['state']) == value['lineage']['after_state_sha256']
