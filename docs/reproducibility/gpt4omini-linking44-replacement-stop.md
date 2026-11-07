@@ -4,7 +4,7 @@
 
 ## Execution and stopping decision
 
-On 7 November 2026 the group opened on PR #50's ledger. Independent Standards and Spec reviews cleared commit `91d651b876acf33c0a3ce3d2eb098677308a84b0` for local execution. The focused offline gate passed 159 tests. A copy of the opening ledger admitted a complete 1,666-call fixture covering the ordered 675 turns and 158 questions. Adverse cases covered cross-attempt isolation, aggregate admission, terminal success, the third-claim limit and rejection of unknown or financially unsafe restarts. The group's USD 10 ceiling includes model reservations and service usage across all ordinals.
+On 7 November 2026 the group opened on PR #50's ledger. Independent Standards and Spec reviews cleared commit `91d651b876acf33c0a3ce3d2eb098677308a84b0` for local execution. The focused offline gate passed 159 tests. The native executor completed an ordered 1,666-call fixture for 675 turns and 158 questions using synthetic opening SQL. Separate checks on copies of PR #50's ledger verified stage admission and unsafe stops. Adverse cases covered cross-attempt isolation, aggregate admission, terminal success, the third-claim limit and rejection of unknown or financially unsafe restarts. The group's USD 10 ceiling includes model reservations and service usage across all ordinals.
 
 The first attempt began at 21:45 Hong Kong time on 7 November in an empty memory store and independent cache namespace. The pinned OpenAI route, native schemas, shared decisions, temperatures, construction neighbours, retrieval and original scoring policies were inherited from the reviewed executor. The repetition was 1. The recorded build ended with counter 566, 557 strengthening actions and zero neighbour updates.
 
@@ -41,9 +41,9 @@ The four-condition interaction on conv-49 and conv-50 was +1.91 F1 / +1.23 BLEU-
 
 ## Independent verification
 
-Standards and Spec separately reconstructed all 566 committed turns, their actions, five consolidations and the stale retrieval corpus. CPU recomputation matched all 566 × 384 embedding values. The failed turn generated metadata and a shared-decision response, with zero committed changes for that turn. Standards verified the complete remote observation set. Both ordinals 2 and 3 remained unclaimed when the controller exited.
+Standards and Spec separately reconstructed all 566 committed turns, their actions, five consolidations and the stale retrieval corpus. CPU recomputation matched all 566 × 384 embedding values. The failed turn generated metadata and a shared-decision response, with zero committed changes for that turn. Standards verified the complete remote observation set. Both ordinals 2 and 3 remained unclaimed when the controller exited. The preservation audit rechecked 154,085 historical scientific, billing and observability files, the prior 18,348 SQL attempts, all eleven accepted cells and 1,534 DeepSeek files.
 
-A separate post-stop environment check found the temporary Python installation missing the standard-library file `py_compile.py`. Its interpreter and the other 2,023 checked files matched the retained distribution. This was observed after the recorded provider failure. The stopped-state verification completed, and the local installation was left as observed.
+A separate post-stop environment check found the temporary Python installation missing the standard-library file `py_compile.py`. All 2,023 present regular files checked, including the interpreter, matched the retained distribution. This was observed after the recorded provider failure. The stopped-state verification completed, and the local installation was left as observed.
 
 ## Reproducibility evidence
 
@@ -70,3 +70,4 @@ The local release and receipts live under `artifacts/gpt4omini/cells/linking_onl
 | Independent Spec finance verification | `d815d4ffa6cbd600a8b1626d92265a63b9998431e7a6ee44d574dae2049fffce` |
 | Independent Standards finance verification | `b39fd46a2963e6ef85fe9a7acfc24af1c6039179f619d5f0c32945b160463253` |
 | Independent campaign finance close | `f7b4dc89b1003a96b1f5a4e143eec81ec3e5294879f8a58e7db023b0fbe2ab29` |
+| Closing historical preservation | `99685cb9e11360f410b64cd7bbad1d723d4c862bc7ad5fff3256bf41c699fa13` |
