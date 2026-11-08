@@ -1,0 +1,5 @@
+Configuration,Identified model cost (USD),Historical F1 (%),Alternative F1 (%),Historical Pareto status,Alternative Pareto status
+Neither,0.95044785,30.02712915,39.00300820,Efficient,Efficient
+Linking Only,1.07939100,30.20564880,37.34247682,Efficient,Dominated
+Evolution Only,0.95332785,29.28682038,35.85614541,Dominated,Dominated
+Full A-MEM,1.08083640,32.69135404,36.91176156,Efficient,Dominated

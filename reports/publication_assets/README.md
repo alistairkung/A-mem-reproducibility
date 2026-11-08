@@ -1,6 +1,6 @@
 # A-MEM publication assets
 
-This collection supplies six scientific tables and five figures for the twelve accepted GPT-4o-mini cells on 558 matched LoCoMo questions. Configuration order is Neither, Linking Only, Evolution Only, Full A-MEM throughout. The additional alternative-reference policy retains the accepted internal name `author-corrected-v1`; public labels use alternative-reference to avoid implying universal superiority over the authors' historical policy.
+This collection supplies six scientific tables, a compact companion table and six figures for the twelve accepted GPT-4o-mini cells on 558 matched LoCoMo questions. Configuration order is Neither, Linking Only, Evolution Only, Full A-MEM throughout. The additional alternative-reference policy retains the accepted internal name `author-corrected-v1`; public labels use alternative-reference to avoid implying universal superiority over the authors' historical policy.
 
 ## Reproduce and validate
 
@@ -24,7 +24,7 @@ CSV metric values retain eight decimal places. Word, LaTeX and graphical scores 
 - `tables/01_configurations.csv` through `06_conversation_results.csv` contain the six machine-readable tables.
 - `tables/latex/` contains six standalone booktabs fragments. Load `booktabs`, `array` and `graphicx` in a UTF-8 LaTeX document. Table 4 supplies two metric panels, and Table 6 supplies per-conversation supplementary detail.
 - [publication_tables.docx](tables/publication_tables.docx) is a six-page A4 Word collection with one numbered table per page, suggested captions, interpretation and caveats.
-- `figures/01_scoring_comparison` through `05_token_overhead` each have SVG and 300-DPI PNG versions. SVG retains text for vector workflows. PNG is suitable for Word and PowerPoint.
+- `figures/01_scoring_comparison` through `05_token_overhead` each have SVG and 300-DPI PNG versions. Figure 6 adds a shared-scale historical/alternative cost comparison in the same formats. SVG retains text for vector workflows. PNG is suitable for Word and PowerPoint.
 - [captions.json](captions.json) contains a suggested academic title, caption, interpretation and limitation for every table and figure.
 
 SVG IDs, figure dates, DOCX core properties and ZIP timestamps are stabilized. Tests regenerate the collection and require byte-identical output hashes on the recorded environment. Different font stacks or compression/runtime versions can affect binary outputs; scientific validation still runs before exports.
@@ -37,7 +37,7 @@ For a 15-minute presentation, use Figures 1, 2, 4, 3 and 5 in that order, progre
 
 ## Inspection
 
-All five actual PNGs were inspected for label clipping, scale, contrast and legibility. Both bar figures use zero-based axes. The interaction and scatter axes are zoomed and labelled with point values. Figure 2 uses the sequential cividis scale with two-decimal annotations. Its full 0–100 scale avoids rescaling each category. Figure 3 marks the observed frontier with a circle and dominated points with crosses. Figure 5 uses separate axes for tokens and retrieved entries.
+All six actual PNGs were inspected for label clipping, scale, contrast and legibility. Both bar figures use zero-based axes. The interaction and scatter axes are zoomed and labelled with point values. Figure 2 uses the sequential cividis scale with two-decimal annotations. Its full 0–100 scale avoids rescaling each category. Figure 3 marks the observed frontier with a circle and dominated points with crosses. Figure 5 uses separate axes for tokens and retrieved entries.
 
 The DOCX was rendered with LibreOffice and checked across all six pages. The LaTeX fragments were compiled in a local test wrapper. Rendering intermediates are kept outside this deliverable directory. No final coursework report or presentation is included.
 
@@ -130,3 +130,11 @@ Separate zero-based panels show native answer input tokens in millions and mean 
 Linking-expanded retrieval approximately doubles the answer input token volume.
 
 Token volume measures input overhead, not answer quality or a universal efficiency effect.
+
+## Section 5.3 two-policy cost comparison
+
+Use `figures/06_dual_scoring_f1_vs_cost.svg` or its 300-DPI PNG to compare historical and alternative-reference F1 at identical identified model costs. Both panels have the same numerical ranges, direct condition labels and stable condition colours and marker shapes. Filled markers are efficient, hollow markers are dominated, and the dotted line connects the historical frontier. `tables/07_dual_scoring_cost_performance.csv` and its standalone LaTeX fragment expose the values and computed statuses. The six-page Word collection is preserved.
+
+The historical frontier contains Neither, Linking Only and Full A-MEM. This differs from the proposed two-point historical frontier. Linking Only has historical F1 of 30.21% versus Neither's 30.03%, and costs USD 1.079391 versus Full's USD 1.080836. Neither therefore cannot dominate Linking Only on historical F1, and Full cannot dominate it on cost. Evolution Only is dominated. Under the alternative reference, Neither is the sole frontier point. The classifications are calculated from unrounded question-level means and accepted scientific model charges; display rounding does not control membership.
+
+These frontiers describe only the 558 matched questions and three accepted scientific builds per configuration. Observability fees, historical failed attempts and financial reservations do not enter the cost axis. No statistical significance or universal efficiency is implied. Figure 3 remains byte-identical for compatibility. The new figure can replace Figure 3 in Section 5.3 when both evaluation perspectives are discussed.

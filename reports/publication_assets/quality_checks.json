@@ -1,9 +1,11 @@
 {
   "all_docx_pages_visually_inspected": true,
   "all_latex_pages_visually_inspected": true,
+  "companion_latex_compiled": true,
   "docx_pages": 6,
   "docx_title_border_removed": true,
-  "figure_pngs_inspected": 5,
+  "dual_scoring_shared_axes_verified": true,
+  "figure_pngs_inspected": 6,
   "files": {
     "document_exports.py": "419103cc41fee9a548314d29d3db9b9f299609a8f56cfe41611fe22e41c74d43",
     "tables/latex/01_configurations.tex": "fd7ec61989429390e0b0bd406a4fa2178dcf48b4e19e4120724837bfd289620b",
@@ -20,7 +22,7 @@
     "array"
   ],
   "latex_pages": 6,
-  "offline_tests_passed": 13,
+  "offline_tests_passed": 15,
   "repeat_generation_byte_identical": true,
   "table4_two_panels": true,
   "verified": true,

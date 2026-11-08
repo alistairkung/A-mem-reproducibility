@@ -47,9 +47,9 @@ def test_corrupted_reporting_inputs_fail(raw,damage):
 def test_output_inventory_hashes_labels_and_units(raw):
     manifest=json.loads((HERE/'source_manifest.json').read_text())
     assert manifest['inputs']=={'docs/reproducibility/'+n:hashlib.sha256(b).hexdigest() for n,b in raw.items()}
-    expected={f'figures/{n}.{ext}' for n in ['01_scoring_comparison','02_category_heatmap','03_f1_vs_cost','04_factorial_interaction','05_token_overhead'] for ext in ['svg','png']}
+    expected={f'figures/{n}.{ext}' for n in ['01_scoring_comparison','02_category_heatmap','03_f1_vs_cost','04_factorial_interaction','05_token_overhead','06_dual_scoring_f1_vs_cost'] for ext in ['svg','png']}
     stems=['01_configurations','02_overall_results','03_factorial_contrasts','04_category_performance','05_cost_retrieval','06_conversation_results']
-    expected|={f'tables/{s}.csv' for s in stems}|{f'tables/latex/{s}.tex' for s in stems}|{'tables/publication_tables.docx'}
+    expected|={f'tables/{s}.csv' for s in stems}|{f'tables/latex/{s}.tex' for s in stems}|{'tables/publication_tables.docx','tables/07_dual_scoring_cost_performance.csv','tables/latex/07_dual_scoring_cost_performance.tex'}
     assert set(manifest['generated_outputs'])==expected
     for name,digest in manifest['generated_outputs'].items():
         assert hashlib.sha256((HERE/name).read_bytes()).hexdigest()==digest
@@ -90,3 +90,42 @@ def test_word_tables_use_explicit_academic_greyscale():
                     for color in cell.findall('.//w:rPr/w:color',ns):
                         assert color.get(attr('val'))=='000000'
                         assert all('theme' not in key.lower() for key in color.attrib)
+
+
+
+def test_dual_policy_costs_scores_frontiers_and_axes(raw):
+    import matplotlib.pyplot as plt
+    _, pooled, _, cost = g.validate(raw)
+    frame = g.dual_cost_data(pooled, cost)
+    assert frame['Historical Pareto status'].tolist() == ['Efficient','Efficient','Dominated','Efficient']
+    assert frame['Alternative Pareto status'].tolist() == ['Efficient','Dominated','Dominated','Dominated']
+    fig = g.dual_cost_figure(frame, len([json.loads(l) for l in raw[g.FILES[0]].splitlines()]))
+    try:
+        left, right = fig.axes
+        assert left.get_xlim() == right.get_xlim() and left.get_ylim() == right.get_ylim()
+        for ax, policy, name in [(left,'historical','Historical'), (right,'corrected','Alternative')]:
+            for i, arm in enumerate(g.ORDER):
+                point = ax.collections[i]
+                c, f1 = point.get_offsets()[0]
+                assert c == float(cost.loc[arm,'selected_model_usd'])
+                assert f1 == pooled[policy]['groups']['overall']['means_percent'][arm]['f1']
+                assert frame.iloc[i][name+' F1 (%)'] == f1
+                assert any(t.get_text()==g.LABELS[i] for t in ax.texts)
+        for a,b in zip(left.collections,right.collections):
+            assert (a.get_edgecolors()==b.get_edgecolors()).all()
+            assert (a.get_paths()[0].vertices==b.get_paths()[0].vertices).all()
+        assert g.pareto_mask([1,1,2],[2,2,1]) == [True,True,False]
+    finally:
+        plt.close(fig)
+
+
+def test_dual_exports_are_valid_and_old_figure_compatible():
+    import xml.etree.ElementTree as ET
+    import subprocess
+    path=HERE/'figures/06_dual_scoring_f1_vs_cost.svg'
+    assert ET.parse(path).getroot().tag.endswith('svg')
+    assert 'Historical F1' in path.read_text() and 'Alternative-reference F1' in path.read_text()
+    for ext in ('png','svg'):
+        p=HERE/f'figures/03_f1_vs_cost.{ext}'
+        old=subprocess.check_output(['git','show','bd520b1:reports/publication_assets/figures/'+p.name],cwd=g.ROOT)
+        assert p.read_bytes()==old
