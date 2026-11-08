@@ -12,6 +12,8 @@ class PDF15Surface(PDFSurface):
     def _create_surface(self, width, height):
         surface, width, height = super()._create_surface(width, height)
         surface.restrict_to_version(cairo.PDF_VERSION_1_5)
+        surface.set_metadata(cairo.PDF_METADATA_CREATE_DATE, "2026-11-08T00:00:00Z")
+        surface.set_metadata(cairo.PDF_METADATA_MOD_DATE, "2026-11-08T00:00:00Z")
         return surface, width, height
 
 if __name__ == '__main__':

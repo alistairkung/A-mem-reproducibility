@@ -75,8 +75,10 @@ subjects match; the approved repository SVG versions use different titles,
 fonts, axes/legend styling and markers from some embedded DOCX bitmaps. The
 requested original assets take precedence for graphical appearance. Captions
 retain their scientific wording. CairoSVG 2.9.0 / Cairo 1.18.6 converts the SVGs
-into vector PDF 1.5; no rasterisation, scientific regeneration or diagram redrawing
-occurs. `asset_manifest.json` pins both input and output hashes.
+into vector PDF 1.5; no additional rasterisation, scientific regeneration or diagram redrawing
+occurs. The heatmap SVG already embeds two raster images (cells and colour scale);
+those source-native images are retained alongside vector text. The other three
+PDF assets contain no raster images. `asset_manifest.json` pins both input and output hashes.
 
 ## Intentional formatting differences
 
@@ -126,5 +128,18 @@ No substantive citation correction was made.
 - Independent verifier passes; A4, ten pages and working internal/source links checked.
 - All ten rendered pages inspected for clipping, overlap, heading/table breaks and
   figure legibility. The architecture is deliberately given a dedicated page.
-- Independent Standards and Spec reviews: pending final review.
+- Independent Standards review: **PASS**, zero hard violations or actionable
+  judgment-call findings. A clean temp-copy build with auxiliaries removed produced
+  the byte-identical final PDF, SHA-256
+  `731a4f8818e98e2a6e47beb8e012602622b6992a24803e6576582a72c1cb3fe6`.
+- Independent Spec review: **PASS**, zero conversion defects or blocking findings;
+  separately confirmed every source paragraph in the PDF and inspected all ten pages.
+  One optional observation remains: Figure 4's two-panel labels are approximately
+  6 pt. A full-width trial exceeded ten pages; the reviewed layout is retained.
+- A final regeneration test found Cairo's default current-date PDF metadata.
+  Fixed creation/modification dates now make all four conversions byte-identical
+  on this environment. Independent Standards re-review confirmed every regenerated
+  asset hash; Spec review approved the metadata fix and heatmap clarification.
+  The final PDF remains byte-identical; all ten final rendered pages also match
+  the visually inspected render pixel-for-pixel.
 - No experimental pipeline, publication-data generator, accepted result or ledger changed.

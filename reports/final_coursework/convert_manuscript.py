@@ -11,7 +11,7 @@ from lxml import etree as E
 HERE = Path(__file__).resolve().parent
 ASSETS = HERE.parent / 'publication_assets'
 NS = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
-SOURCE_SHA = 'c433d42629e62eb70b050785c40ac691df4ec7a4e20d5315857ad870a2d642a5'  # Filled from the approved manuscript on first conversion.
+SOURCE_SHA = 'c433d42629e62eb70b050785c40ac691df4ec7a4e20d5315857ad870a2d642a5'  # Approved editorial-source fingerprint.
 
 
 def esc(s):

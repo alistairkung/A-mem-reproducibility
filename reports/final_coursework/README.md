@@ -61,7 +61,8 @@ python reports/final_coursework/convert_assets.py
 
 On macOS with Homebrew Cairo, prefix that command with
 `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib` if the dynamic loader needs it.
-The converter uses the committed SVGs directly and restricts output to PDF 1.5;
+The converter uses the committed SVGs directly, fixes creation/modification dates
+and restricts output to PDF 1.5;
 no raster image is substituted. `asset_manifest.json` records source/output hashes.
 The PDFs are committed so compilation does not depend on native Cairo or font
 substitution in an SVG converter. Regeneration on another Cairo/font stack may
