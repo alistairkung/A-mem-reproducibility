@@ -1,0 +1,278 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=22mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{texgyretermes}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\setsansfont{texgyreheros}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold]
+\setmonofont{lmmono10-regular.otf}
+\usepackage{microtype,booktabs,array,tabularx,graphicx,amsmath}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{float,needspace,titlesec,fancyvrb,placeins}
+\usepackage[hidelinks,unicode]{hyperref}
+\urlstyle{same}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt plus 1pt}
+\setlength{\textfloatsep}{10pt}
+\setlength{\intextsep}{9pt}
+\renewcommand{\arraystretch}{1.13}
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{10pt}{5pt}
+\titlespacing*{\subsection}{0pt}{7pt}{3pt}
+\clubpenalty=10000 \widowpenalty=10000
+\emergencystretch=1em
+\DeclareCaptionType{listing}[Listing][List of Listings]
+\begin{document}
+
+{\centering\LARGE\bfseries Reproducing A-MEM: A Cost-Aware Study of Memory Linking and Evolution\par}
+\vspace{5pt}{\centering\small FTEC5660 — Agentic AI for Business and FinTech  |  Individual Reproducibility Assignment\par}
+{\centering\small Paper: Xu et al. (2025), A-MEM: Agentic Memory for LLM Agents  |  Code and evidence: \href{https://github.com/alistairkung/A-mem-reproducibility}{github.com/alistairkung/A-mem-reproducibility}\par}\vspace{8pt}
+\noindent{\small Student name: [enter name] \hfill Student ID: [enter ID]}\par
+\section{Project summary and research questions}
+A-MEM is an agentic memory system that turns conversational turns into structured notes, creates links to related memories and can revise contextual metadata of older notes. The original paper~\cite{xu2025amem} reports an ablation of Neither, Linking Only and Full A-MEM. I set out to reproduce the mechanism-level comparison and investigate a missing fourth condition: Evolution Only, in which older memories can be updated without strengthening new memories.
+
+The fourth condition completes a two-factor design and permits two questions: does neighbour evolution improve answers independently of linking, and do the additional memory operations justify their computational cost? Inspired by Professor Nguyen’s Pareto-oriented approach, I measured answer quality, retrieval expansion, token use and identified model charges. I also reproduced the paper-compatible evaluation and added a complementary measure for questions that require acknowledging missing information.
+
+\subsection{Cost-aware scope}
+The released LoCoMo sample~\cite{locomo} contains ten conversations, 5,882 turns and 1,986 questions. I selected three conversations before inspecting their performance, stratifying by length with a fixed seed (42). This retained matched questions under all four experimental configurations while reducing the required independent memory builds from forty to twelve. The subset limits generalisation but avoids choosing conversations on the basis of observed scores.
+
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.48\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.25\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.27\linewidth-5.333333333333333pt\relax}@{}}
+\toprule
+Conversation & Turns & Questions \\
+\midrule
+conv-44 & 675 & 158 \\
+conv-49 & 509 & 196 \\
+conv-50 & 568 & 204 \\
+Total per condition & 1,752 & 558 \\
+\bottomrule\end{tabular}
+\caption{Preselected LoCoMo evaluation population (558 questions per configuration).}\label{tab1}
+\end{table}
+\section{A-MEM and experimental setup}
+\subsection{Memory construction and retrieval}
+For every conversation turn, an LLM creates a memory containing the original content and generated keywords, context and tags. MiniLM embeddings identify up to five nearby existing memories. A shared evolution decision then proposes possible actions: strengthen, which adds outgoing links and may revise the new note’s tags; and update\_neighbor, which changes existing neighbours’ contexts and tags without rewriting their original content. The new note is inserted into the store. At answer time, similarity retrieval begins with ten notes and can expand through links.
+
+Both mechanisms are proposed by the same LLM decision in every configuration, even when the experiment subsequently disables their application. Consequently, this design isolates the effects of applying two bundles of state mutations, not the cost of skipping the shared decision call.
+
+\subsection{Frozen runtime and reproducibility}
+The frozen author implementation~\cite{amemsource} was fixed to commit f9a173d. The accepted GPT-4o-mini campaign used openai/gpt-4o-mini-2024-07-18 via OpenRouter, with OpenAI pinned as the upstream provider. Each cell used separate memory, retrieval-index and response-cache state. Prompts and native output contracts were fixed; temperature was 0.7 except for category-5 answers at 0.5. Construction neighbours were k=5; answer retrieval began at k=10. A 4,096-token limit applied to evolution decisions and 1,000 tokens to other stages. The recorded Python environment used Python 3.11.17 for publication reproducibility.
+
+The repository~\cite{reproduction,acceptedresults} records source and dataset fingerprints, model responses, original question IDs, checkpointed memory states, scoring outputs, and independently reviewed evidence. The publication-asset generator pins its scientific inputs to accepted commit 8485673, rather than the moving working tree. Detailed execution commands and dependencies are retained in the project repository and reporting README.
+
+\section{Reproduction target and evaluation}
+\subsection{Published reproduction target}
+The principal target was Table 3 of A-MEM, which compares Neither, Linking Only and Full A-MEM. The published Full F1/BLEU-1 scores were 27.02/20.09 (multi-hop), 45.85/36.67 (temporal), 12.14/12.00 (open-domain), 44.65/37.06 (single-hop) and 50.03/49.47 (adversarial). I reproduce the authors’ evaluation procedure and examine whether the same directional conclusions hold. Absolute numerical replication is limited by differences in the released question population and incompletely specified Table 3 retrieval settings.
+
+\subsection{What the metrics mean}
+F1 measures overlap between the words in a generated answer and the reference answer. Precision asks what fraction of the prediction’s words match; recall asks what fraction of the reference words were captured; F1 balances the two. The released scorer treats words as sets, so repeated words do not increase its count.
+
+BLEU-1 measures how many individual words in the generated answer also occur in the reference (unigram overlap), with a penalty when a generated answer is too short. Both metrics are computed per question and averaged with equal question weight. They measure matching wording, not semantic truth: a correct paraphrase may still receive a low score.
+
+\subsection{What the five question categories test}
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.18\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.12\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.7\linewidth-5.333333333333333pt\relax}@{}}
+\toprule
+Category & Questions & What the question requires \\
+\midrule
+Multi-hop & 99 & Combine facts scattered across multiple conversation turns. \\
+Temporal & 89 & Reason about dates, sequences and changes over time. \\
+Open-domain & 27 & Apply general knowledge or contextual understanding to conversation evidence. \\
+Single-hop & 222 & Retrieve a directly stated conversational fact. \\
+Adversarial & 121 & Recognise when the conversation does not supply the requested information. \\
+\bottomrule\end{tabular}
+\caption{The five LoCoMo question categories in the selected 558-question population.}\label{tab2}
+\end{table}
+\subsection{Historical and complementary adversarial evaluation}
+In category 5, the agent chooses between an unsupported distractor and “Not mentioned in the conversation.” I reproduced the authors’ historical scoring method, which compares the generated answer against the supplied distractor. I also introduced a complementary evaluation to examine the agent’s ability to recognise missing information. Throughout the figures, this complementary evaluation is labelled alternative-reference scoring. This uses the same F1 and BLEU-1 calculations but compares against the no-information response. Binary adversarial correctness separately records whether that response was selected.
+
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.26\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.36\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.38\linewidth-5.333333333333333pt\relax}@{}}
+\toprule
+ & Historical (paper-compatible) & Complementary adversarial \\
+\midrule
+F1/BLEU-1 calculation & Original author scorer & Identical author scorer \\
+Category 5 reference & Supplied distractor & “Not mentioned in the conversation” \\
+Saved predictions & Unchanged & Unchanged \\
+Purpose & Reproduce the paper’s evaluation & Assess recognition of missing information \\
+\bottomrule\end{tabular}
+\caption{The two evaluation perspectives use identical predictions and calculations; only the adversarial reference changes. Neither is presented as universally superior.}\label{tab3}
+\end{table}
+Because adversarial questions contribute to overall F1 and BLEU-1, the selected reference can also change the aggregate ranking of memory configurations. Reporting both perspectives preserves the historical comparison while providing complementary evidence about unsupported answers. The binary measure is the more direct test of appropriate abstention.
+
+\section{Modification, experimental wrapper and verification}
+\subsection{Completing the factorial design}
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.36\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.3\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.34\linewidth-5.333333333333333pt\relax}@{}}
+\toprule
+Condition & Strengthen new note & Update existing neighbours \\
+\midrule
+Neither & OFF & OFF \\
+Linking Only & ON & OFF \\
+Evolution Only (added) & OFF & ON \\
+Full A-MEM & ON & ON \\
+\bottomrule\end{tabular}
+\caption{Two independently gated action bundles. The shared LLM evolution decision remains in all four conditions.}\label{tab4}
+\end{table}
+The two independent Boolean factors—strengthening and neighbour evolution—create a complete 2\ensuremath{\times}2 factorial design. The authors’ three-condition comparison cannot test neighbour evolution without linking, so I added Evolution Only. I hypothesised that updating older memories could improve temporal or context-dependent answers, while linking could help connect facts required for multi-hop reasoning. These are hypotheses about two bundled operations, not separately controlled changes to links, tags and contexts.
+
+For metric M, interaction = Full \ensuremath{-} Linking Only \ensuremath{-} Evolution Only + Neither. It measures how the observed effect of evolution changes when strengthening is enabled. Alongside these contrasts, I recorded retrieval expansion, answer tokens and model charges to test whether each additional mechanism justified its computational cost.
+
+\subsection{Wrapper implementation and validation}
+To preserve the original A-MEM implementation, I built an experimental wrapper around the frozen author source. Figure~\ref{fig1} distinguishes the scientific workflow from the experimental controls. The wrapper selects a condition, routes calls through the controlled model adapter, isolates each cell’s memory store and retrieval index, and captures evidence. I parsed the original evolution method into a Python abstract syntax tree and extended only its two existing action guards with fixed Boolean gates. The shared LLM decision therefore runs in all four configurations, while only selected and enabled actions may mutate memory. The original note insertion, retrieval and consolidation behaviour is retained.
+
+\begin{figure}[H]\centering
+\includegraphics[width=150mm]{assets/amem_wrapper_architecture.pdf}
+\captionsetup{hypcap=false}
+\caption{Experimental wrapper around the frozen A-MEM implementation. The original workflow generates a shared evolution decision for every configuration; the two bound gates allow only selected and enabled mutations. The wrapper separately controls execution, tracing and accounting.}\label{fig1}
+\end{figure}
+\begin{minipage}{\linewidth}
+\VerbatimInput[fontsize=\footnotesize]{listing.py}
+\captionof{listing}{Abridged excerpt from \href{https://github.com/alistairkung/A-mem-reproducibility/blob/8485673183d7b8018c841082d075b21158002700/amem_repro/actions.py}{amem\_repro/actions.py}, commit 8485673. This is not a continuous verbatim extract; the production equality-operator guard and validation/compilation steps are omitted.}
+\end{minipage}\par\smallskip
+Full-mode deterministic replay against the frozen author source matched 568 memory insertion states, 1,544 model requests and 204 answers under identical saved responses. Separate tests verified that disabled actions cannot change prohibited memory fields and that condition-specific stores remain independent. Strengthening changes new-note links and tags; neighbour evolution changes existing-note contexts and tags. The replay checks implementation fidelity, not stochastic equivalence between independent runs.
+
+
+\subsection{Tracing and financial reconciliation}
+Langfuse provided passive traces for model generations, memory actions, retrieval and question-level scoring. Local journals and saved scientific records remained authoritative; Langfuse was an independently inspectable observation layer, not a component deciding memory mutations. For each model request the financial controller reserved a conservative maximum charge before transmission. A complete response then recorded generation identity, model route, native token usage and reported cost, permitting ledger settlement. Missing usage retained its reservation rather than being treated as free.
+
+For financial reconciliation, I independently retrieved OpenRouter generation records and checked identities, provider route, token counts and charges against the local ledger. I then compared the sum of identified charges with wallet and API-key usage movements. The final clean cell reconciled all 1,666 generations. I used only identified model charges from the twelve accepted scientific builds for the quality–cost analysis; historic failed attempts, uncertain reservations and Langfuse fees remain separate operational expenditure. Early exhaustive verification caused substantial overhead, which later incremental readback reduced.
+
+\FloatBarrier
+\section{Results and interpretation}
+\subsection{The evaluation policy changes the aggregate ranking}
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.2\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.14\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.16\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.14\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.16\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.2\linewidth-6.666666666666667pt\relax}@{}}
+\toprule
+Configuration & Historical F1 & Hist. BLEU-1 & Alternative F1 & Alt. BLEU-1 & Adversarial correct \\
+\midrule
+Neither & 30.03 & 25.95 & 39.00 & 35.01 & 86/121 \\
+Linking Only & 30.21 & 26.43 & 37.34 & 33.57 & 80/121 \\
+Evolution Only & 29.29 & 25.69 & 35.86 & 32.29 & 79/121 \\
+Full A-MEM & 32.69 & 28.64 & 36.91 & 32.81 & 71/121 \\
+\bottomrule\end{tabular}
+\caption{Question-weighted percentages on all 558 matched questions per configuration; two reference policies applied to the same saved predictions.}\label{tab5}
+\end{table}
+\begin{figure}[H]\centering
+\includegraphics[width=0.92\linewidth]{assets/01_scoring_comparison.pdf}
+\caption{Historical versus alternative-reference F1; the same 558 predictions yield different configuration rankings.}\label{fig2}
+\end{figure}
+Full A-MEM ranks first under the paper-compatible scoring (F1 32.69), with Linking Only slightly above Neither. This reproduces the published overall ordering, although not its full category-level direction. Under the additional no-information reference, Neither scores highest (F1 39.00; BLEU-1 35.01) and also gives the most appropriate adversarial answers (86/121). Full has 71/121. Therefore the evaluation-reference choice has a material effect on what counts as success, not merely on cosmetic presentation of results.
+
+\subsection{Mechanisms and factorial contrasts}
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.52\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.24\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.24\linewidth-5.333333333333333pt\relax}@{}}
+\toprule
+Matched contrast & \ensuremath{\Delta} F1 (pp) & \ensuremath{\Delta} BLEU-1 (pp) \\
+\midrule
+Linking \ensuremath{-} Neither & \ensuremath{-}1.66 & \ensuremath{-}1.44 \\
+Evolution \ensuremath{-} Neither & \ensuremath{-}3.15 & \ensuremath{-}2.72 \\
+Full \ensuremath{-} Linking & \ensuremath{-}0.43 & \ensuremath{-}0.76 \\
+Full \ensuremath{-} Evolution & +1.06 & +0.52 \\
+Interaction & +2.72 & +1.96 \\
+\bottomrule\end{tabular}
+\caption{Matched alternative-reference contrasts in percentage points; interaction = Full \ensuremath{-} Linking \ensuremath{-} Evolution + Neither.}\label{tab6}
+\end{table}
+Evolution Only did not improve aggregate F1 over Neither in any of the three conversations and scored lower in every pooled category. On temporal questions its F1 was 34.17 versus 36.61 for Neither, contrary to my initial hypothesis. Linking Only increased multi-hop F1 from 16.86 to 20.25 (+3.40 points), but decreased temporal and adversarial performance. Full increased temporal F1 by 2.67 points relative to Linking Only, suggesting that the effect of neighbour updates depends on whether links are also present.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.92\linewidth]{assets/02_category_heatmap.pdf}
+\caption{Alternative-reference F1 by question category, with category sizes shown in the labels.}\label{fig3}
+\end{figure}
+The category pattern is not a simple ladder from Neither through Linking Only to Full. Linking Only leads multi-hop questions at 20.25 F1, but Full falls to 17.54. On single-hop questions, Full achieves the highest F1 (35.94) despite lower pooled results. On open-domain questions, Full also leads (15.92), but that estimate is based on only 27 questions; one or two different answers could meaningfully move the mean. Neither has the highest temporal (36.61) and adversarial (72.05) scores. The more detailed category table is retained as a reproducible publication asset, rather than reproducing all twenty cells of values in the short report.
+
+The binary adversarial counts reinforce the importance of scoring choice: Neither correctly identifies missing information on 86/121 questions, Linking Only on 80, Evolution Only on 79 and Full on 71. Historical overlap, by contrast, gives Full the highest adversarial F1 (41.70 against the distractor reference). This contrast does not identify why a particular answer was produced, but it shows that the legacy reference and the no-information reference reward meaningfully different behaviour. The same generated predictions underlie every score in this comparison.
+
+The pooled factorial interaction was +2.72 F1 and +1.96 BLEU-1 points. This means evolution’s effect was less negative when linking was enabled: \ensuremath{-}3.15 F1 points without linking versus \ensuremath{-}0.43 with linking. The interaction was positive in conv-44 and conv-50 but negative in conv-49; this is descriptive heterogeneity rather than evidence of a stable causal synergy. Open-domain contains only 27 questions, so its large category-level interaction is particularly fragile.
+
+\subsection{Is extra memory complexity worth its cost?}
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.22\linewidth-6.4pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.19\linewidth-6.4pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.23\linewidth-6.4pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.19\linewidth-6.4pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.17\linewidth-6.4pt\relax}@{}}
+\toprule
+Configuration & Retrieved / QA & Answer input tokens & Model USD & Alt. F1 \\
+\midrule
+Neither & 10.00 & 747,640 & \$0.95045 & 39.00 \\
+Linking Only & 20.15 & 1,511,478 & \$1.07939 & 37.34 \\
+Evolution Only & 10.00 & 749,026 & \$0.95333 & 35.86 \\
+Full A-MEM & 19.99 & 1,503,791 & \$1.08084 & 36.91 \\
+\bottomrule\end{tabular}
+\caption{Matched 558-question scientific inference costs from accepted builds only; excludes failed attempts, held reservations and Langfuse fees.}\label{tab7}
+\end{table}
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{assets/06_dual_scoring_f1_vs_cost.pdf}
+\caption{Cost–performance frontiers under historical and alternative-reference F1 (558 matched questions). Historical scores place Neither, Linking Only and Full A-MEM on the observed frontier; alternative-reference scores place only Neither on it. Costs include identified model charges from accepted scientific builds, excluding earlier attempts and Langfuse fees.}\label{fig4}
+\end{figure}
+Linking Only increased mean retrieved entries from 10.00 to 20.15 and doubled native answer input tokens (747,640 to 1,511,478). Its identified model charges rose from \$0.95045 to \$1.07939, while alternative-reference F1 declined by 1.66 percentage points. Figure~\ref{fig4} keeps expenditure fixed across both panels but changes the quality measure. Under the historical reference, Neither, Linking Only and Full A-MEM are all Pareto-efficient: each offers a higher historical F1 than less expensive predecessors. Under the alternative reference, Neither has both the lowest cost and highest F1, dominating the other conditions. The apparent value of additional memory operations therefore depends on which evaluation objective is chosen. These frontiers are descriptive for this fixed model, sample and pricing basis, not general efficiency guarantees.
+
+\section{Debug diary and methodological reflection}
+\subsection{The unplanned DeepSeek detour}
+I initially selected DeepSeek because I already had credit and assumed that an OpenAI-compatible API would make model substitution straightforward. It was a convenience decision, not a planned cross-model experiment. Instead, I encountered type mismatches in structured outputs, malformed JSON, output-limit failures and transport interruptions. My instinct was to solve each obstacle through more engineering: strict contract checks, checkpoint recovery, financial reservations and Langfuse instrumentation. These controls proved useful, but they also consumed time that should have been directed at the A-MEM mechanisms.
+
+Despite these obstacles, three DeepSeek Flash Full A-MEM lineages completed in Degraded status. Table~\ref{tab8} summarises their saved scores, including a newly derived question-weighted pooled row. DeepSeek produced higher observed word-overlap scores than the GPT-4o-mini Full baselines (alternative F1 50.37\% versus 36.91\%), but this was not a controlled comparison: model, generation caps, provider, compatibility policy and recovery history differed. I eventually recognised that I was optimising a model-porting exercise rather than reproducing the paper’s mechanism experiment. I returned to GPT-4o-mini for the primary factorial study. API compatibility, I learned, is not experimental equivalence.
+
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.19\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.09\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.18\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.18\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.18\linewidth-6.666666666666667pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.18\linewidth-6.666666666666667pt\relax}@{}}
+\toprule
+Conversation & QA & Alt. F1 & Alt. BLEU-1 & Hist. F1 & Hist. BLEU-1 \\
+\midrule
+conv-44 & 158 & 54.06 & 48.37 & 42.05 & 36.24 \\
+conv-49 & 196 & 49.63 & 46.31 & 43.22 & 39.95 \\
+conv-50 & 204 & 48.22 & 43.53 & 41.74 & 37.19 \\
+Pooled (derived) & 558 & 50.37 & 45.88 & 42.35 & 37.89 \\
+\bottomrule\end{tabular}
+\caption{Exploratory DeepSeek Flash Full A-MEM results (scores in \%). Three completed Degraded lineages; the pooled row is a derived 558-question aggregate, not part of the primary GPT-4o-mini experiment.}\label{tab8}
+\end{table}
+\subsection{Provider failures and the final clean run}
+The final Linking Only / conv-44 cell exposed a second problem: execution infrastructure could affect the author’s fallback behaviour. The first run disconnected during evolution; the special financial stop escaped the author’s ordinary exception handler, preventing an unevolved note from being inserted. A reviewed recovery completed all 675 memories, but a second disconnect stopped answer generation after 87 of 158 questions. A fresh replacement then stopped on an HTTP 200 response whose generation was marked erroneous. In each case we preserved the failed artifacts rather than silently altering outputs or combining stochastic memory states.
+
+I ultimately chose a final fresh run with broader, predeclared and financially bounded recovery rules while retaining unchanged scientific settings. The successful run needed none of those recovery allowances: it completed 675 memories and 158 questions through 1,666 first-transmission model calls, with zero retries. Independent checks reproduced embeddings, retrieval rankings, scores, Langfuse experiment associations and provider charges. The new Linking Only cell was accepted as Clean; all earlier failures remained available for audit.
+
+The lesson was not simply to make every service call succeed. Conservative accounting and provenance were necessary, but overly narrow stop rules and repeated full-history reconciliation made the experiment fragile and slow. A better design would combine immutable scientific state with bounded, failure-triggered retries and incremental financial reconciliation. Reliable engineering serves the scientific objective; it should not become a substitute for asking whether the experiment still answers the intended question.
+
+There was also an important difference between scientific inference cost and the cost of conducting research. The twelve accepted GPT-4o-mini builds incurred approximately \$4.06 in identified model charges. Campaign-wide identified model charges, including earlier failed attempts and compatibility checks, totalled approximately \$4.70. Broader conservative campaign exposure, including held reservations and a conservative upper bound for Langfuse service, reached \$10.46. Only the accepted-build model charges belong in Section 5’s like-for-like Pareto comparison.
+
+The final Clean cell mattered because it yielded a complete comparison without reconstructed memories, answer imputation or cross-run mixing. I would design observability and financial safeguards into future experiments from the outset, but proportionately: their purpose is to make findings credible and recoverable, not to displace the research question.
+
+\section{Limitations, conclusion and reproducibility evidence}
+\subsection{What is reproducible?}
+I reproduced the released A-MEM workflow under a frozen GPT-4o-mini configuration and completed twelve independently accepted cells on 558 matched questions per configuration. Deterministic Full-mode replay matched the frozen author implementation across 568 memory insertion states, 1,544 requests and 204 answers. The added Evolution Only condition completes the 2\ensuremath{\times}2 comparison without rewriting the core algorithm.
+
+I also reproduced the historical F1/BLEU-1 scoring procedure. Under that policy, our three published configurations follow the paper’s aggregate F1 ordering: Neither (30.03\%), Linking Only (30.21\%), then Full (32.69\%). This reproduces the directional aggregate conclusion within our subset, not the paper’s exact Table 3 scores or its category-by-category pattern.
+
+\subsection{What does not reproduce, and why?}
+The overall ordering is not reproduced under the complementary adversarial evaluation, even though it scores precisely the same predictions using the same F1 formula. With “Not mentioned in the conversation” as category 5’s reference, Neither scores 39.00\%, Linking Only 37.34\% and Full 36.91\%. Full also has the lowest binary adversarial correctness (71/121), compared with Neither (86/121). The two reference policies measure different aspects of the same behaviour; the complementary analysis does not invalidate or replace the historical metric.
+
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.35\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.325\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.325\linewidth-5.333333333333333pt\relax}@{}}
+\toprule
+Finding & Historical evaluation & Complementary evaluation \\
+\midrule
+Highest overall F1 & Full: 32.69\% & Neither: 39.00\% \\
+Published three-arm ordering & Neither \ensuremath{<} Linking \ensuremath{<} Full & Neither \ensuremath{>} Linking \ensuremath{>} Full \\
+Linking \ensuremath{-} Neither & +0.18 pp & \ensuremath{-}1.66 pp \\
+Full \ensuremath{-} Linking & +2.49 pp & \ensuremath{-}0.43 pp \\
+Evolution Only \ensuremath{-} Neither & \ensuremath{-}0.74 pp & \ensuremath{-}3.15 pp \\
+\bottomrule\end{tabular}
+\caption{Identical 558-question predictions evaluated using the authors’ historical reference and our complementary adversarial reference; values are F1 unless marked as percentage-point differences.}\label{tab9}
+\end{table}
+The original absolute scores are not replicated: our preselected sample contains three of ten released conversations, uses a fixed initial retrieval depth of ten, and reconstructs the published ablations from separate action boundaries. The exact Table 3 question identities and retrieval settings are not fully specified. These differences prevent attributing numerical gaps solely to the memory mechanisms.
+
+\subsection{Additional findings and limitations}
+Evolution Only did not improve complementary F1 over Neither (\ensuremath{-}3.15 pp). The positive 2.72-point factorial interaction indicates that neighbour evolution’s observed effect is less negative with linking enabled; it does not mean Full ranks first. Linking improved multi-hop F1 by 3.40 points but expanded retrieval and roughly doubled answer input tokens. Under historical F1, Neither, Linking Only and Full lie on the observed cost–performance frontier; under complementary F1, only Neither does.
+
+These are descriptive results, not statistical significance claims. Each condition has one stochastic memory build per conversation, and the three-conversation subset limits generalisability. Moreover, strengthening bundles links with new-note tag updates, while evolution bundles existing-note contexts with tag updates. Future studies should repeat independent builds, broaden the evaluation population, vary retrieval depth and isolate the bundled operations.
+
+The methodological lesson is that reproducing an algorithm and reproducing a conclusion are distinct. The experiment recovers the original aggregate ordering under its own evaluation, while complementary measurement reveals how the conclusion depends on what answer quality is intended to reward.
+
+\subsection{Sources and development evidence}
+Xu et al. (2025), A-MEM: Agentic Memory for LLM Agents, \href{https://arxiv.org/abs/2502.12110v11}{arXiv:2502.12110 (v11)}; original implementation \href{https://github.com/WujiangXu/A-mem/tree/f9a173dec325d84fcc97e7828775c7b241c33466}{WujiangXu/A-mem} (frozen f9a173d); \href{https://snap-research.github.io/locomo/}{LoCoMo benchmark data} distributed with the release. Source, results and commit history: \href{https://github.com/alistairkung/A-mem-reproducibility}{github.com/alistairkung/A-mem-reproducibility}.
+
+Accepted twelve-cell scientific evidence: \href{https://github.com/alistairkung/A-mem-reproducibility/commit/8485673183d7b8018c841082d075b21158002700}{8485673183d7b8018c841082d075b21158002700}. Reporting assets: PRs \#53–57; full matched analysis, both scoring policies and independent financial/observability receipts are linked from the repository. The pooled DeepSeek figures in Section 6 are exploratory, not part of the controlled factorial comparison.
+
+\begingroup
+\footnotesize\raggedright
+\setlength{\parskip}{0pt}
+\let\originalthebibliography\thebibliography
+\renewcommand{\thebibliography}[1]{\originalthebibliography{#1}\setlength{\itemsep}{2pt}\setlength{\parsep}{0pt}}
+\bibliographystyle{unsrturl}
+\bibliography{references}
+\endgroup
+\end{document}
