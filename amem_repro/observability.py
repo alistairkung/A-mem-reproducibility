@@ -285,6 +285,9 @@ class LangfuseObserver:
                                    ('attempt', 'status_code', 'error_type', 'usage', 'duration_seconds',
                                     'budget_attempt_id', 'charged_cost_usd', 'reservation_microusd')}
                                   for a in event.get('attempts', [])])
+        if 'physical_generations' in event:
+            # The final campaign groups identical physical retries into one scientific operation.
+            metadata['physical_generations'] = copy.deepcopy(event['physical_generations'])
         accepted = event.get('error_type') is None and isinstance(event.get('output'), str)
         choices = response.get('choices') or []
         output = {'provider_arguments': raw, 'accepted': accepted,

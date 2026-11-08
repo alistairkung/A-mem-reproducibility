@@ -300,14 +300,27 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
     condition=approval['condition']
     if binding['conversation_id']!=cell or binding['condition']!=condition:
         raise BudgetStop('Cell identity differs from source-bound approval')
-    replacement = approval.get('kind') == 'replacement'
+    final_fresh = approval.get('kind') == 'final_fresh'
+    replacement = final_fresh or approval.get('kind') == 'replacement'
+    controller_type = OpenRouterController
     repetition = 0
     if replacement:
-        from .linking44_replacement import ReplacementLedger, attempt_store
-        if not isinstance(ledger, ReplacementLedger) or approval.get('parent') or approval.get('parent_path'):
-            raise BudgetStop('Replacement requires an empty-start group attempt')
-        repetition = approval['ordinal']
-        store = attempt_store(ledger.root, repetition)
+        if final_fresh:
+            from .linking44_final_ledger import FinalLedger, attempt_store
+            from .linking44_retry import FinalController
+            if not isinstance(ledger, FinalLedger):
+                raise BudgetStop('Final attempt requires its own campaign ledger')
+            controller_type = FinalController
+            repetition = 3 + approval['ordinal']
+            store = attempt_store(ledger.root, approval['ordinal'])
+        else:
+            from .linking44_replacement import ReplacementLedger, attempt_store
+            if not isinstance(ledger, ReplacementLedger):
+                raise BudgetStop('Replacement requires its own group ledger')
+            repetition = approval['ordinal']
+            store = attempt_store(ledger.root, repetition)
+        if approval.get('parent') or approval.get('parent_path'):
+            raise BudgetStop('Fresh attempts must start from an empty store')
         if any(os.path.lexists(store / name) for name in ('runs', 'cache')):
             raise BudgetStop('Replacement attempt storage is already occupied')
     else:
@@ -334,7 +347,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
     output=store/'runs'/phase
     output.mkdir(parents=True,exist_ok=False)
     save_new(output/'approval.json',approval)
-    controller=OpenRouterController(client,ledger=ledger,phase=phase,journal=output/'raw')
+    controller=controller_type(client,ledger=ledger,phase=phase,journal=output/'raw')
     def factory(record):
         controller.observer=record
         return controller
@@ -370,6 +383,8 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         boundary()
     except BaseException as exc:
         error=type(exc).__name__;failure=exc
+        if final_fresh and type(exc) is RecoverableLength and guard.recoverable:
+            ledger.stop(phase, 'verified_length_fallback')
     events=[json.loads(l) for l in (output/'events.jsonl').read_text().splitlines()]
     results=[e['result'] for e in events if e['type']=='question_result']
     views=None;post_scoring_failures=0
@@ -437,7 +452,9 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                 if [r['question_id'] for r in results]!=[q['question_id'] for q in conversation['questions']]:
                     raise BudgetStop('Ordered benchmark questions differ')
                 with ledger.transaction() as db:
-                    if replacement:
+                    if final_fresh:
+                        count = ledger.logical_count(phase, db)
+                    elif replacement:
                         count = db.execute("SELECT COUNT(*) FROM attempts WHERE phase=? AND state='settled'",
                                            (phase,)).fetchone()[0]
                     else:
@@ -448,6 +465,8 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
             receipt['experiments']=import_results(views,context,client=observer.client,
                                                 traces=original_qa_traces(capture))
             receipt['status']='degraded' if post_scoring_failures or checkpoint or (cell=='conv-44' and condition=='full' and approval.get('retained_access_prefix')) else summary['status']
+            if final_fresh and ledger.retry_count(phase):
+                receipt['status'] = 'degraded'
             save_new(output/'final-memory.json',state)
             # Cloud work must not conceal a changed cache/source after initial validation.
             if CacheStore(store/'cache').load(identity)!=state:
