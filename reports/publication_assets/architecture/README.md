@@ -1,6 +1,6 @@
 # Experimental wrapper architecture
 
-The Section 4.2 asset follows the supplied Mermaid screenshot's nested composition. The outer **Experimental wrapper** contains one controls box and an inner **Original A-MEM algorithm**. Two prominent side-by-side gates follow the shared evolution decision. A single **Experimental evidence** box appears below the wrapper. The screenshot supplies layout guidance; source-verified behaviour determines the labels and connections.
+The Section 4.2 asset follows the supplied Mermaid screenshot's nested composition. The outer **Experimental wrapper** contains one controls box and an inner **Frozen A-MEM workflow with experimental action gates**. Two prominent side-by-side gates follow the shared evolution decision. A single **Experimental evidence** box appears below the wrapper. The screenshot supplies layout guidance; source-verified behaviour determines the labels and connections.
 
 - [Primary SVG](amem_wrapper_architecture.svg)
 - [300-DPI PNG](amem_wrapper_architecture.png)
@@ -48,6 +48,6 @@ From the repository root, run in the existing publication-assets Matplotlib envi
 python reports/publication_assets/architecture/generate_diagram.py
 ```
 
-The Python source is the editable layout. Matplotlib 3.11.2 and DejaVu Sans were used. The SVG has a white 16 cm by 19 cm canvas and outlined lettering for consistent rendering in LaTeX and PowerPoint. Text and positions remain editable in the source. PNG is 1889 × 2244 pixels at 300 DPI. Body text is 9 pt at 16 cm width, approximately 8.44 pt at 15 cm. Insert at 15–16 cm width to retain report-scale readability.
+The Python source is the editable layout. Matplotlib 3.11.2 and DejaVu Sans were used. The SVG has a white 16 cm by 15 cm canvas and outlined lettering for consistent rendering in LaTeX and PowerPoint. Text and positions remain editable in the source. PNG is 1889 × 1771 pixels at 300 DPI. Body text is 8.7 pt at 16 cm width, approximately 8.16 pt at 15 cm. Insert at 15–16 cm width to retain report-scale readability.
 
 The final PNG and an independent CairoSVG 2.9.1 rendering of the SVG were inspected at report scale for overlaps, clipping and crossing or ambiguous arrows. Repeated generation produces byte-identical exports. The revision is confined to this architecture directory and does not regenerate existing scientific figures or change accepted experiments or results.
