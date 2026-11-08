@@ -1,0 +1,83 @@
+{
+  "source_sha256": "c433d42629e62eb70b050785c40ac691df4ec7a4e20d5315857ad870a2d642a5",
+  "main_sections": 7,
+  "converted_heading_and_prose_paragraphs": 66,
+  "tables": [
+    {
+      "number": 1,
+      "cells": 15,
+      "caption": "Preselected LoCoMo evaluation population (558 questions per configuration)."
+    },
+    {
+      "number": 2,
+      "cells": 18,
+      "caption": "The five LoCoMo question categories in the selected 558-question population."
+    },
+    {
+      "number": 3,
+      "cells": 15,
+      "caption": "The two evaluation perspectives use identical predictions and calculations; only the adversarial reference changes. Neither is presented as universally superior."
+    },
+    {
+      "number": 4,
+      "cells": 15,
+      "caption": "Two independently gated action bundles. The shared LLM evolution decision remains in all four conditions."
+    },
+    {
+      "number": 5,
+      "cells": 30,
+      "caption": "Question-weighted percentages on all 558 matched questions per configuration; two reference policies applied to the same saved predictions."
+    },
+    {
+      "number": 6,
+      "cells": 18,
+      "caption": "Matched alternative-reference contrasts in percentage points; interaction = Full \u2212 Linking \u2212 Evolution + Neither."
+    },
+    {
+      "number": 7,
+      "cells": 25,
+      "caption": "Matched 558-question scientific inference costs from accepted builds only; excludes failed attempts, held reservations and Langfuse fees."
+    },
+    {
+      "number": 8,
+      "cells": 30,
+      "caption": "Exploratory DeepSeek Flash Full A-MEM results (scores in %). Three completed Degraded lineages; the pooled row is a derived 558-question aggregate, not part of the primary GPT-4o-mini experiment."
+    },
+    {
+      "number": 9,
+      "cells": 18,
+      "caption": "Identical 558-question predictions evaluated using the authors\u2019 historical reference and our complementary adversarial reference; values are F1 unless marked as percentage-point differences."
+    }
+  ],
+  "verified_fragments": [
+    {
+      "table": 5,
+      "source": "tables/latex/02_overall_results.tex",
+      "numerical_cells_checked": 20
+    },
+    {
+      "table": 6,
+      "source": "tables/latex/03_factorial_contrasts.tex",
+      "numerical_cells_checked": 10
+    },
+    {
+      "table": 7,
+      "source": "tables/latex/05_cost_retrieval.tex",
+      "numerical_cells_checked": 16
+    },
+    {
+      "table": 8,
+      "source": "exploratory_deepseek/deepseek_results.tex",
+      "numerical_cells_checked": 20
+    }
+  ],
+  "figures": [
+    "architecture/amem_wrapper_architecture.svg",
+    "figures/01_scoring_comparison.svg",
+    "figures/02_category_heatmap.svg",
+    "figures/06_dual_scoring_f1_vs_cost.svg"
+  ],
+  "listing_lines": 16,
+  "extra_text_nodes": {},
+  "tracked_revisions": 0
+}

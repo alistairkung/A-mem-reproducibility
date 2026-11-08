@@ -1,0 +1,26 @@
+[
+  {
+    "source": "architecture/amem_wrapper_architecture.svg",
+    "source_sha256": "c3f43e42a7de824a733fbeef1da36d3e5d63588227dd1dd8fc02a0cbe92a9c34",
+    "output": "assets/amem_wrapper_architecture.pdf",
+    "output_sha256": "dfd87eed038f2b8a1c5c12b9a7bfb5fac0be90c03ce86ce238d71084c83eb4cb"
+  },
+  {
+    "source": "figures/01_scoring_comparison.svg",
+    "source_sha256": "7478a3f230cf72016b218be11e812514ec5ef885adb349cc82161eb3ce4eee80",
+    "output": "assets/01_scoring_comparison.pdf",
+    "output_sha256": "6dede41f7c4ec28be37316ef5be388da9dcf838b1fd3599f5d63a1c21b96dc19"
+  },
+  {
+    "source": "figures/02_category_heatmap.svg",
+    "source_sha256": "49bd0ac49db8b110009f08738e8019f7b7318c94944da3de5fbc8bcf9b42fd9d",
+    "output": "assets/02_category_heatmap.pdf",
+    "output_sha256": "8d419dc2d5d44ddd86213cfe6148b99e023a184938e537274a1c5870c8f4b5af"
+  },
+  {
+    "source": "figures/06_dual_scoring_f1_vs_cost.svg",
+    "source_sha256": "4644c4a23218a376e99705c1d9ae29101bcb5b5aef93a3d59f68fbbdcd13e0ec",
+    "output": "assets/06_dual_scoring_f1_vs_cost.pdf",
+    "output_sha256": "47e15ca6986d23cc89c240295d6b38a55b7d1611500f0aa31b1fb1b3c4d6acc3"
+  }
+]

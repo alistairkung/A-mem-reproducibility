@@ -1,0 +1,17 @@
+{
+  "manuscript_sha256": "c433d42629e62eb70b050785c40ac691df4ec7a4e20d5315857ad870a2d642a5",
+  "comparison": "pass",
+  "counts": {
+    "headings": 26,
+    "prose_and_title_paragraphs": 43,
+    "captions": 14,
+    "listing_lines": 16,
+    "table_cells": 184
+  },
+  "prose_order": "preserved",
+  "pdf_pages": 10,
+  "internal_links_checked": 3,
+  "missing_paragraphs": [],
+  "table_comparison": "all cells equal, including labels and displayed precision",
+  "log_checks": "no overfull/underfull boxes, missing glyphs or undefined references"
+}
