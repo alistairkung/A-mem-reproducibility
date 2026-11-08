@@ -300,7 +300,18 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
     condition=approval['condition']
     if binding['conversation_id']!=cell or binding['condition']!=condition:
         raise BudgetStop('Cell identity differs from source-bound approval')
-    store=cell_store(ledger.root,cell_key(cell,condition))
+    replacement = approval.get('kind') == 'replacement'
+    repetition = 0
+    if replacement:
+        from .linking44_replacement import ReplacementLedger, attempt_store
+        if not isinstance(ledger, ReplacementLedger) or approval.get('parent') or approval.get('parent_path'):
+            raise BudgetStop('Replacement requires an empty-start group attempt')
+        repetition = approval['ordinal']
+        store = attempt_store(ledger.root, repetition)
+        if any(os.path.lexists(store / name) for name in ('runs', 'cache')):
+            raise BudgetStop('Replacement attempt storage is already occupied')
+    else:
+        store=cell_store(ledger.root,cell_key(cell,condition))
     nturns,nqa=FULL_CELLS[cell]
     if fingerprint(source_fingerprint(root))!=binding['source_sha256']:
         raise BudgetStop('Source changed since reviewed phase freeze')
@@ -353,7 +364,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         summary=run_manifest(root/'data/locomo10.json',read(root/'manifests/fallback.json'),
             copy.deepcopy(OPENROUTER_CONFIG),output_dir=output,cache_root=store/'cache',
             source_hashes=source_fingerprint(root),condition=condition,agent_factory=tracked_factory,
-            scorer=scorer,observer=observer,run_id=phase,conversation_ids=[cell],
+            scorer=scorer,observer=observer,run_id=phase,conversation_ids=[cell],repetition=repetition,
             boundary_check=boundary,evolution_guard=guard,checkpoint=checkpoint,
             execution_type='checkpoint_recovery' if checkpoint else 'fresh_build')
         boundary()
@@ -392,7 +403,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
         start=next(e for e in events if e['type']=='run_start')
         conversation=next(c for c in start['manifest']['conversations'] if c['original_id']==cell)
         identity=build_identity(OPENROUTER_CONFIG,conversation,start['manifest']['dataset_sha256'],
-                                start['source_hashes'],provider_contract_policy='strict-original-v1')
+                                start['source_hashes'],repetition=repetition,provider_contract_policy='strict-original-v1')
         identity.update(condition=condition,memory_actions=action_configuration(condition),
                         action_policy='released-action-boundaries-v1',
                         action_implementation='frozen-author' if condition=='full' else 't7-action-gates',
@@ -409,20 +420,28 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
              'error_message':str(failure) if failure else None,
              'post_scoring_failure_count':post_scoring_failures,
              'recoverable_length_failure':False,'budget':ledger.totals()}
+    if replacement:
+        receipt.update(replacement_group=approval['group'], repetition=repetition)
     try:
         observer.assert_healthy()
         context={'binding':{**binding,'run_id':phase},'output_dir':str(output)}
+        if replacement:
+            context['binding']['repetition'] = repetition
         receipt['observations']=verify_observations(capture,context)
         if not error:
             if receipt['notes']!=nturns or receipt['questions']!=nqa:
                 raise BudgetStop('Original turn/question coverage incomplete')
-            if approval.get('retained_access_prefix'):
+            if approval.get('retained_access_prefix') or replacement:
                 if [o['turn_id'] for o in outcomes]!=conversation['turn_ids']:
                     raise BudgetStop('Ordered original turn coverage differs')
                 if [r['question_id'] for r in results]!=[q['question_id'] for q in conversation['questions']]:
                     raise BudgetStop('Ordered benchmark questions differ')
                 with ledger.transaction() as db:
-                    count=db.execute("SELECT COUNT(*) FROM attempts a JOIN phases p ON a.phase=p.id WHERE json_extract(p.approval,'$.kind')='baseline' AND json_extract(p.approval,'$.conversation')=? AND json_extract(p.approval,'$.condition')=? AND a.state='settled'",(cell,condition)).fetchone()[0]
+                    if replacement:
+                        count = db.execute("SELECT COUNT(*) FROM attempts WHERE phase=? AND state='settled'",
+                                           (phase,)).fetchone()[0]
+                    else:
+                        count=db.execute("SELECT COUNT(*) FROM attempts a JOIN phases p ON a.phase=p.id WHERE json_extract(p.approval,'$.kind')='baseline' AND json_extract(p.approval,'$.conversation')=? AND json_extract(p.approval,'$.condition')=? AND a.state='settled'",(cell,condition)).fetchone()[0]
                 # The approved no-response attempt belongs to the sealed parent.
                 expected_settled = 2 * (nturns + nqa) - int(transport_recovery)
                 if count!=expected_settled:raise BudgetStop('Full baseline original request count differs')
@@ -438,7 +457,7 @@ def execute_phase(approval, ledger, *, observer, client, token_counter,
                                                'files':inventory(cache_path)})
             if fingerprint(source_fingerprint(root))!=binding['source_sha256']:
                 raise BudgetStop('Reviewed source changed during reporting')
-        elif (not transport_recovery and type(failure) is RecoverableLength and guard.recoverable
+        elif (not replacement and not transport_recovery and type(failure) is RecoverableLength and guard.recoverable
                 and (output/'summary.json').exists() and (output/'partial-memory.json').exists()
                 and not any(e.get('kind') in ('partial_artifact','reporting','token_measurement') for e in events)
                 and not ledger.unaccepted_unknowns(approval)):
