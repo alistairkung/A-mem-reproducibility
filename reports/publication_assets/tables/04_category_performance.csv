@@ -1,0 +1,21 @@
+Category,n,Configuration,Alternative F1 (%),Alternative BLEU-1 (%)
+Multi-hop,99,Neither,16.85620548,11.94340125
+Multi-hop,99,Linking Only,20.25292232,15.00058192
+Multi-hop,99,Evolution Only,15.71803145,10.54111308
+Multi-hop,99,Full A-MEM,17.54402816,11.29480205
+Temporal,89,Neither,36.61372959,32.80247620
+Temporal,89,Linking Only,31.62283721,28.32107396
+Temporal,89,Evolution Only,34.17412799,31.27438772
+Temporal,89,Full A-MEM,34.29402682,30.12797004
+Open-domain,27,Neither,14.37001349,14.15054892
+Open-domain,27,Linking Only,12.78283077,12.86133717
+Open-domain,27,Evolution Only,8.08901338,7.88417591
+Open-domain,27,Full A-MEM,15.91510538,16.41357342
+Single-hop,222,Neither,34.81832265,28.72174295
+Single-hop,222,Linking Only,33.74754391,28.18089580
+Single-hop,222,Evolution Only,32.18260152,26.90182833
+Single-hop,222,Full A-MEM,35.93562452,30.39793961
+Adversarial,121,Neither,72.05482898,71.70110193
+Adversarial,121,Linking Only,67.60776090,67.15110324
+Adversarial,121,Evolution Only,66.50583252,66.15446078
+Adversarial,121,Full A-MEM,61.15966354,60.47957688
