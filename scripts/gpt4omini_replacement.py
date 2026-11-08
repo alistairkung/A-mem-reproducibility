@@ -215,7 +215,8 @@ def close_attempt(client, ledger, phase, store, receipt, opening, units):
     return record
 
 
-def run_attempt(client, ledger, release, ordinal, opening, protected):
+def run_attempt(client, ledger, release, ordinal, opening, protected, *, final_approval=None,
+                final_store=None, financial_close=close_attempt):
     from langfuse import Langfuse
     import tiktoken
     from importlib.metadata import version
@@ -223,15 +224,22 @@ def run_attempt(client, ledger, release, ordinal, opening, protected):
     from amem_repro.observability import LangfuseObserver
     from amem_repro.observation_policy import should_export_span
 
-    store = attempt_store(CAMPAIGN, ordinal)
-    phase = phase_id(ordinal)
-    approval = {'approved':True,'approved_at':now(),'kind':'replacement','group':GROUP,
-                'ordinal':ordinal,'phase':phase,'conversation':'conv-44','condition':'linking_only',
-                'binding': release['binding'], 'release_sha256':sha(GROUP_DIR / 'release.json'),
-                'service_reserve_microusd':GROUP_LIMITS['service_reserve_per_attempt_microusd']}
-    if ordinal > 1:
-        approval['previous_reconciliation_sha256'] = sha(attempt_store(CAMPAIGN,ordinal-1) / 'reconciliation.json')
-    save_new(store / 'frozen/approval.json',approval)
+    if final_approval is None:
+        store = attempt_store(CAMPAIGN, ordinal)
+        phase = phase_id(ordinal)
+        approval = {'approved':True,'approved_at':now(),'kind':'replacement','group':GROUP,
+                    'ordinal':ordinal,'phase':phase,'conversation':'conv-44','condition':'linking_only',
+                    'binding': release['binding'], 'release_sha256':sha(GROUP_DIR / 'release.json'),
+                    'service_reserve_microusd':GROUP_LIMITS['service_reserve_per_attempt_microusd']}
+        if ordinal > 1:
+            approval['previous_reconciliation_sha256'] = sha(attempt_store(CAMPAIGN,ordinal-1) / 'reconciliation.json')
+        save_new(store / 'frozen/approval.json',approval)
+        repetition = ordinal
+    else:
+        store = final_store
+        approval = final_approval
+        phase = approval['phase']
+        repetition = approval['repetition']
     encoded = tiktoken.get_encoding('o200k_base')
     counter = TokenCounter(lambda t:encoded.encode(t,disallowed_special=()),'tiktoken o200k_base; hosted prompt overhead unverified; API usage authoritative',version('tiktoken'))
     export = ServiceUnits(CELL_SERVICE_UNITS)
@@ -246,7 +254,7 @@ def run_attempt(client, ledger, release, ordinal, opening, protected):
             life.callback(setattr,cloud._resources,'add_score_task',original)
             life.callback(cloud.shutdown)
             observer = LangfuseObserver(MeteredRuntimeClient(cloud,runtime),
-                        {**release['binding'],'run_id':phase,'repetition':ordinal,'execution_mode':'paid-gpt4omini-baseline'})
+                        {**release['binding'],'run_id':phase,'repetition':repetition,'execution_mode':'paid-gpt4omini-baseline'})
             healthy = observer.assert_healthy
             def check():
                 healthy()
@@ -260,7 +268,7 @@ def run_attempt(client, ledger, release, ordinal, opening, protected):
         save_new(store / 'service' / (phase+'.json'), {'maximum_units':export.limit,'admitted_units':export.spent,
                  'runtime_units_admitted':runtime.spent,'stopped':export.exhausted or runtime.exhausted})
     check()
-    return receipt, close_attempt(client,ledger,phase,store,receipt,opening,export.spent)
+    return receipt, financial_close(client,ledger,phase,store,receipt,opening,export.spent)
 
 
 def execute_one(ordinal):
