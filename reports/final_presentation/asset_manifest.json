@@ -1,0 +1,326 @@
+{
+  "manuscript_revision": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+  "scientific_revision": "8485673183d7b8018c841082d075b21158002700",
+  "provenance": "All cited bytes were read from committed Git objects. The asset list covers source evidence, embedded SVGs and their paired PNG fallback images.",
+  "assets": [
+    {
+      "path": "reports/final_coursework/AMEM_FTEC5660_Report.pdf",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "ce0f19c56c23ba50712da8d4344e2b5199aa352b",
+      "sha256": "662720d75e1953d850e5c6973eedb21f78ff90119c2ec98da4e82ffcbc93bf4f",
+      "purpose": "Authoritative manuscript",
+      "slides": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/final_coursework/AMEM_FTEC5660_Report.pdf"
+    },
+    {
+      "path": "docs/reproducibility/gpt4omini-twelve-cell-results.md",
+      "commit": "8485673183d7b8018c841082d075b21158002700",
+      "git_blob": "46e53f83ad7b42013c0df663114ee621ef1703b4",
+      "sha256": "858c266d0364c6f55b11c76c333ae13d2a7f50e71a134a0ddff03f67b19a6eff",
+      "purpose": "Accepted scientific report",
+      "slides": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/8485673183d7b8018c841082d075b21158002700/docs/reproducibility/gpt4omini-twelve-cell-results.md"
+    },
+    {
+      "path": "reports/publication_assets/tables/01_configurations.csv",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "02b51814bda01a2bd65aea89d49e2bd7217c6593",
+      "sha256": "e4c013f0774f57926fa5a1fd92028324de479a9fa0a9cbb2f67b479ad160f9c6",
+      "purpose": "Verification source",
+      "slides": [
+        2,
+        3
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/tables/01_configurations.csv"
+    },
+    {
+      "path": "reports/publication_assets/architecture/README.md",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "da7890b04c59987c8af5f95dd31930c8d5b5ad20",
+      "sha256": "a30ea7b4b9aa713b429890db1570e89a67c9b83a26b6b9f9b613ec5d9fb38f3a",
+      "purpose": "Verification source",
+      "slides": [
+        2,
+        4
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/architecture/README.md"
+    },
+    {
+      "path": "reports/publication_assets/architecture/amem_wrapper_architecture.svg",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "54ea340920e42590bd058984f575a9d05961b847",
+      "sha256": "c3f43e42a7de824a733fbeef1da36d3e5d63588227dd1dd8fc02a0cbe92a9c34",
+      "purpose": "Embedded publication vector",
+      "slides": [
+        4
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/architecture/amem_wrapper_architecture.svg"
+    },
+    {
+      "path": "reports/publication_assets/architecture/amem_wrapper_architecture.png",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "e1b2a47867df0ec481a19783b9760bb8b614e503",
+      "sha256": "e84e7e728691d0baa7e5827ad51c6a12332c0949f0a08acf5b32844f51b31b75",
+      "purpose": "PowerPoint compatibility preview of embedded vector",
+      "slides": [
+        4
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/architecture/amem_wrapper_architecture.png"
+    },
+    {
+      "path": "reports/publication_assets/tables/06_conversation_results.csv",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "015fa60a401f46af0350a6ec58342fa40e89aa91",
+      "sha256": "8adaa5a306268d56c5784225b0c3bf73048348d54e76969e199d5dd072981bde",
+      "purpose": "Verification source",
+      "slides": [
+        5,
+        9
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/tables/06_conversation_results.csv"
+    },
+    {
+      "path": "reports/publication_assets/figures/01_scoring_comparison.svg",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "d339fee97fa273297f9ec4855d283785bb131f84",
+      "sha256": "7478a3f230cf72016b218be11e812514ec5ef885adb349cc82161eb3ce4eee80",
+      "purpose": "Embedded publication vector",
+      "slides": [
+        7
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/figures/01_scoring_comparison.svg"
+    },
+    {
+      "path": "reports/publication_assets/figures/01_scoring_comparison.png",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "de0f7ad9c092471a409c5da76bdac65db875d20d",
+      "sha256": "59b4f0a76b1373b7ea89f62ae77e8587ad89bcfcc5a0b2f9acbc70718cf5afbf",
+      "purpose": "PowerPoint compatibility preview of embedded vector",
+      "slides": [
+        7
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/figures/01_scoring_comparison.png"
+    },
+    {
+      "path": "reports/publication_assets/tables/02_overall_results.csv",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "0364d298405963f9adc5a72bc77a0726378cfbe1",
+      "sha256": "ebcd140a655f1356c4b3616cded379ee06532a62f91a14c7aa04260d06c3b240",
+      "purpose": "Verification source",
+      "slides": [
+        7,
+        11,
+        13
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/tables/02_overall_results.csv"
+    },
+    {
+      "path": "reports/publication_assets/figures/02_category_heatmap.svg",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "88f5efc607a1cab8e0c7d3e148d6d027510b1ff4",
+      "sha256": "49bd0ac49db8b110009f08738e8019f7b7318c94944da3de5fbc8bcf9b42fd9d",
+      "purpose": "Embedded publication vector",
+      "slides": [
+        8
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/figures/02_category_heatmap.svg"
+    },
+    {
+      "path": "reports/publication_assets/figures/02_category_heatmap.png",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "47d926b5bbb0b7ba7d954c2ed196f9a4cbf7b772",
+      "sha256": "46518d5f1f35c5fe52953db6ed7d27c2233a13bdb320c2774e0b05e6018139c1",
+      "purpose": "PowerPoint compatibility preview of embedded vector",
+      "slides": [
+        8
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/figures/02_category_heatmap.png"
+    },
+    {
+      "path": "reports/publication_assets/tables/03_factorial_contrasts.csv",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "600c07ed1a64d7174191702a2f951bd7f0e395bc",
+      "sha256": "f3cb29b4b9b39c84c90f020d612aaa10863eb5c30a7d3ffae227a18a2111fe83",
+      "purpose": "Verification source",
+      "slides": [
+        8,
+        9,
+        13
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/tables/03_factorial_contrasts.csv"
+    },
+    {
+      "path": "reports/publication_assets/tables/04_category_performance.csv",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "30faaeb2d1837cfe19be7a089e08fd1e3d5713e9",
+      "sha256": "64c27616bb8cda3a1e6612527ec502f237c04f4ff3bbeb09408a63d05a94ecd6",
+      "purpose": "Verification source",
+      "slides": [
+        8,
+        13
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/tables/04_category_performance.csv"
+    },
+    {
+      "path": "reports/publication_assets/figures/04_factorial_interaction.svg",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "ae9c4f1d3c6b334b71b0eddac88bab2e86592459",
+      "sha256": "f3908c3f1425fc868d73d01860345c6defd00312e9834ab8109fce03d73f879b",
+      "purpose": "Embedded publication vector",
+      "slides": [
+        9
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/figures/04_factorial_interaction.svg"
+    },
+    {
+      "path": "reports/publication_assets/figures/04_factorial_interaction.png",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "cbe64f4260f0049f3cbe425ce64bea2d281e4f2d",
+      "sha256": "4c5ca3e7d5041d862b3ee4dea19c8012eaaeecfe2d59e1b34b9ce0ae4c6b3a2a",
+      "purpose": "PowerPoint compatibility preview of embedded vector",
+      "slides": [
+        9
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/figures/04_factorial_interaction.png"
+    },
+    {
+      "path": "reports/publication_assets/figures/06_dual_scoring_f1_vs_cost.svg",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "47d42149719bd9a86bfd09b1ce5726884dec482d",
+      "sha256": "4644c4a23218a376e99705c1d9ae29101bcb5b5aef93a3d59f68fbbdcd13e0ec",
+      "purpose": "Embedded publication vector",
+      "slides": [
+        10
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/figures/06_dual_scoring_f1_vs_cost.svg"
+    },
+    {
+      "path": "reports/publication_assets/figures/06_dual_scoring_f1_vs_cost.png",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "eb697b0cba4ac855794b347945c2567695a7bb5c",
+      "sha256": "e224e1c6242d9af7aa01b2be41e2da59ff198482d2bd5186e2b87a648dc2ef1d",
+      "purpose": "PowerPoint compatibility preview of embedded vector",
+      "slides": [
+        10
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/figures/06_dual_scoring_f1_vs_cost.png"
+    },
+    {
+      "path": "reports/publication_assets/tables/05_cost_retrieval.csv",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "3af71b9db0fcd2771707cfa7d00a32cc907f0b7a",
+      "sha256": "1dd7c0e46a942d51899ab05dc65043271f4470968bc5c0df056b1f08387976a1",
+      "purpose": "Verification source",
+      "slides": [
+        10,
+        12
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/tables/05_cost_retrieval.csv"
+    },
+    {
+      "path": "reports/publication_assets/tables/07_dual_scoring_cost_performance.csv",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "347a97e920ca709f8432221b808293986427d9c3",
+      "sha256": "0102d742f7aa5b0e6ef8a6be61d5bec4ed7fcff2afcc4168c0a0a3c811b917f5",
+      "purpose": "Verification source",
+      "slides": [
+        10
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/tables/07_dual_scoring_cost_performance.csv"
+    },
+    {
+      "path": "reports/publication_assets/exploratory_deepseek/deepseek_vs_gpt4omini.svg",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "8412d43f193faf817df3a82735032d67e170949e",
+      "sha256": "02d3c6816aa9d9c0be013c632a0ade151ed395c5ef3476d31a4fa5bbd4839995",
+      "purpose": "Embedded publication vector",
+      "slides": [
+        11
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/exploratory_deepseek/deepseek_vs_gpt4omini.svg"
+    },
+    {
+      "path": "reports/publication_assets/exploratory_deepseek/deepseek_vs_gpt4omini.png",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "28f6e1c4d2331f4d6a5e2197e372b168b1f57e49",
+      "sha256": "cf50ce87135a947741573bbf6664113b1d2e7756f9c8f6df8d7da807ba8a312c",
+      "purpose": "PowerPoint compatibility preview of embedded vector",
+      "slides": [
+        11
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/exploratory_deepseek/deepseek_vs_gpt4omini.png"
+    },
+    {
+      "path": "reports/publication_assets/exploratory_deepseek/deepseek_results.csv",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "c3e8fa78f0014abd4f52b600b1f3c83b4a94174a",
+      "sha256": "f23be8585e57bb4925f255d97d79cebbb3a38581002171c1acaee9e4fa13877a",
+      "purpose": "Verification source",
+      "slides": [
+        11
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/exploratory_deepseek/deepseek_results.csv"
+    },
+    {
+      "path": "reports/publication_assets/exploratory_deepseek/README.md",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "a84f038b849f5ca2246bf03d3a81992256f08f5d",
+      "sha256": "6b8f17c8b58b016af1295d650a50da4978044d44485a8bf2d5d542c318895fa3",
+      "purpose": "Verification source",
+      "slides": [
+        11
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/reports/publication_assets/exploratory_deepseek/README.md"
+    },
+    {
+      "path": "docs/reproducibility/t7-action-gates.md",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "228936e80196e8de5933294db41dbb66b0bccc5b",
+      "sha256": "aeddd402fad8d9fe80064ef4a278e35a42d62dd3b888a72e15735341d36e87ad",
+      "purpose": "Deterministic Full-mode verification",
+      "slides": [
+        4
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/docs/reproducibility/t7-action-gates.md"
+    },
+    {
+      "path": "docs/reproducibility/t6-replay.md",
+      "commit": "c7c2b0e4bd0fe16f382d17f2c5390e50daf24619",
+      "git_blob": "19d8860066be2f035b54e54472e498c1b6477106",
+      "sha256": "84c126c7329ddb45cea2cbfd06b0fbcef1d5d6b09c228c0c442516e7c324b371",
+      "purpose": "Recorded conv-50 DeepSeek replay lineage",
+      "slides": [
+        4
+      ],
+      "source_url": "https://github.com/alistairkung/A-mem-reproducibility/blob/c7c2b0e4bd0fe16f382d17f2c5390e50daf24619/docs/reproducibility/t6-replay.md"
+    }
+  ]
+}
