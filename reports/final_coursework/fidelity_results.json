@@ -9,8 +9,9 @@
     "table_cells": 184
   },
   "prose_order": "preserved",
+  "authorized_changes": "citation markers; one terminology clarification; listing caption explicitly abridged/pinned; student placeholders; rendered bibliography",
   "pdf_pages": 10,
-  "internal_links_checked": 3,
+  "internal_links_checked": 8,
   "missing_paragraphs": [],
   "table_comparison": "all cells equal, including labels and displayed precision",
   "log_checks": "no overfull/underfull boxes, missing glyphs or undefined references"

@@ -10,6 +10,8 @@ from pypdf import PdfReader
 HERE=Path(__file__).resolve().parent
 
 def decode(s):
+    s=re.sub(r'\\cite\{[^}]*\}', '', s)
+    s=s.replace('Throughout the figures, this complementary evaluation is labelled alternative-reference scoring. ', '')
     s=re.sub(r'\\href\{[^}]*\}\{([^}]*)\}',r'\1',s)
     s=re.sub(r'\\ref\{(?:fig|tab)(\d+)\}',r'\1',s)
     s=re.sub(r'\\ensuremath\{([^}]*)\}',r'\1',s)
@@ -31,6 +33,12 @@ def main():
         if p.style.name.startswith('Code') or s in code:
             assert s in code,s;stats['listing_lines']+=1;continue
         m=re.match(r'^(Table|Figure|Listing) (\d+)\. (.*)',s)
+        if m and m[1]=='Listing':
+            assert 'Abridged excerpt from' in plain
+            assert 'commit 8485673' in plain
+            assert 'not a continuous verbatim extract' in plain
+            stats['captions']+=1
+            continue
         if m:
             expected=m[3].replace(' (PR #57)','').replace('PR #54; ','').replace('PR #56; ','')
             stats['captions']+=1
@@ -64,9 +72,13 @@ def main():
     for url in ['https://arxiv.org/abs/2502.12110v11','https://snap-research.github.io/locomo/','https://github.com/alistairkung/A-mem-reproducibility/commit/8485673183d7b8018c841082d075b21158002700']:
         assert any(a.get('/A',{}).get('/URI')==url for a in links),url
     assert '??' not in pdftext
+    for key in ['xu2025amem','locomo','amemsource','reproduction','acceptedresults']:
+        assert 'cite.'+key in reader.named_destinations
+    assert 'Student name:' in pdftext and 'Student ID:' in pdftext
+    assert 'Figure 1:' in reader.pages[3].extract_text() and 'Listing 1:' in reader.pages[3].extract_text()
     log=(HERE/'main.log').read_text()
     assert not re.search(r'Overfull|Underfull|undefined references|Missing character|^!',log,re.M)
-    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'all cells equal, including labels and displayed precision','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
+    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; student placeholders; rendered bibliography','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'all cells equal, including labels and displayed precision','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
     (HERE/'fidelity_results.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 

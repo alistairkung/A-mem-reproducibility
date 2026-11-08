@@ -1,145 +1,109 @@
-# DOCX to LaTeX conversion audit
+# Final submission fidelity audit
 
-## Source and result
+## Source and scope
 
-Editorial source confirmed before conversion:
-`/Users/alistair/Downloads/AMEM_FTEC5660_Sections_3_7_Updated.docx`.
-SHA-256: `c433d42629e62eb70b050785c40ac691df4ec7a4e20d5315857ad870a2d642a5`.
-The companion `.pages` file was not used. Document contents were treated as
-manuscript data, not operational instructions. Conversion branch starts at
-`508f7d93def50586743c2fe37d3cda79b9283095` (merged publication assets).
+The approved DOCX remains `/Users/alistair/Downloads/AMEM_FTEC5660_Sections_3_7_Updated.docx`,
+SHA-256 `c433d42629e62eb70b050785c40ac691df4ec7a4e20d5315857ad870a2d642a5`.
+This polish directly edits the existing LaTeX from `86af3cc`; it does not regenerate
+the manuscript. The extraction JSON retains the original editorial evidence.
 
-The final PDF is **10 A4 pages, including the source/reference section**. It uses
-11 pt TeX Gyre Termes, 22 mm margins, black body text and restrained booktabs tables.
-The architecture remains a 160 mm-wide vector diagram. No prose was shortened to
-meet the limit. Three scientific figures use 92% of the text width.
+The final output has **10 A4 pages**, including a rendered BibTeX bibliography.
+Body text remains 11 pt TeX Gyre Termes with 22 mm margins. No scientific paragraph
+was shortened, paraphrased or removed. No accepted numerical result changed.
 
-## Section fidelity
+## Content preserved
 
-All seven main sections and all 19 subsections remain in order:
+All seven sections, 19 subsections, nine tables, four figures and the original
+16-line code abridgement remain. Independent DOCX comparison verifies 26 headings,
+43 prose/title paragraphs, 14 captions and all **184 table cells** (labels, values,
+signs and precision). The listing caption is an explicitly authorised replacement.
+The comparison removes only citation markers and the one authorised terminology
+sentence; it does not normalise away scientific wording changes. Original prose
+and heading order is preserved. `fidelity_results.json` records the checks.
 
-| Section | Retained content |
+The reproduction target, fourth factorial condition, F1/BLEU-1 definitions, five
+categories, both evaluation perspectives, complete twelve-cell/558-question
+results, interactions, evaluation-dependent frontiers, exploratory DeepSeek
+caveats and stochastic/sample-size limitations remain intact.
+
+| Table | Authority used in original conversion, retained unchanged |
 |---|---|
-| 1. Project summary and research questions | Original target, fourth condition, cost-aware population selection |
-| 2. A-MEM and experimental setup | Construction/retrieval, frozen runtime, parameters and provenance |
-| 3. Reproduction target and evaluation | Paper target, F1/BLEU-1 explanations, five categories, historical/complementary framing |
-| 4. Modification, experimental wrapper and verification | Two-factor design, interaction formula, AST listing, replay, tracing/accounting |
-| 5. Results and interpretation | Both rankings, factorial/category caveats, cost comparison and both Pareto frontiers |
-| 6. Debug diary and methodological reflection | DeepSeek detour, exploratory caveat, failures, final Clean run, operational reflection |
-| 7. Limitations, conclusion and reproducibility evidence | What reproduces, what does not and why, descriptive limitations, sources |
+| 1–4, 9 | Approved DOCX; no identical-schema generated fragment |
+| 5 | `tables/latex/02_overall_results.tex`, manuscript headings |
+| 6 | `tables/latex/03_factorial_contrasts.tex`, manuscript labels/signs |
+| 7 | `tables/latex/05_cost_retrieval.tex`, manuscript five-column subset and five-decimal dollar display |
+| 8 | `exploratory_deepseek/deepseek_results.tex`, manuscript labels |
 
-An independent extraction route (`python-docx`, separate from the converter's
-OOXML traversal) verifies 26 headings, 43 prose/title paragraphs, 14 captions,
-16 code lines and **184 table cells**, including every label, sign and displayed
-numerical value. Zero missing paragraphs; prose/headings retain their order.
-The source has no tracked revisions or separate footnote/endnote/comment text.
-`manuscript_extract.json` retains the complete ordered body extraction.
-`fidelity_results.json` records the independent checks. These checks support
-textual fidelity subject to the explicit formatting changes below; they do not
-prove the scientific truth of the manuscript or binary/image identity.
+Paths are relative to `reports/publication_assets/`. All figure PDFs and their
+manifest hashes are unchanged during polish: Figure 1 uses the PR #57 architecture;
+Figures 2–4 use `01_scoring_comparison.svg`, `02_category_heatmap.svg` and
+`06_dual_scoring_f1_vs_cost.svg`. Source-native heatmap rasters remain; other assets
+preserve vector paths/text. No scientific graphic was regenerated or redesigned.
 
-## Table mapping
+## Authorised editorial and formatting changes
 
-| DOCX table | LaTeX origin | Fidelity |
-|---|---|---|
-| 1. Selected population | DOCX table 1 | Every cell retained |
-| 2. Five question categories | DOCX table 2 | Every cell retained, including explanatory sentences |
-| 3. Evaluation perspectives | DOCX table 3 | Every cell retained |
-| 4. Action bundles | DOCX table 4 | Every cell retained; generated configuration fragment has a different schema |
-| 5. Overall scores | `tables/latex/02_overall_results.tex` | All 20 numerical cells sourced/checked against verified fragment; DOCX headings retained |
-| 6. Factorial contrasts | `tables/latex/03_factorial_contrasts.tex` | All 10 numerical cells checked; DOCX labels and explicit plus signs retained |
-| 7. Cost/retrieval | `tables/latex/05_cost_retrieval.tex` | DOCX's five-column subset; 16 numerical cells checked; Decimal rounding of verified six-decimal dollar cells to DOCX's five decimals |
-| 8. Exploratory DeepSeek | `exploratory_deepseek/deepseek_results.tex` | All 20 numerical cells sourced/checked; DOCX's QA/Alt./Hist./Pooled* labels retained |
-| 9. Historical/complementary summary | DOCX table 9 | Every cell retained, including all contrasts |
+- Figure 1 moves before the listing on page 4, immediately after its Section 4.2
+  introduction on page 3. At 150 mm width, diagram body lettering is approximately
+  8.16 pt. It shares page 4 with Listing 1 and replay-methodology text. There are
+  no figure-only pages. Figure 4 now uses the full text width for improved labels.
+- Listing 1 is explicitly **abridged**, not a continuous verbatim source excerpt.
+  The caption pins `amem_repro/actions.py` at accepted commit `8485673` through a
+  full-commit hyperlink. Its equality-operator guard, `found` tracking and final
+  validation/compilation are absent from the displayed abridgement; the caption
+  discloses the omitted guard and validation/compilation steps. Displayed code is
+  unchanged from the approved manuscript; no invented code was introduced.
+- Section 3.4 adds only: “Throughout the figures, this complementary evaluation is
+  labelled alternative-reference scoring.” Existing scientific explanations remain.
+- Five numbered BibTeX references are cited from Sections 1–2 and rendered after
+  Section 7.4. The original source paragraphs and frozen/evidence revisions remain.
+  References use readable 9 pt text; body font size was not reduced.
+- The title block adds `[enter name]` and `[enter ID]` placeholders. Module code,
+  title and report title remain. No personal identifier was inferred.
+- The initial converter is now archival and requires a separate output directory;
+  it cannot overwrite the polished source. Build the report from `main.tex`.
 
-Fragment paths are relative to `reports/publication_assets/`. No numerical result
-was manually retyped. The converter validates the scientific fragment cells before
-writing output. Tables 1–4 and 9 have no identical-schema generated fragments, so
-the approved DOCX remains their authority. Table 4 intentionally omits the extra
-state-description column found in the repository configuration fragment. No extra
-scientific table or figure was added.
+## Citation verification
 
-## Figure mapping
+On 8 November 2026, bibliographic authors, title, year, version and DOI for A-MEM
+were verified against [arXiv v11](https://arxiv.org/abs/2502.12110v11). LoCoMo's six
+authors, ACL 2024 proceedings title, pages 13851–13870 and DOI were verified against
+[ACL Anthology](https://aclanthology.org/2024.acl-long.747/). Repository references
+link to the released source at frozen `f9a173d`, the reproduction repository and
+accepted scientific evidence `8485673183d7b8018c841082d075b21158002700`. No venue,
+publication date or personal author identity was invented for repository entries.
+No substantive citation ambiguity was identified.
 
-| DOCX figure / embedded media | Committed source SVG |
-|---|---|
-| 1 / `image6.png` | `architecture/amem_wrapper_architecture.svg` (merged PR #57) |
-| 2 / `image1.png` | `figures/01_scoring_comparison.svg` |
-| 3 / `image2.png` | `figures/02_category_heatmap.svg` |
-| 4 / `image5.png` | `figures/06_dual_scoring_f1_vs_cost.svg` |
+## Remaining editorial decisions
 
-The DOCX contains four displayed drawings; two additional media ZIP entries are
-unused and do not represent omitted figures. All four displayed figures were
-visually compared with the repository versions. Scientific values and figure
-subjects match; the approved repository SVG versions use different titles,
-fonts, axes/legend styling and markers from some embedded DOCX bitmaps. The
-requested original assets take precedence for graphical appearance. Captions
-retain their scientific wording. CairoSVG 2.9.0 / Cairo 1.18.6 converts the SVGs
-into vector PDF 1.5; no additional rasterisation, scientific regeneration or diagram redrawing
-occurs. The heatmap SVG already embeds two raster images (cells and colour scale);
-those source-native images are retained alongside vector text. The other three
-PDF assets contain no raster images. `asset_manifest.json` pins both input and output hashes.
+1. Student name and ID must be filled in before submission.
+2. The preserved Section 6.2 claim of approximately **$4.70** for accepted builds
+   differs from Table 7's **$4.06401** displayed sum (**$4.06400310** unrounded).
+   This pre-existing scientific statement needs author adjudication; not changed.
+3. Table 8 retains `Pooled*` without a separate starred footnote; its caption and
+   prose explain the derived aggregate. No footnote was invented.
 
-## Intentional formatting differences
+## Validation
 
-- LaTeX generates section, figure, table and listing numbers and working references.
-  References to **the paper's Table 3** remain plain text, avoiding a false link to
-  this report's Table 3. Existing source references gain working URLs.
-- The code listing remains verbatim, including indentation, at a smaller monospace
-  size. Tables use smaller readable text and wrapped columns, without vertical rules.
-- Captions consistently follow their objects, even where the DOCX caption preceded
-  its table. The architecture is allowed to float to its own page after Section 4.3;
-  all prose and all figure/table sequences remain intact.
-- Routine provenance tokens `(PR #57)`, `PR #54; ` and `PR #56; ` are removed from
-  figure/table captions as requested. Section 7.4 retains the development references.
-- Mathematical minus, delta, multiplication and inequalities use LaTeX symbols.
-  No terminology was changed from historical, alternative-reference or complementary.
-- Section 7.4 retains the approved linked reference prose as the equivalent reference
-  list. `references.bib` supplies verified structured metadata without adding a second
-  bibliography or additional scientific claims.
+The build, independent comparison and all ten rendered-page inspections pass.
+A4 size, page limit, eight internal links (including bibliography destinations),
+source hyperlinks, citation keys and student placeholders are checked. No overfull
+or underfull boxes, missing glyphs or unresolved references occur. No accepted
+asset, scientific pipeline, result, financial record or experimental setting changed.
+Independent final Standards and Spec reviews are recorded below.
 
-## Source and citation issues for editorial review
+### Independent Standards review
 
-1. **Accepted-build cost total:** Section 6.2 says approximately **$4.70** for the
-   twelve accepted builds. Table 7's four displayed costs sum to **$4.06401**;
-   the verified unrounded asset totals sum to **$4.06400310**. The statement is
-   preserved unchanged. The manuscript does not explain this difference. Approval
-   of any replacement wording/value is an editorial decision, outside conversion.
-2. **Pooled asterisk:** Table 8 uses `Pooled*` without a separate starred footnote.
-   Its caption and preceding paragraph do explain that it is a derived aggregate.
-   The original label is preserved; no footnote was invented.
-3. The manuscript has no student name/ID. None was inferred or added. Confirm
-   separately whether coursework submission requires those identifiers.
-4. The manuscript references LoCoMo by benchmark name rather than a full paper
-   citation. The existing phrase now links to the official project; the BibTeX file
-   supplies the verified title/author list. No publication year/venue was guessed.
+**PASS — zero unresolved findings.** A clean temporary build with all auxiliary
+and bibliography files removed reproduced PDF SHA-256
+`b64314e27ed32c2f10deff23c8b615811fe87e537dcec577ceb3673921777d6c`
+byte-for-byte. Updated fidelity checks and documented workflows passed; no hard
+standards violations or actionable heuristic findings were identified.
 
-Citation verification on 8 November 2026 confirmed the A-MEM title, six authors,
-year and v11 against [arXiv](https://arxiv.org/abs/2502.12110v11); the frozen
-[released source](https://github.com/WujiangXu/A-mem/tree/f9a173dec325d84fcc97e7828775c7b241c33466)
-and official [LoCoMo project](https://snap-research.github.io/locomo/) match the
-manuscript's intent. Repository and accepted-result URLs are pinned where appropriate.
-No substantive citation correction was made.
+### Independent Spec review
 
-## Validation and reviews
-
-- Tectonic 0.17.0 compiles the final source without warnings, overfull/underfull
-  boxes, undefined references or missing glyphs.
-- Independent verifier passes; A4, ten pages and working internal/source links checked.
-- All ten rendered pages inspected for clipping, overlap, heading/table breaks and
-  figure legibility. The architecture is deliberately given a dedicated page.
-- Independent Standards review: **PASS**, zero hard violations or actionable
-  judgment-call findings. A clean temp-copy build with auxiliaries removed produced
-  the byte-identical final PDF, SHA-256
-  `731a4f8818e98e2a6e47beb8e012602622b6992a24803e6576582a72c1cb3fe6`.
-- Independent Spec review: **PASS**, zero conversion defects or blocking findings;
-  separately confirmed every source paragraph in the PDF and inspected all ten pages.
-  One optional observation remains: Figure 4's two-panel labels are approximately
-  6 pt. A full-width trial exceeded ten pages; the reviewed layout is retained.
-- A final regeneration test found Cairo's default current-date PDF metadata.
-  Fixed creation/modification dates now make all four conversions byte-identical
-  on this environment. Independent Standards re-review confirmed every regenerated
-  asset hash; Spec review approved the metadata fix and heatmap clarification.
-  The final PDF remains byte-identical; all ten final rendered pages also match
-  the visually inspected render pixel-for-pixel.
-- No experimental pipeline, publication-data generator, accepted result or ledger changed.
+**PASS — zero blocking findings.** Independently verified ten A4 pages, all five
+rendered references, all 98 unchanged source text items in the PDF (after the
+approved additions/caption changes), all 184 table cells and unchanged listing.
+All ten rendered pages were inspected. Figure 1 and Listing 1 share page 4;
+Figure 4 uses full text width; citation metadata and links pass. Reviewed PDF hash
+matches the Standards review above. Remaining author decisions are listed above.

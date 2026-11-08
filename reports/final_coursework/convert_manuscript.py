@@ -55,7 +55,12 @@ def checked_tables(tables):
 
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('manuscript',type=Path);args=ap.parse_args()
+    global HERE
+    ap=argparse.ArgumentParser();ap.add_argument('manuscript',type=Path);ap.add_argument('--output-dir',type=Path,required=True);args=ap.parse_args()
+    if args.output_dir.resolve()==HERE:
+        ap.error('Use a separate directory: this archival converter must not overwrite the polished report')
+    HERE=args.output_dir.resolve()
+    HERE.mkdir(parents=True,exist_ok=True)
     digest=hashlib.sha256(args.manuscript.read_bytes()).hexdigest()
     if SOURCE_SHA: assert digest==SOURCE_SHA, 'Different editorial source: review required'
     with ZipFile(args.manuscript) as z:

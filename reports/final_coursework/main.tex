@@ -26,13 +26,14 @@
 {\centering\LARGE\bfseries Reproducing A-MEM: A Cost-Aware Study of Memory Linking and Evolution\par}
 \vspace{5pt}{\centering\small FTEC5660 — Agentic AI for Business and FinTech  |  Individual Reproducibility Assignment\par}
 {\centering\small Paper: Xu et al. (2025), A-MEM: Agentic Memory for LLM Agents  |  Code and evidence: \href{https://github.com/alistairkung/A-mem-reproducibility}{github.com/alistairkung/A-mem-reproducibility}\par}\vspace{8pt}
+\noindent{\small Student name: [enter name] \hfill Student ID: [enter ID]}\par
 \section{Project summary and research questions}
-A-MEM is an agentic memory system that turns conversational turns into structured notes, creates links to related memories and can revise contextual metadata of older notes. The original paper reports an ablation of Neither, Linking Only and Full A-MEM. I set out to reproduce the mechanism-level comparison and investigate a missing fourth condition: Evolution Only, in which older memories can be updated without strengthening new memories.
+A-MEM is an agentic memory system that turns conversational turns into structured notes, creates links to related memories and can revise contextual metadata of older notes. The original paper~\cite{xu2025amem} reports an ablation of Neither, Linking Only and Full A-MEM. I set out to reproduce the mechanism-level comparison and investigate a missing fourth condition: Evolution Only, in which older memories can be updated without strengthening new memories.
 
 The fourth condition completes a two-factor design and permits two questions: does neighbour evolution improve answers independently of linking, and do the additional memory operations justify their computational cost? Inspired by Professor Nguyen’s Pareto-oriented approach, I measured answer quality, retrieval expansion, token use and identified model charges. I also reproduced the paper-compatible evaluation and added a complementary measure for questions that require acknowledging missing information.
 
 \subsection{Cost-aware scope}
-The released LoCoMo sample contains ten conversations, 5,882 turns and 1,986 questions. I selected three conversations before inspecting their performance, stratifying by length with a fixed seed (42). This retained matched questions under all four experimental configurations while reducing the required independent memory builds from forty to twelve. The subset limits generalisation but avoids choosing conversations on the basis of observed scores.
+The released LoCoMo sample~\cite{locomo} contains ten conversations, 5,882 turns and 1,986 questions. I selected three conversations before inspecting their performance, stratifying by length with a fixed seed (42). This retained matched questions under all four experimental configurations while reducing the required independent memory builds from forty to twelve. The subset limits generalisation but avoids choosing conversations on the basis of observed scores.
 
 \begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.48\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.25\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.27\linewidth-5.333333333333333pt\relax}@{}}
@@ -53,9 +54,9 @@ For every conversation turn, an LLM creates a memory containing the original con
 Both mechanisms are proposed by the same LLM decision in every configuration, even when the experiment subsequently disables their application. Consequently, this design isolates the effects of applying two bundles of state mutations, not the cost of skipping the shared decision call.
 
 \subsection{Frozen runtime and reproducibility}
-The frozen author implementation was fixed to commit f9a173d. The accepted GPT-4o-mini campaign used openai/gpt-4o-mini-2024-07-18 via OpenRouter, with OpenAI pinned as the upstream provider. Each cell used separate memory, retrieval-index and response-cache state. Prompts and native output contracts were fixed; temperature was 0.7 except for category-5 answers at 0.5. Construction neighbours were k=5; answer retrieval began at k=10. A 4,096-token limit applied to evolution decisions and 1,000 tokens to other stages. The recorded Python environment used Python 3.11.17 for publication reproducibility.
+The frozen author implementation~\cite{amemsource} was fixed to commit f9a173d. The accepted GPT-4o-mini campaign used openai/gpt-4o-mini-2024-07-18 via OpenRouter, with OpenAI pinned as the upstream provider. Each cell used separate memory, retrieval-index and response-cache state. Prompts and native output contracts were fixed; temperature was 0.7 except for category-5 answers at 0.5. Construction neighbours were k=5; answer retrieval began at k=10. A 4,096-token limit applied to evolution decisions and 1,000 tokens to other stages. The recorded Python environment used Python 3.11.17 for publication reproducibility.
 
-The repository records source and dataset fingerprints, model responses, original question IDs, checkpointed memory states, scoring outputs, and independently reviewed evidence. The publication-asset generator pins its scientific inputs to accepted commit 8485673, rather than the moving working tree. Detailed execution commands and dependencies are retained in the project repository and reporting README.
+The repository~\cite{reproduction,acceptedresults} records source and dataset fingerprints, model responses, original question IDs, checkpointed memory states, scoring outputs, and independently reviewed evidence. The publication-asset generator pins its scientific inputs to accepted commit 8485673, rather than the moving working tree. Detailed execution commands and dependencies are retained in the project repository and reporting README.
 
 \section{Reproduction target and evaluation}
 \subsection{Published reproduction target}
@@ -81,7 +82,7 @@ Adversarial & 121 & Recognise when the conversation does not supply the requeste
 \caption{The five LoCoMo question categories in the selected 558-question population.}\label{tab2}
 \end{table}
 \subsection{Historical and complementary adversarial evaluation}
-In category 5, the agent chooses between an unsupported distractor and “Not mentioned in the conversation.” I reproduced the authors’ historical scoring method, which compares the generated answer against the supplied distractor. I also introduced a complementary evaluation to examine the agent’s ability to recognise missing information. This uses the same F1 and BLEU-1 calculations but compares against the no-information response. Binary adversarial correctness separately records whether that response was selected.
+In category 5, the agent chooses between an unsupported distractor and “Not mentioned in the conversation.” I reproduced the authors’ historical scoring method, which compares the generated answer against the supplied distractor. I also introduced a complementary evaluation to examine the agent’s ability to recognise missing information. Throughout the figures, this complementary evaluation is labelled alternative-reference scoring. This uses the same F1 and BLEU-1 calculations but compares against the no-information response. Binary adversarial correctness separately records whether that response was selected.
 
 \begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.26\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.36\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.38\linewidth-5.333333333333333pt\relax}@{}}
@@ -118,16 +119,18 @@ For metric M, interaction = Full \ensuremath{-} Linking Only \ensuremath{-} Evol
 \subsection{Wrapper implementation and validation}
 To preserve the original A-MEM implementation, I built an experimental wrapper around the frozen author source. Figure~\ref{fig1} distinguishes the scientific workflow from the experimental controls. The wrapper selects a condition, routes calls through the controlled model adapter, isolates each cell’s memory store and retrieval index, and captures evidence. I parsed the original evolution method into a Python abstract syntax tree and extended only its two existing action guards with fixed Boolean gates. The shared LLM decision therefore runs in all four configurations, while only selected and enabled actions may mutate memory. The original note insertion, retrieval and consolidation behaviour is retained.
 
-\begin{minipage}{\linewidth}
-\VerbatimInput[fontsize=\footnotesize]{listing.py}
-\captionof{listing}{Condensed production excerpt from amem\_repro/actions.py; check the pinned repository implementation for the complete guard validation and compilation.}
-\end{minipage}
-Full-mode deterministic replay against the frozen author source matched 568 memory insertion states, 1,544 model requests and 204 answers under identical saved responses. Separate tests verified that disabled actions cannot change prohibited memory fields and that condition-specific stores remain independent. Strengthening changes new-note links and tags; neighbour evolution changes existing-note contexts and tags. The replay checks implementation fidelity, not stochastic equivalence between independent runs.
-
-\begin{figure}[!htbp]\centering
-\includegraphics[width=160mm]{assets/amem_wrapper_architecture.pdf}
+\begin{figure}[H]\centering
+\includegraphics[width=150mm]{assets/amem_wrapper_architecture.pdf}
+\captionsetup{hypcap=false}
 \caption{Experimental wrapper around the frozen A-MEM implementation. The original workflow generates a shared evolution decision for every configuration; the two bound gates allow only selected and enabled mutations. The wrapper separately controls execution, tracing and accounting.}\label{fig1}
 \end{figure}
+\begin{minipage}{\linewidth}
+\VerbatimInput[fontsize=\footnotesize]{listing.py}
+\captionof{listing}{Abridged excerpt from \href{https://github.com/alistairkung/A-mem-reproducibility/blob/8485673183d7b8018c841082d075b21158002700/amem_repro/actions.py}{amem\_repro/actions.py}, commit 8485673. This is not a continuous verbatim extract; the production equality-operator guard and validation/compilation steps are omitted.}
+\end{minipage}\par\smallskip
+Full-mode deterministic replay against the frozen author source matched 568 memory insertion states, 1,544 model requests and 204 answers under identical saved responses. Separate tests verified that disabled actions cannot change prohibited memory fields and that condition-specific stores remain independent. Strengthening changes new-note links and tags; neighbour evolution changes existing-note contexts and tags. The replay checks implementation fidelity, not stochastic equivalence between independent runs.
+
+
 \subsection{Tracing and financial reconciliation}
 Langfuse provided passive traces for model generations, memory actions, retrieval and question-level scoring. Local journals and saved scientific records remained authoritative; Langfuse was an independently inspectable observation layer, not a component deciding memory mutations. For each model request the financial controller reserved a conservative maximum charge before transmission. A complete response then recorded generation identity, model route, native token usage and reported cost, permitting ledger settlement. Missing usage retained its reservation rather than being treated as free.
 
@@ -194,7 +197,7 @@ Full A-MEM & 19.99 & 1,503,791 & \$1.08084 & 36.91 \\
 \caption{Matched 558-question scientific inference costs from accepted builds only; excludes failed attempts, held reservations and Langfuse fees.}\label{tab7}
 \end{table}
 \begin{figure}[H]\centering
-\includegraphics[width=0.92\linewidth]{assets/06_dual_scoring_f1_vs_cost.pdf}
+\includegraphics[width=\linewidth]{assets/06_dual_scoring_f1_vs_cost.pdf}
 \caption{Cost–performance frontiers under historical and alternative-reference F1 (558 matched questions). Historical scores place Neither, Linking Only and Full A-MEM on the observed frontier; alternative-reference scores place only Neither on it. Costs include identified model charges from accepted scientific builds, excluding earlier attempts and Langfuse fees.}\label{fig4}
 \end{figure}
 Linking Only increased mean retrieved entries from 10.00 to 20.15 and doubled native answer input tokens (747,640 to 1,511,478). Its identified model charges rose from \$0.95045 to \$1.07939, while alternative-reference F1 declined by 1.66 percentage points. Figure~\ref{fig4} keeps expenditure fixed across both panels but changes the quality measure. Under the historical reference, Neither, Linking Only and Full A-MEM are all Pareto-efficient: each offers a higher historical F1 than less expensive predecessors. Under the alternative reference, Neither has both the lowest cost and highest F1, dominating the other conditions. The apparent value of additional memory operations therefore depends on which evaluation objective is chosen. These frontiers are descriptive for this fixed model, sample and pricing basis, not general efficiency guarantees.
@@ -264,4 +267,12 @@ Xu et al. (2025), A-MEM: Agentic Memory for LLM Agents, \href{https://arxiv.org/
 
 Accepted twelve-cell scientific evidence: \href{https://github.com/alistairkung/A-mem-reproducibility/commit/8485673183d7b8018c841082d075b21158002700}{8485673183d7b8018c841082d075b21158002700}. Reporting assets: PRs \#53–57; full matched analysis, both scoring policies and independent financial/observability receipts are linked from the repository. The pooled DeepSeek figures in Section 6 are exploratory, not part of the controlled factorial comparison.
 
+\begingroup
+\footnotesize\raggedright
+\setlength{\parskip}{0pt}
+\let\originalthebibliography\thebibliography
+\renewcommand{\thebibliography}[1]{\originalthebibliography{#1}\setlength{\itemsep}{2pt}\setlength{\parsep}{0pt}}
+\bibliographystyle{unsrturl}
+\bibliography{references}
+\endgroup
 \end{document}

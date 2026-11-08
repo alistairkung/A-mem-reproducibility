@@ -19,12 +19,12 @@ Output: `reports/final_coursework/AMEM_FTEC5660_Report.pdf`.
 The build fixes `SOURCE_DATE_EPOCH` for PDF metadata; scientific computation,
 asset generation, credentials and paid APIs are not involved. The fixed Tectonic
 bundle used here is `6ffe055852f8faf66c0acbe1a7fb27f87b869a90bad1204f3bf4d9683f597c7c`.
-`main.log` is generated locally; auxiliary files are ignored. Section 7.4 is the
-rendered reference list, preserving the approved wording and adding working links.
-`references.bib` supplies equivalent structured metadata for reuse; no separate,
-duplicate bibliography is appended to the PDF.
+`main.log` is generated locally; auxiliary files are ignored. Section 7.4 retains the
+approved source wording and working links.
+`references.bib` is cited in Sections 1–2 and rendered as a numbered bibliography
+after Section 7.4. The original source paragraphs are retained for editorial fidelity.
 
-## Re-extract and audit the approved DOCX
+## Audit the polished report against the approved DOCX
 
 The source is supplied separately and is not committed:
 `/Users/alistair/Downloads/AMEM_FTEC5660_Sections_3_7_Updated.docx`.
@@ -35,15 +35,16 @@ Use Python with `python-docx`, `lxml` and `pypdf` (the review used the Codex bun
 Python 3.12 runtime). In a separate environment, install `requirements.txt`, then:
 
 ```sh
-python reports/final_coursework/convert_manuscript.py /path/to/AMEM_FTEC5660_Sections_3_7_Updated.docx
 sh reports/final_coursework/build.sh
 python reports/final_coursework/verify_fidelity.py /path/to/AMEM_FTEC5660_Sections_3_7_Updated.docx
 ```
 
-The converter rejects a different manuscript hash, extracts every body block in
-order, checks numerical cells against the existing generated LaTeX fragments and
-retains manuscript labels, signs and display precision. The independent verifier
-reads the DOCX with `python-docx`, compares prose/headings/captions/listing and all
+The final source is maintained directly in `main.tex`; do not regenerate it.
+The archival initial converter requires `--output-dir /tmp/amem-original-conversion`
+and rejects writing into this report directory. It retains the original extraction
+workflow for provenance, including numerical checks against verified fragments. The independent verifier
+reads the DOCX with `python-docx`, allows only the authorised citation markers, terminology sentence and listing
+caption replacement while comparing prose/headings/captions/listing and all
 184 table cells with LaTeX, and checks the compiled page count, A4 size, links and
 TeX diagnostics. It does not establish the truth of scientific claims or provide
 a visual-layout check. `manuscript_extract.json`, `conversion_checks.json` and
@@ -76,3 +77,8 @@ pdftoppm -r 150 -png reports/final_coursework/AMEM_FTEC5660_Report.pdf /tmp/amem
 ```
 
 Inspect all ten page images. They are QA intermediates and are not committed.
+
+## Submission fields
+
+Fill `[enter name]` and `[enter ID]` in the title block in `main.tex`, then rebuild.
+See `CHANGELOG.md` and `conversion_audit.md` for exact changes and remaining author decisions.
