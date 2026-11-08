@@ -1,6 +1,11 @@
 import copy
+import hashlib
+import subprocess
 import unittest
+import pytest
 from amem_repro.config import (
+    AUTHOR_REVISION,
+    UPSTREAM_README,
     load_config,
     validate_config,
     fingerprint,
@@ -38,6 +43,48 @@ class ConfigTests(unittest.TestCase):
         )
         self.assertIn("memory_layer.py", provenance["files"])
         self.assertEqual(len(provenance["files"]["utils.py"]), 64)
+
+
+def test_author_file_inventory_and_readme_layouts(tmp_path):
+    # A real Git tree exercises the same path-based lookups as the release guard.
+    subprocess.run(["git", "clone", "--quiet", "--shared", str(ROOT), str(tmp_path)], check=True)
+    original = subprocess.check_output(["git", "show", f"{AUTHOR_REVISION}:README.md"], cwd=tmp_path)
+    readme_sha = hashlib.sha256(original).hexdigest()
+    files = source_fingerprint(tmp_path)["files"]
+    assert files[UPSTREAM_README] == readme_sha and "README.md" not in files
+    for name, digest in files.items():
+        assert hashlib.sha256((tmp_path / name).read_bytes()).hexdigest() == digest
+    (tmp_path / "README.md").write_text("Coursework guide\n")
+    assert source_fingerprint(tmp_path)["files"] == files
+    frozen = subprocess.check_output(["git", "ls-tree", "-r", "--name-only", AUTHOR_REVISION],
+                                     cwd=tmp_path, text=True).splitlines()
+    for name in frozen:
+        if name.endswith((".py", ".sh")) or name in ("README.md", "LICENSE", "requirements.txt"):
+            item = tmp_path / (UPSTREAM_README if name == "README.md" else name)
+            saved = item.read_bytes()
+            item.write_bytes(saved + b"altered")
+            with pytest.raises(ValueError, match="Frozen author source changed"):
+                source_fingerprint(tmp_path)
+            item.write_bytes(saved)
+
+    (tmp_path / "README.md").write_bytes(original)
+    archive = tmp_path / UPSTREAM_README
+    archive.unlink()
+    with pytest.raises(ValueError, match=UPSTREAM_README):
+        source_fingerprint(tmp_path)
+    archive.symlink_to("README.md")
+    with pytest.raises(ValueError, match=UPSTREAM_README):
+        source_fingerprint(tmp_path)
+    archive.unlink()
+    subprocess.run(["git", "restore", "--", "README.md", UPSTREAM_README], cwd=tmp_path, check=True)
+    for ref in (
+        "8485673183d7b8018c841082d075b21158002700",  # accepted analysis
+        "34f4ab5e96e9854c9b63492c473155ab4b65279a",  # PR #52 merge
+        "e736a007e243442ef65b156f184bb70b78c578a2",  # merged coursework report
+    ):
+        subprocess.run(["git", "checkout", "--quiet", "--detach", ref], cwd=tmp_path, check=True)
+        old = source_fingerprint(tmp_path)["files"]
+        assert old["README.md"] == readme_sha and UPSTREAM_README not in old
 
 
 if __name__ == "__main__":

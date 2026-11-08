@@ -7,6 +7,13 @@ from pathlib import Path
 import subprocess
 
 AUTHOR_REVISION = "f9a173dec325d84fcc97e7828775c7b241c33466"
+UPSTREAM_README = "UPSTREAM_README.md"
+# The scientific and report merge tips have different ancestry. Only
+# their historical checkouts may use the old root README as the author copy.
+LEGACY_README_TIPS = (
+    "34f4ab5e96e9854c9b63492c473155ab4b65279a",  # PR #52 merge, includes 8485673
+    "e736a007e243442ef65b156f184bb70b78c578a2",
+)
 STRICT_PROVIDER_POLICY = "strict-original-v1"
 INDEX_STRING_POLICY = "canonical-index-strings-v1"
 OUTPUT_TOKEN_POLICY = "d9a-shared-decision-4000-v1"
@@ -177,16 +184,33 @@ def load_run2_config(path=None):
     return config
 
 
+def _author_readme_path(root):
+    for tip in LEGACY_README_TIPS:
+        if subprocess.run(
+            ["git", "merge-base", "--is-ancestor", "HEAD", tip], cwd=root,
+            stderr=subprocess.DEVNULL,
+        ).returncode == 0:
+            return "README.md"
+    return UPSTREAM_README
+
+
+def _verified_author_file(root, upstream_path):
+    name = _author_readme_path(root) if upstream_path == "README.md" else upstream_path
+    path = root / name
+    if name == UPSTREAM_README and (path.is_symlink() or not path.is_file()):
+        raise ValueError(f"Missing or invalid frozen author file: {name}")
+    expected = subprocess.check_output(
+        ["git", "show", f"{AUTHOR_REVISION}:{upstream_path}"], cwd=root
+    )
+    current = path.read_bytes()
+    if current != expected:
+        raise ValueError(f"Frozen author source changed: {name}")
+    return name, current
+
+
 def verified_author_bytes(repo_root, relative_path):
     """Return only the exact bytes checked against the frozen Git blob."""
-    root = Path(repo_root)
-    expected = subprocess.check_output(
-        ["git", "show", f"{AUTHOR_REVISION}:{relative_path}"], cwd=root
-    )
-    current = (root / relative_path).read_bytes()
-    if current != expected:
-        raise ValueError(f"Frozen author source changed: {relative_path}")
-    return current
+    return _verified_author_file(Path(repo_root), relative_path)[1]
 
 
 def source_fingerprint(repo_root):
@@ -203,8 +227,8 @@ def source_fingerprint(repo_root):
     ]
     hashes = {}
     for path in paths:
-        current = verified_author_bytes(root, path)
-        hashes[path] = hashlib.sha256(current).hexdigest()
+        name, current = _verified_author_file(root, path)
+        hashes[name] = hashlib.sha256(current).hexdigest()
     support = [*root.glob("amem_repro/**/*.py"), *root.glob("config/*.json")]
     support += [
         root / name for name in ("pyproject.toml", "uv.lock") if (root / name).exists()
