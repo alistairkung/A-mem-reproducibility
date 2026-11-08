@@ -1,6 +1,6 @@
 # A-MEM publication assets
 
-This collection supplies six scientific tables, a compact companion table and six figures for the twelve accepted GPT-4o-mini cells on 558 matched LoCoMo questions. Configuration order is Neither, Linking Only, Evolution Only, Full A-MEM throughout. The additional alternative-reference policy retains the accepted internal name `author-corrected-v1`; public labels use alternative-reference to avoid implying universal superiority over the authors' historical policy.
+This collection supplies six scientific tables, a compact companion table and seven figures for the twelve accepted GPT-4o-mini cells on 558 matched LoCoMo questions. Configuration order is Neither, Linking Only, Evolution Only, Full A-MEM throughout. The additional alternative-reference policy retains the accepted internal name `author-corrected-v1`; public labels use alternative-reference to avoid implying universal superiority over the authors' historical policy.
 
 ## Reproduce and validate
 
@@ -24,7 +24,7 @@ CSV metric values retain eight decimal places. Word, LaTeX and graphical scores 
 - `tables/01_configurations.csv` through `06_conversation_results.csv` contain the six machine-readable tables.
 - `tables/latex/` contains six standalone booktabs fragments. Load `booktabs`, `array` and `graphicx` in a UTF-8 LaTeX document. Table 4 supplies two metric panels, and Table 6 supplies per-conversation supplementary detail.
 - [publication_tables.docx](tables/publication_tables.docx) is a six-page A4 Word collection with one numbered table per page, suggested captions, interpretation and caveats.
-- `figures/01_scoring_comparison` through `05_token_overhead` each have SVG and 300-DPI PNG versions. Figure 6 adds a shared-scale historical/alternative cost comparison in the same formats. SVG retains text for vector workflows. PNG is suitable for Word and PowerPoint.
+- `figures/01_scoring_comparison` through `05_token_overhead` each have SVG and 300-DPI PNG versions. Figure 6 adds a shared-scale historical/alternative cost comparison in the same formats. [Figure 7](figures/07_dual_policy_category_heatmap.svg) compares category F1 under both references on a shared 0–100% scale. Only the 121 adversarial questions change reference. SVG retains text for vector workflows. PNG is suitable for Word and PowerPoint.
 - [captions.json](captions.json) contains a suggested academic title, caption, interpretation and limitation for every table and figure.
 
 SVG IDs, figure dates, DOCX core properties and ZIP timestamps are stabilized. Tests regenerate the collection and require byte-identical output hashes on the recorded environment. Different font stacks or compression/runtime versions can affect binary outputs; scientific validation still runs before exports.

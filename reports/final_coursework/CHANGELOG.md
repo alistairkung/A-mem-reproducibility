@@ -15,4 +15,7 @@
 - Changed the DeepSeek pooled row label from `Pooled*` to `Pooled (derived)`; all values remain unchanged.
 - Updated the fidelity verifier to allow only these two exact editorial replacements.
 
-Remaining submission input: fill student name and ID.
+## Two-policy comparison
+
+- Completed the title block with the supplied student name and ID.
+- Clarified the four policy-invariant categories in §5.2 and the question-weighted, exploratory Full A-MEM comparison in §6.1. The tables and figures retain their approved numerical content.

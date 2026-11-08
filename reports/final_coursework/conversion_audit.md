@@ -94,9 +94,9 @@ and `final-programme-reconciliation.json`. Table 7, Figure 4 and every experimen
 score/cost cell remain unchanged. The verifier whitelists only the exact approved
 paragraph and exact Table 8 label replacement; it retains all other comparisons.
 
-## Remaining submission input
+## Submission fields
 
-Student name and ID must be filled in before submission. The cost-scope and
+The supplied student name and ID now appear in the title block. The cost-scope and
 `Pooled*` editorial issues are resolved by the explicit approval above.
 
 ## Validation
@@ -123,7 +123,7 @@ rendered references, all 98 unchanged source text items in the PDF (after the
 approved additions/caption changes), all 184 table cells and unchanged listing.
 All ten rendered pages were inspected. Figure 1 and Listing 1 share page 4;
 Figure 4 uses full text width; citation metadata and links pass. Reviewed PDF hash
-matches the Standards review above. The remaining submission input is listed above.
+matches the Standards review above. The submission fields are documented above.
 
 ### Approved-correction validation
 
@@ -134,4 +134,4 @@ warnings or layout diagnostics occur. Focused independent Standards and Spec re-
 Standards reproduced this hash from a clean temporary build. Spec independently
 verified the exact approved paragraph, receipt-bound totals and unchanged numerical
 cells; page 8 is clean and the other nine rendered pages are pixel-identical to
-the previously inspected version. Only student name and ID remain to complete.
+the previously inspected version. The submission fields were completed in the subsequent two-policy editorial revision.

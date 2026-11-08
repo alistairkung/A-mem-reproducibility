@@ -96,6 +96,34 @@ def make_figure(deepseek,gpt):
     return fig
 
 
+def dual_policy_figure(deepseek, gpt, count):
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.65), sharey=True)
+    fig.subplots_adjust(left=.074, right=.985, bottom=.18, top=.67, wspace=.14)
+    fig.suptitle('Exploratory — not a controlled model benchmark', x=.5, y=.985,
+                 fontsize=19, weight='bold')
+    fig.text(.5, .868, f'Full A-MEM · Question-weighted scores across {count} matched LoCoMo questions',
+             ha='center', fontsize=13)
+    for ax, policy, title in zip(axes, ['historical', 'alternative'],
+                                  ['A   Historical evaluation', 'B   Complementary evaluation']):
+        x = np.arange(len(METRICS))
+        for offset, model, scores, color, hatch in [
+            (-.19, 'DeepSeek Flash', deepseek[policy], '#456b88', ''),
+            (.19, 'GPT-4o-mini', gpt[policy], '#d49b45', '///'),
+        ]:
+            bars = ax.bar(x + offset, [scores[m] for m in METRICS], .36, color=color,
+                          edgecolor='white', hatch=hatch, label=model)
+            ax.bar_label(bars, fmt='%.2f', fontsize=14, padding=3)
+        ax.set_title(title, fontsize=16, loc='left', pad=8)
+        ax.set(xticks=x, xticklabels=['F1', 'BLEU-1'], ylim=(0, 60), yticks=[0, 20, 40, 60])
+        ax.tick_params(axis='both', labelsize=12, labelleft=True)
+        ax.set_axisbelow(True)
+        ax.yaxis.grid(True, alpha=.22)
+    axes[0].set_ylabel('Score (%)', fontsize=12)
+    fig.legend(*axes[0].get_legend_handles_labels(), loc='lower center', ncols=2,
+               bbox_to_anchor=(.5, -.008), frameon=False, fontsize=13)
+    return fig
+
+
 def generate():
     evidence_path=HERE/'inputs/evidence.json';score_path=HERE/'inputs/question_scores.jsonl'
     evidence=json.loads(evidence_path.read_bytes())
@@ -127,11 +155,19 @@ def generate():
     document.core_properties.title='Exploratory DeepSeek Full A-MEM results'
     document.save(HERE/'deepseek_results.docx');_normalise_docx(HERE/'deepseek_results.docx')
     gpt_means=gpt['corrected']['groups']['overall']['means_percent']['full']
-    fig=make_figure(overall['alternative'],gpt_means)
-    fig.savefig(HERE/'deepseek_vs_gpt4omini.svg',metadata={'Date':None})
-    vector=HERE/'deepseek_vs_gpt4omini.svg';vector.write_text('\n'.join(line.rstrip() for line in vector.read_text().splitlines())+'\n')
-    fig.savefig(HERE/'deepseek_vs_gpt4omini.png',dpi=300,metadata={'Software':'A-MEM exploratory reporting'});plt.close(fig)
-    outputs=['deepseek_results.csv','deepseek_results.tex','deepseek_results.docx','deepseek_vs_gpt4omini.svg','deepseek_vs_gpt4omini.png']
+    gpt_both = {'historical': gpt['historical']['groups']['overall']['means_percent']['full'],
+                'alternative': gpt_means}
+    outputs = ['deepseek_results.csv', 'deepseek_results.tex', 'deepseek_results.docx']
+    for name, fig in [
+        ('deepseek_vs_gpt4omini', make_figure(overall['alternative'], gpt_means)),
+        ('dual_policy_full_comparison', dual_policy_figure(overall, gpt_both, len(rows))),
+    ]:
+        vector = HERE / (name + '.svg')
+        fig.savefig(vector, metadata={'Date': None})
+        vector.write_text('\n'.join(line.rstrip() for line in vector.read_text().splitlines()) + '\n')
+        fig.savefig(HERE / (name + '.png'), dpi=300, metadata={'Software': 'A-MEM exploratory reporting'})
+        plt.close(fig)
+        outputs.extend([vector.name, name + '.png'])
     sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
     manifest={'scientific_source_commit':publication.COMMIT,'deepseek_evidence':evidence,
         'gpt_inputs':{'docs/reproducibility/'+n:hashlib.sha256(b).hexdigest() for n,b in raw.items()},
@@ -141,7 +177,7 @@ def generate():
         'versions':{'python':platform.python_version(),'matplotlib':matplotlib.__version__,'pandas':pd.__version__,'numpy':np.__version__,'python-docx':version('python-docx'),'lxml':version('lxml'),'pillow':version('pillow'),'zlib':zlib.ZLIB_RUNTIME_VERSION},
         'pooled_row':'Derived aggregate from 558 saved question scores; not a previously accepted campaign total',
         'aggregation_rounding_tolerance':1e-12,'table_display_decimals':2,'csv_decimals':10,
-        'gpt_full_alternative_percent':gpt_means,'deepseek_derived_pooled_percent':overall}
+        'gpt_full_historical_percent':gpt_both['historical'],'gpt_full_alternative_percent':gpt_means,'deepseek_derived_pooled_percent':overall}
     (HERE/'source_manifest.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
     print(frame.to_string(index=False))
 

@@ -79,6 +79,8 @@ def validate(raw):
             for values in r[policy].values():
                 require(set(values)=={'f1','bleu1'} and all(isinstance(x,(int,float)) and np.isfinite(x)
                        and 0<=x<=1 for x in values.values()),'Invalid metric')
+        if r['category'] != 5:
+            require(r['historical'] == r['corrected'], 'Non-adversarial question scores differ by policy')
         if r['category']==5:
             require(set(r['adversarial_correct'])==set(ORDER) and all(v in (0,1) for v in r['adversarial_correct'].values()),'Invalid binary correctness')
     pooled = summarize(rows)
@@ -196,6 +198,38 @@ def dual_cost_figure(frame, n):
     return fig
 
 
+def dual_policy_category_figure(pooled):
+    fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
+    fig.subplots_adjust(left=.14, right=.985, bottom=.25, top=.88, wspace=.46)
+    for ax, policy, title in zip(axes, POLICIES, ['A   Historical F1', 'B   Complementary F1']):
+        groups = [pooled[policy]['groups'][f'category_{i}'] for i in range(1, 6)]
+        values = [[group['means_percent'][arm]['f1'] for arm in ORDER] for group in groups]
+        heatmap = ax.imshow(values, cmap='cividis', vmin=0, vmax=100, aspect='auto',
+                            interpolation='nearest')
+        ax.set_title(title, loc='left', fontsize=18, weight='bold', pad=10)
+        ax.set_xticks(range(4), ['Neither', 'Linking\nOnly', 'Evolution\nOnly', 'Full\nA-MEM'], fontsize=12)
+        ax.set_yticks(range(5), [f"{label} ({g['n']})" for label, g in zip(CATEGORIES, groups)],
+                      fontsize=12)
+        ax.tick_params(length=0, pad=5)
+        ax.get_yticklabels()[-1].set_weight('bold')
+        ax.axhline(3.5, color='white', linewidth=2.2)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        for row, scores in enumerate(values):
+            for col, score in enumerate(scores):
+                rgb = np.array(heatmap.cmap(heatmap.norm(score))[:3])
+                linear = np.where(rgb <= .04045, rgb / 12.92, ((rgb + .055) / 1.055) ** 2.4)
+                luminance = linear @ [.2126, .7152, .0722]
+                ax.text(col, row, f'{score:.2f}', ha='center', va='center', fontsize=16,
+                        color='black' if luminance > .179 else 'white',
+                        weight='bold' if row == 4 else 'normal')
+    key = fig.add_axes([.40, .068, .22, .024])
+    fig.colorbar(heatmap, cax=key, orientation='horizontal', ticks=[0, 50, 100])
+    key.set_title('F1 (%)', fontsize=11, pad=3)
+    key.tick_params(length=2, labelsize=10)
+    return fig
+
+
 def figures(pooled,cost):
     plt.rcParams.update({'font.family':'DejaVu Sans','font.size':10,'axes.titlesize':12,'axes.labelsize':10,
         'svg.fonttype':'none','svg.hashsalt':'amem-publication-v1','axes.spines.top':False,'axes.spines.right':False,
@@ -249,6 +283,7 @@ def figures(pooled,cost):
         ax.set(xticks=x,xticklabels=LABELS,ylabel=ylabel,ylim=(0,max(vals)*1.22));ax.tick_params(axis='x',labelrotation=27,labelsize=8)
     fig.suptitle('Linking-expanded retrieval increases answer input volume',fontsize=12);save(fig,'05_token_overhead')
     save(dual_cost_figure(dual_cost_data(pooled, cost), n), '06_dual_scoring_f1_vs_cost')
+    save(dual_policy_category_figure(pooled), '07_dual_policy_category_heatmap')
 
 
 def generate():

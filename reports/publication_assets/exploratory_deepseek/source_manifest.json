@@ -2,8 +2,8 @@
   "aggregation_rounding_tolerance": 1e-12,
   "code": {
     "../document_exports.py": "419103cc41fee9a548314d29d3db9b9f299609a8f56cfe41611fe22e41c74d43",
-    "../generate_assets.py": "a1ca2b9fb01e896976b2fc7b522dce82a7188f3c8cc5b2096c7460c29b02688c",
-    "generate_assets.py": "3febcff853e030f4dc87ab1ed71bebc2b37ff1ad727eb3f925e07dc953bf7702",
+    "../generate_assets.py": "08714a4abd196d779189a599b58b591b27569824a5ea5a77e62fcb61d5dd0784",
+    "generate_assets.py": "0cbe3452258c963756611e9fbc5add46a950df1a55b876b0d0218ef8dda573b3",
     "verify_sources.py": "01a9b784d2b92391fae80874e2e511bfbccbadc5abfab7466f95889ff1d5bf6e"
   },
   "csv_decimals": 10,
@@ -348,6 +348,10 @@
     "bleu1": 32.81202977667661,
     "f1": 36.91176156378498
   },
+  "gpt_full_historical_percent": {
+    "bleu1": 28.640854232296128,
+    "f1": 32.69135404008839
+  },
   "gpt_inputs": {
     "docs/reproducibility/gpt4omini-558q-four-condition-scores.jsonl": "3ef0dd2d935d61937c9086ab9915730414aec3a0a4d3aa6a0c0c12e6cfd68315",
     "docs/reproducibility/gpt4omini-f1-vs-cost.csv": "070efc337e68a68ae9e3de96242cf8f74e40b49e39aa4851c2e27c134827328e",
@@ -359,7 +363,9 @@
     "deepseek_results.docx": "5656a706103ff632ea9cbe9c2874d279ae78ea36d6961ec74302fbfecfedf6c6",
     "deepseek_results.tex": "3b2015f5c0ac161666a725fc393ea0ff809a054fb24736d46d176270fb77d05c",
     "deepseek_vs_gpt4omini.png": "cf50ce87135a947741573bbf6664113b1d2e7756f9c8f6df8d7da807ba8a312c",
-    "deepseek_vs_gpt4omini.svg": "02d3c6816aa9d9c0be013c632a0ade151ed395c5ef3476d31a4fa5bbd4839995"
+    "deepseek_vs_gpt4omini.svg": "02d3c6816aa9d9c0be013c632a0ade151ed395c5ef3476d31a4fa5bbd4839995",
+    "dual_policy_full_comparison.png": "5c30474b4faf34f13efa2c4a1c6c8f36ef429db8323b09d25840dcaef9b6135a",
+    "dual_policy_full_comparison.svg": "6a22abcdce69eb8b3e35468790bfeceaac50634635fb5aa16bbb0639d4ea02f4"
   },
   "pooled_row": "Derived aggregate from 558 saved question scores; not a previously accepted campaign total",
   "scientific_source_commit": "8485673183d7b8018c841082d075b21158002700",
