@@ -139,6 +139,63 @@ def tables(pooled,panels,cost):
     return frames
 
 
+def pareto_mask(costs, scores):
+    """Minimize identified model cost and maximize the chosen F1 perspective."""
+    return [not any(c <= own_cost and s >= own_score and (c < own_cost or s > own_score)
+                    for c, s in zip(costs, scores)) for own_cost, own_score in zip(costs, scores)]
+
+
+def dual_cost_data(pooled, cost):
+    frame = pd.DataFrame({'Configuration': LABELS,
+                          'Identified model cost (USD)': [cost.loc[a, 'selected_model_usd'] for a in ORDER]})
+    for policy, label in [('historical', 'Historical'), ('corrected', 'Alternative')]:
+        scores = [pooled[policy]['groups']['overall']['means_percent'][a]['f1'] for a in ORDER]
+        frame[f'{label} F1 (%)'] = scores
+        frame[f'{label} Pareto status'] = ['Efficient' if efficient else 'Dominated' for efficient in
+            pareto_mask([float(c) for c in frame['Identified model cost (USD)']], scores)]
+    return frame[['Configuration', 'Identified model cost (USD)', 'Historical F1 (%)', 'Alternative F1 (%)',
+                  'Historical Pareto status', 'Alternative Pareto status']]
+
+
+def dual_cost_figure(frame, n):
+    """Both panels use identical point costs, ranges, condition styles and status encodings."""
+    from matplotlib.lines import Line2D
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4.5), sharex=True, sharey=True, layout='constrained')
+    costs = frame['Identified model cost (USD)'].astype(float).tolist()
+    all_scores = frame[['Historical F1 (%)', 'Alternative F1 (%)']].to_numpy()
+    colors = ['#0072B2', '#D55E00', '#009E73', '#CC79A7']
+    markers = ['o', '^', 's', 'D']
+    xspan = max(costs) - min(costs)
+    for ax, policy, panel in zip(axes, ['Historical', 'Alternative'], ['A', 'B']):
+        scores = frame[f'{policy} F1 (%)'].tolist()
+        efficient = pareto_mask(costs, scores)
+        frontier = sorted((c, s) for c, s, e in zip(costs, scores, efficient) if e)
+        if len(frontier) > 1:
+            ax.plot(*zip(*frontier), color='#555555', linestyle=':', linewidth=1.3, zorder=1)
+        for i, (label, c, score, e, color, marker) in enumerate(zip(LABELS, costs, scores, efficient, colors, markers)):
+            ax.scatter(c, score, s=65, marker=marker, facecolor=color if e else 'white',
+                       edgecolor=color, linewidth=1.6, zorder=3)
+            # Fixed label positions reflect condition identity, never measured correctness.
+            dx, dy, align = (-8, -19, 'right') if i == 3 else (7, -17, 'left') if i == 2 else (7, 8, 'left')
+            ax.annotate(label, (c, score), xytext=(dx, dy), textcoords='offset points',
+                        ha=align, fontsize=10)
+        title = 'Historical F1' if policy == 'Historical' else 'Alternative-reference F1'
+        ax.set_title(f'{panel}  {title}', loc='left', fontsize=11, pad=9)
+        ax.set_xlabel('Identified model cost (USD)')
+        ax.set_ylabel(title + ' (%)')
+        ax.set_xlim(min(costs) - .16*xspan, max(costs) + .33*xspan)
+        ax.set_ylim(float(all_scores.min()) - 1.2, float(all_scores.max()) + 1.5)
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: f'${value:.2f}'))
+        ax.tick_params(labelleft=True)
+        ax.grid(axis='y', alpha=.16)
+    fig.suptitle('Cost–performance trade-offs under two evaluation policies', fontsize=13)
+    fig.supxlabel(f'{n} matched questions per configuration · Three accepted scientific builds each', fontsize=9)
+    handles = [Line2D([], [], marker='o', linestyle='none', markerfacecolor='black', color='black', label='Pareto-efficient'),
+               Line2D([], [], marker='o', linestyle='none', markerfacecolor='white', color='black', label='Pareto-dominated')]
+    axes[0].legend(handles=handles, frameon=False, loc='upper left', fontsize=9)
+    return fig
+
+
 def figures(pooled,cost):
     plt.rcParams.update({'font.family':'DejaVu Sans','font.size':10,'axes.titlesize':12,'axes.labelsize':10,
         'svg.fonttype':'none','svg.hashsalt':'amem-publication-v1','axes.spines.top':False,'axes.spines.right':False,
@@ -191,6 +248,7 @@ def figures(pooled,cost):
         ax.bar_label(bars,labels=[f'{v:.3f}' if scale==1e6 else f'{v:.2f}' for v in vals],padding=3,fontsize=9)
         ax.set(xticks=x,xticklabels=LABELS,ylabel=ylabel,ylim=(0,max(vals)*1.22));ax.tick_params(axis='x',labelrotation=27,labelsize=8)
     fig.suptitle('Linking-expanded retrieval increases answer input volume',fontsize=12);save(fig,'05_token_overhead')
+    save(dual_cost_figure(dual_cost_data(pooled, cost), n), '06_dual_scoring_f1_vs_cost')
 
 
 def generate():
@@ -202,6 +260,11 @@ def generate():
     for name,frame in frames.items():frame.to_csv(OUT/'tables'/f'{name}.csv',index=False,float_format='%.8f',lineterminator='\n')
     from document_exports import export_tables
     export_tables(frames,captions,OUT/'tables')
+    companion = dual_cost_data(pooled, cost)
+    companion.to_csv(OUT/'tables/07_dual_scoring_cost_performance.csv', index=False, float_format='%.8f', lineterminator='\n')
+    from document_exports import write_latex
+    write_latex(OUT/'tables/latex/07_dual_scoring_cost_performance.tex',
+                'Cost–performance under both evaluation policies', [("", companion)])
     figures(pooled,cost)
     outputs=[p for folder in ('tables','figures') for p in sorted((OUT/folder).rglob('*')) if p.is_file()]
     digest=lambda b:hashlib.sha256(b).hexdigest()

@@ -1,9 +1,9 @@
 {
   "aggregate_rounding_tolerance_pp": 1e-12,
   "code": {
-    "captions.json": "291d5987e4d6791721072cb248cf6323c24a96d8bc753effaf77939d3d21e1b2",
+    "captions.json": "d501e26e2f1d766ee5766d737eaa982990cdd45f8f39c3acbbd1f8ee538c9cee",
     "document_exports.py": "419103cc41fee9a548314d29d3db9b9f299609a8f56cfe41611fe22e41c74d43",
-    "generate_assets.py": "0ddf692a1440a714951adcf0efc0320a0fcd3b39ce585c49f757f4109c4e4d7b"
+    "generate_assets.py": "a1ca2b9fb01e896976b2fc7b522dce82a7188f3c8cc5b2096c7460c29b02688c"
   },
   "display_decimals": 2,
   "generated_outputs": {
@@ -17,18 +17,22 @@
     "figures/04_factorial_interaction.svg": "f3908c3f1425fc868d73d01860345c6defd00312e9834ab8109fce03d73f879b",
     "figures/05_token_overhead.png": "0373b0391e78b1f9f362dd539db9c75e4683b76eeb5dc374fd6b8a3cd931fe77",
     "figures/05_token_overhead.svg": "bdcc120453552aa280015f6a55eb1e158bcf15180ba0c685f3ca57e043ab290e",
+    "figures/06_dual_scoring_f1_vs_cost.png": "e224e1c6242d9af7aa01b2be41e2da59ff198482d2bd5186e2b87a648dc2ef1d",
+    "figures/06_dual_scoring_f1_vs_cost.svg": "4644c4a23218a376e99705c1d9ae29101bcb5b5aef93a3d59f68fbbdcd13e0ec",
     "tables/01_configurations.csv": "e4c013f0774f57926fa5a1fd92028324de479a9fa0a9cbb2f67b479ad160f9c6",
     "tables/02_overall_results.csv": "ebcd140a655f1356c4b3616cded379ee06532a62f91a14c7aa04260d06c3b240",
     "tables/03_factorial_contrasts.csv": "f3cb29b4b9b39c84c90f020d612aaa10863eb5c30a7d3ffae227a18a2111fe83",
     "tables/04_category_performance.csv": "64c27616bb8cda3a1e6612527ec502f237c04f4ff3bbeb09408a63d05a94ecd6",
     "tables/05_cost_retrieval.csv": "1dd7c0e46a942d51899ab05dc65043271f4470968bc5c0df056b1f08387976a1",
     "tables/06_conversation_results.csv": "8adaa5a306268d56c5784225b0c3bf73048348d54e76969e199d5dd072981bde",
+    "tables/07_dual_scoring_cost_performance.csv": "0102d742f7aa5b0e6ef8a6be61d5bec4ed7fcff2afcc4168c0a0a3c811b917f5",
     "tables/latex/01_configurations.tex": "fd7ec61989429390e0b0bd406a4fa2178dcf48b4e19e4120724837bfd289620b",
     "tables/latex/02_overall_results.tex": "d701c2b6b305102a368af65023d3a944f0624d9210ec01418130e2389642a26b",
     "tables/latex/03_factorial_contrasts.tex": "8b9bc9883f119733f4b7f7efbea6bb472a3b214139f02b56f46740dea163ebd7",
     "tables/latex/04_category_performance.tex": "ee9759bf0cca07b9bdf3faba40714b1457e9f06b0248314b47b6686169811cd9",
     "tables/latex/05_cost_retrieval.tex": "7fc00f4ea4da142307e6b4fb651f0433efe33223e5dea8c6517d31a30c55ab9c",
     "tables/latex/06_conversation_results.tex": "87500f69cc1169c15273f83234a61c96fd2a778a8f019a1914f4ce9a5db7299b",
+    "tables/latex/07_dual_scoring_cost_performance.tex": "8d59aefdb40500f2ca51ee5a6bfbbbccd4367423898389aa4459e6d78aac01ed",
     "tables/publication_tables.docx": "d636be13dfae930af9674714a0cee454130855b098c16c2368633a60bcb697a1"
   },
   "inputs": {
