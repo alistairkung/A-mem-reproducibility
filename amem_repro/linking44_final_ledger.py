@@ -164,7 +164,7 @@ def _length_fallback(directory,last,event):
     response=event['attempts'][0]['response_body']
     require(last[1]=='shared_decision' and last[5]=='settled' and generation['budget_logical_id']==last[0]
             and response['choices'][0]['finish_reason']=='length' and event.get('error_type')=='AdapterError'
-            and generation['turn_id']==outcome['turn_id']==proof['turn_id']
+            and generation.get('turn_id') and generation['turn_id']==outcome.get('turn_id')==proof.get('turn_id')
             and outcome['counter_before']==outcome['counter_after'] and not outcome['changed_existing_note_ids']
             and proof.get('kind')=='original_evolution_fallback' and proof.get('provider_deviation')=='length'
             and proof.get('original_fallback_verified') is True and proof.get('provider_output_accepted') is False

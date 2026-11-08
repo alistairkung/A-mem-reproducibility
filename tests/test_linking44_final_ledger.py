@@ -217,3 +217,46 @@ def test_second_settled_length_restart_requires_original_fallback(tmp_path,damag
     if damage is None:fin._length_fallback(tmp_path,row,event)
     else:
         with pytest.raises(BudgetStop):fin._length_fallback(tmp_path,row,event)
+
+
+def test_unknown_operational_close_rolls_forward_only_with_original_gets(env):
+    l,p=start(env);c=l.root;store=fin.attempt_store(c,1);out=store/'runs'/p
+    # One settled request and two failed transmissions for the next logical slot.
+    ok=paid(l,p,'metadata');resp=settle(l,ok)
+    bad=paid(l,p,'shared_decision');mark(l,p,bad)
+    retry=paid(l,p,'shared_decision',previous=bad[1]);mark(l,p,retry)
+    l.stop(p,'RemoteProtocolError')
+    capture={'observations':[{'trace_id':'t'}],'trace_ids':['t'],'scores':[],'errors':[]}
+    save_new(out/'trace-capture.json',capture)
+    proof=out/'langfuse-verified.json'
+    save_new(proof,{'verified':True,'identity':{'run_id':p}})
+    receipt={'phase':p,'status':'incomplete','error_type':'BudgetStop','notes':0,'questions':0,
+             'observations':{'verified':True,'evidence_path':str(proof),'evidence_sha256':fin.sha(proof)},
+             'files':{str(f.relative_to(out)):fin.sha(f) for f in out.rglob('*') if f.is_file()}}
+    save_new(out/'phase.json',receipt);l.finish(p,receipt,'terminal')
+    save_new(store/'service'/f'{p}.json',{'runtime_units_admitted':2,'admitted_units':2,'maximum_units':13500,'stopped':False})
+    opening=l.claimed[p]['opening_account'];gross=Decimal('.0090075') # unknown aggregate .009 bounded by .042088.
+    closing={'credits':{'total_credits':'50','total_usage':str(Decimal(opening['credits']['total_usage'])+gross)},
+             'key':{'usage':str(Decimal(opening['key']['usage'])+gross),'limit_remaining':str(Decimal(opening['key']['limit_remaining'])-gross)}}
+    for endpoint,fields in opening.items():
+        save_new(store/'opening-reads'/f'{endpoint}.json',{'endpoint':endpoint,'params':{},'status':200,
+                 'response_base64':base64.b64encode(json.dumps({'data':fields}).encode()).decode()})
+    def handler(r):
+        assert r.method=='GET'
+        endpoint=r.url.path.rsplit('/',1)[-1]
+        if endpoint=='generation':
+            assert r.url.params['id']==resp['id']
+            return httpx.Response(200,json={'data':{'id':resp['id'],'model':MODEL,'provider_name':'OpenAI','total_cost':.0000075,
+                      'native_tokens_prompt':10,'native_tokens_completion':10,'provider_responses':[{'status':200,'provider_name':'OpenAI','model_permaslug':MODEL}]}})
+        return httpx.Response(200,json={'data':closing[endpoint]})
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        record=fin.close_attempt(client,l,p,store,receipt,opening,2)
+    assert record['verified'] and record['restart_eligible'] and not record['known_only_exact_movement']
+    assert record['unknown_attempt_ids']==[bad[1],retry[1]] and record['group_unresolved_reservations_microusd']==42088
+    assert fin.classify_restart(c,p)
+    # Archive tampering, despite a still-valid sealed scientific phase and untouched SQL, blocks a successor.
+    journal=store/'financial-readbacks';page=read(journal/'0-0.json');page['response_base64']=base64.b64encode(b'{"data":{}}').decode()
+    put(journal/'0-0.json',page)
+    assert not fin.classify_restart(c,p)
+    l2,a2=env[1](2)
+    with pytest.raises(BudgetStop):l2.claim(a2)
