@@ -1,4 +1,4 @@
-"""Render the editable, source-verified architecture at its intended 16 cm width."""
+"""Editable nested wrapper layout, verified against the accepted A-MEM source."""
 from pathlib import Path
 import os
 import tempfile
@@ -6,79 +6,67 @@ os.environ.setdefault('MPLCONFIGDIR', str(Path(tempfile.gettempdir())/'amem-publ
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, FancyArrowPatch
+from matplotlib.patches import Rectangle, FancyArrowPatch, FancyBboxPatch
 
-OUT=Path(__file__).resolve().parent
+OUT = Path(__file__).resolve().parent
+
 
 def generate():
-    plt.rcParams.update({'font.family':'DejaVu Sans','font.size':8,'svg.fonttype':'path','svg.hashsalt':'amem-wrapper-architecture'})
-    fig=plt.figure(figsize=(16/2.54,16.6/2.54),facecolor='white')
-    ax=fig.add_axes([0,0,1,1]);ax.set(xlim=(0,160),ylim=(0,166));ax.axis('off')
-    def text(x,y,s,**kw):
-        kw.setdefault('ha','center')
-        ax.text(x,y,s,va='center',color='#222222',**kw)
-    def area(x,y,w,h,title):
-        ax.add_patch(Rectangle((x,y),w,h,facecolor='#F6F6F6',edgecolor='#888888',lw=.7,zorder=0))
-        text(x+3,y+h-4,title,ha='left',fontweight='bold')
-    def box(x,y,w,h,s,accent=False):
-        ax.add_patch(Rectangle((x,y),w,h,facecolor='white',edgecolor='#41657A' if accent else '#666666',lw=1 if accent else .7,zorder=2))
-        text(x+w/2,y+h/2,s,linespacing=1.3,zorder=3)
-    def arrow(points,dashed=False,double=False):
-        for p,q in zip(points[:-2],points[1:-1]):ax.plot([p[0],q[0]],[p[1],q[1]],color='#666666',lw=.8,ls=(0,(3,2)) if dashed else '-',zorder=1)
-        ax.add_patch(FancyArrowPatch(points[-2],points[-1],arrowstyle='<->' if double else '-|>',mutation_scale=7,lw=.8,linestyle=(0,(3,2)) if dashed else '-',color='#666666',zorder=1))
-    area(3,122,154,41,'Experimental inputs and wrapper controls')
-    box(6,145,35,10,'Frozen author source\nUnchanged files')
-    box(44,145,35,10,'LoCoMo + manifest\nFrozen turn / QA IDs')
-    box(82,145,35,10,'Four configurations\nTwo action factors')
-    box(120,145,34,10,'GPT-4o-mini\nFrozen settings')
-    box(6,126,47,14,'Bound evolution copy\nGate original action guards',True)
-    box(57,126,44,14,'Isolated execution\nNew store / index per cell')
-    box(105,126,49,14,'Controlled model adapter\nOpenRouter → OpenAI only\nReserve → call → account')
-    arrow([(23,145),(23,140)]);arrow([(61,145),(71,140)])
-    arrow([(99,145),(99,142),(30,142),(30,140)])
-    arrow([(137,145),(137,140)])
-    area(3,42,154,76,'Author scientific workflow with bound action gates')
-    # Construction follows the unchanged author methods, with only action guards gated.
-    box(6,97,27,12,'Conversation\nturn')
-    box(37,97,34,12,'LLM metadata\nKeywords / context\nTags')
-    box(75,97,34,12,'Retrieve up to\nfive neighbours')
-    box(113,97,41,12,'Shared LLM decision\nAll configurations')
-    for p,q in [(33,37),(71,75),(109,113)]:arrow([(p,103),(q,103)])
-    # The group is a single action application stage. The two guards are independent.
-    box(6,74,89,17,'',True)
-    text(50.5,88,'Apply only selected and enabled actions',fontsize=8)
-    text(28,79.5,'strengthen\nNew links / tags',fontsize=8)
-    text(71,79.5,'update_neighbor\nNeighbour context / tags',fontsize=8)
-    ax.plot([49,49],[75,84],color='#BBBBBB',lw=.6)
-    box(106,74,48,17,'Insert new note\nAuthor counter / consolidation')
-    arrow([(133.5,97),(133.5,94),(50.5,94),(50.5,91)])
-    arrow([(95,82.5),(106,82.5)])
-    arrow([(30,126),(30,120),(1,120),(1,82.5),(6,82.5)])
-    # One boundary-level bidirectional link covers all four marked LLM stages.
-    arrow([(79,126),(79,118)])
-    arrow([(130,126),(130,118)],double=True)
-    text(111,121,'All LLM calls',fontsize=8)
-    text(42,66,'QA reads the completed cell store',fontsize=8)
-    arrow([(130,74),(130,69),(92,69),(92,60)])
-    box(6,47,27,13,'Question')
-    box(37,47,34,13,'LLM question\nkeywords')
-    box(75,47,34,13,'Initial top 10\n+ author\nlink expansion')
-    box(113,47,41,13,'LLM answer')
-    for p,q in [(33,37),(71,75),(109,113)]:arrow([(p,53.5),(q,53.5)])
-    area(3,3,154,34,'Evidence')
-    box(6,9,34,19,'Memory states\nRetrieval index\nLocal evidence')
-    box(44,9,47,19,'Saved predictions → scores\nHistorical / alternative\nF1 · BLEU-1\nBinary adversarial')
-    box(95,9,27,19,'Passive capture\nLangfuse traces\n+ Experiments')
-    box(126,9,28,19,'Request ledger\nProvider-charge\nreconciliation')
-    arrow([(130,74),(155.5,74),(155.5,40),(23,40),(23,28)])
-    arrow([(133.5,47),(133.5,39),(67.5,39),(67.5,28)])
-    arrow([(108.5,42),(108.5,28)],dashed=True)
-    arrow([(91,18.5),(95,18.5)],dashed=True)
-    arrow([(154,133),(159,133),(159,31),(140,31),(140,28)],dashed=True)
-    for ext in ('svg','png'):
-        target=OUT/f'amem_wrapper_architecture.{ext}'
-        fig.savefig(target,dpi=300,metadata={'Date':None} if ext=='svg' else {'Software':'A-MEM architecture'})
-        if ext=='svg':target.write_text('\n'.join(line.rstrip() for line in target.read_text().splitlines())+'\n')
+    plt.rcParams.update({'font.family':'DejaVu Sans','font.size':9,
+                         'svg.fonttype':'path','svg.hashsalt':'amem-wrapper-architecture'})
+    fig = plt.figure(figsize=(16/2.54,19/2.54),facecolor='white')
+    ax = fig.add_axes([0,0,1,1])
+    ax.set(xlim=(0,160),ylim=(0,190))
+    ax.axis('off')
+
+    def text(x,y,label,**kwargs):
+        ax.text(x,y,label,ha=kwargs.pop('ha','center'),va='center',color='#222222',
+                linespacing=1.25,zorder=3,**kwargs)
+
+    def box(x,y,width,height,label,gate=False):
+        ax.add_patch(FancyBboxPatch((x,y),width,height,boxstyle='round,pad=0,rounding_size=2',
+                     facecolor='#EFF3F5' if gate else 'white',
+                     edgecolor='#527083' if gate else '#777777',lw=1 if gate else .7,zorder=2))
+        text(x+width/2,y+height/2,label)
+
+    def arrow(points):
+        for a,b in zip(points[:-2],points[1:-1]):
+            ax.plot([a[0],b[0]],[a[1],b[1]],color='#666666',lw=.8,zorder=1)
+        ax.add_patch(FancyArrowPatch(points[-2],points[-1],arrowstyle='-|>',
+                     mutation_scale=8,lw=.8,color='#666666',zorder=1))
+
+    ax.add_patch(Rectangle((3,28),154,159,facecolor='#F1F1F1',edgecolor='#888888',lw=.8))
+    text(80,182,'Experimental wrapper',fontsize=11,fontweight='bold')
+    box(25,160,110,15,'Frozen configuration · Provider adapter\nExecution controls · Langfuse · Accounting\nSeparate memory store and index per cell')
+    ax.add_patch(Rectangle((8,36),144,116,facecolor='#FAFAFA',edgecolor='#AAAAAA',lw=.7))
+    text(12,148,'Original A-MEM algorithm',ha='left',fontweight='bold')
+    box(43,129,74,12,'Create memory note\nLLM keywords / context / tags')
+    box(43,111,74,12,'Retrieve up to five neighbours')
+    box(38,93,84,12,'Shared LLM evolution decision\nRuns in every configuration')
+    box(14,72,62,15,'Neighbour-update gate\nExisting-note contexts + tags\nSelected AND enabled',gate=True)
+    box(84,72,62,15,'Strengthen gate\nNew-note links + tags\nSelected AND enabled',gate=True)
+    box(43,55,74,11,'Insert new note')
+    box(23,39,114,11,'QA from the completed memory store\nLLM keywords → top 10 + links → LLM answer')
+    box(15,5,130,16,'Experimental evidence\nMemory states · Predictions · Scores · Traces · Costs')
+
+    arrow([(80,160),(80,141)])
+    arrow([(80,129),(80,123)])
+    arrow([(80,111),(80,105)])
+    # The symmetric branches identify independent mutation scopes, not parallel execution.
+    arrow([(80,93),(80,90),(45,90),(45,87)])
+    arrow([(80,93),(80,90),(115,90),(115,87)])
+    arrow([(45,72),(45,69),(80,69),(80,66)])
+    arrow([(115,72),(115,69),(80,69),(80,66)])
+    arrow([(80,55),(80,50)])
+    arrow([(80,39),(80,21)])
+
+    for extension in ('svg','png'):
+        path = OUT/f'amem_wrapper_architecture.{extension}'
+        fig.savefig(path,dpi=300,metadata={'Date':None} if extension=='svg' else {'Software':'A-MEM architecture'})
+        if extension=='svg':
+            path.write_text('\n'.join(line.rstrip() for line in path.read_text().splitlines())+'\n')
     plt.close(fig)
 
-if __name__=='__main__':generate()
+
+if __name__=='__main__':
+    generate()
