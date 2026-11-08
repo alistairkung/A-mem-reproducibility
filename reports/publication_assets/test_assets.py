@@ -69,3 +69,24 @@ def test_deterministic_regeneration_and_png_resolution():
         with Image.open(p) as image:
             assert all(abs(dpi-300)<.1 for dpi in image.info['dpi'])
             assert image.width>=1800 and image.height>=1000
+
+
+def test_word_tables_use_explicit_academic_greyscale():
+    from zipfile import ZipFile
+    from lxml import etree
+    ns={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+    attr=lambda name:'{'+ns['w']+'}'+name
+    with ZipFile(HERE/'tables/publication_tables.docx') as archive:
+        xml=etree.fromstring(archive.read('word/document.xml'))
+        tables=xml.findall('.//w:tbl',ns)
+        assert len(tables)==7  # Table 4 has separate F1 and BLEU-1 panels.
+        for table in tables:
+            assert table.find('w:tblPr/w:tblStyle',ns).get(attr('val'))=='AMEMAcademic'
+            for row in table.findall('w:tr',ns):
+                for cell in row.findall('w:tc',ns):
+                    shade=cell.find('w:tcPr/w:shd',ns)
+                    assert shade.get(attr('fill')) in {'FFFFFF','E6E6E6','F2F2F2'}
+                    assert all('theme' not in key.lower() for key in shade.attrib)
+                    for color in cell.findall('.//w:rPr/w:color',ns):
+                        assert color.get(attr('val'))=='000000'
+                        assert all('theme' not in key.lower() for key in color.attrib)

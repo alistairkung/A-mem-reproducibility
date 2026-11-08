@@ -96,9 +96,17 @@ def _normalise_docx(path):
 
 def _word_table(doc, frame):
     from docx.oxml import OxmlElement
-    from docx.shared import Pt
+    from docx.shared import Pt, RGBColor
+    from docx.oxml.ns import qn
     table = doc.add_table(rows=1, cols=len(frame.columns))
-    table.style = "Light Shading Accent 1"
+    table.style = "AMEM Academic"
+    borders = OxmlElement("w:tblBorders")
+    for edge in ("top", "bottom"):
+        rule = OxmlElement("w:" + edge)
+        for key, value in {"val": "single", "sz": "6", "color": "000000"}.items():
+            rule.set(qn("w:" + key), value)
+        borders.append(rule)
+    table._tbl.tblPr.append(borders)
     table.autofit = False
     usable = 481.9  # A4 width less the document's two 20 mm margins, in points.
     # Give the configuration and state description readable space in Table 1.
@@ -122,12 +130,18 @@ def _word_table(doc, frame):
         row._tr.get_or_add_trPr().append(cant_split)
         for cell, width in zip(row.cells, widths):
             cell.width = Pt(width)
+            shading = OxmlElement("w:shd")
+            shading.set(qn("w:val"), "clear")
+            shading.set(qn("w:color"), "auto")
+            shading.set(qn("w:fill"), "E6E6E6" if index == 0 else "F2F2F2" if index % 2 else "FFFFFF")
+            cell._tc.get_or_add_tcPr().append(shading)
             for paragraph in cell.paragraphs:
                 paragraph.paragraph_format.space_after = Pt(3)
                 paragraph.paragraph_format.space_before = Pt(3)
                 paragraph.paragraph_format.keep_with_next = False
                 for run in paragraph.runs:
                     run.font.size = Pt(9)
+                    run.font.color.rgb = RGBColor(0, 0, 0)
                     run.bold = index == 0
     doc.add_paragraph().paragraph_format.space_after = Pt(1)
 
@@ -142,6 +156,10 @@ def export_tables(frames, captions, out):
     latex = out / "latex"
     latex.mkdir(parents=True, exist_ok=True)
     doc = Document()
+    from docx.enum.style import WD_STYLE_TYPE
+    academic = doc.styles.add_style("AMEM Academic", WD_STYLE_TYPE.TABLE)
+    academic.font.name = "Arial"
+    academic.font.color.rgb = RGBColor(0, 0, 0)
     section = doc.sections[0]
     section.page_width, section.page_height = Mm(210), Mm(297)
     section.top_margin = section.bottom_margin = Mm(18)

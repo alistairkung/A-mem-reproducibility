@@ -31,7 +31,7 @@ SVG IDs, figure dates, DOCX core properties and ZIP timestamps are stabilized. T
 
 ## Editorial recommendations
 
-For the ten-page report, use Figures 1, 2 and 4 with Tables 1, 2, 3 and 5. Figure 2 communicates Table 4's category pattern without duplicating its wide numerical views. Table 6 is supplementary. Figures 3 and 5 can support the cost discussion if space permits.
+For the ten-page report, prioritise Figures 1, 2 and 3 with Tables 1, 2, 3 and 5. Figure 2 communicates Table 4's category pattern without duplicating its wide numerical views. Table 6 is supplementary. Figure 4 can be supplementary because Table 3 already presents the factorial contrasts. Figure 5 can support the input-overhead discussion if space permits.
 
 For a 15-minute presentation, use Figures 1, 2, 4, 3 and 5 in that order, progressing from reference-dependent rankings to category patterns, interactions, inference cost and input overhead. The observed Pareto result applies to these accepted builds. The positive pooled interaction varies by conversation, and these single-build descriptive results establish no statistical significance.
 
