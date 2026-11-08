@@ -16,7 +16,7 @@ import re
 import subprocess
 
 from .artifacts import CacheStore, snapshot_memory
-from .config import AUTHOR_REVISION, fingerprint, load_config, source_fingerprint, stage_output_limits
+from .config import AUTHOR_REVISION, UPSTREAM_README, fingerprint, load_config, source_fingerprint, stage_output_limits
 from .checkpoint import _read_archive
 from .phases import _verified_phase, _deny_network, _asset_environment, _save
 from .replay import ReplayController, ReplayMismatch, memory_view, failure_view
@@ -71,7 +71,19 @@ def verify_replay_sources(root, archived, current, *, support_reference=None):
     if kind != 'commit':
         raise ReplayMismatch('Support reference must identify a commit')
     require_equal(current['author_revision'], archived['author_revision'], 'author revision')
-    for name, digest in archived['files'].items():
+    archived_files = archived['files'].copy()
+    relocated = {}
+    if 'README.md' in archived_files and UPSTREAM_README in current['files']:
+        # A reviewed offline comparison can match these two physical paths to
+        # the same immutable author blob. Keep the original inventory in the receipt.
+        require_equal(archived['author_revision'], AUTHOR_REVISION, 'README author revision')
+        require_equal(UPSTREAM_README in archived_files or 'README.md' in current['files'],
+                      False, 'ambiguous upstream README paths')
+        original = subprocess.check_output(['git', 'show', f'{AUTHOR_REVISION}:README.md'], cwd=root)
+        require_equal(archived_files['README.md'], hashlib.sha256(original).hexdigest(), 'archived README.md')
+        archived_files[UPSTREAM_README] = archived_files.pop('README.md')
+        relocated['README.md'] = UPSTREAM_README
+    for name, digest in archived_files.items():
         if name not in REVIEWED_SUPPORT_FILES or name not in current['files']:
             require_equal(current['files'].get(name), digest, f'source {name}')
     references = {}
@@ -93,9 +105,10 @@ def verify_replay_sources(root, archived, current, *, support_reference=None):
         'changed_existing_files': {
             name: {'archived_sha256': digest, 'current_sha256': current['files'][name],
                    'reference_sha256': references[name]}
-            for name, digest in archived['files'].items() if digest != current['files'][name]},
+            for name, digest in archived_files.items() if digest != current['files'][name]},
         'added_files': {name: digest for name, digest in current['files'].items()
-                        if name not in archived['files']},
+                        if name not in archived_files},
+        **({'relocated_files': relocated} if relocated else {}),
         'all_current_sources_match_reference': True,
         'archived_critical_pins_retained': True,
         'run1_output_limits': dict(RUN1_OUTPUT_LIMITS),

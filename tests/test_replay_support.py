@@ -54,6 +54,40 @@ def test_changed_support_requires_explicit_reference_and_emits_migration_evidenc
     assert receipt['run1_output_limits']['shared_decision']==4000
 
 
+def test_reviewed_replay_can_relocate_only_the_exact_upstream_readme(repository, monkeypatch):
+    root, archived, current, _, _ = repository
+    (root / 'README.md').write_text('original instructions\n')
+    git(root, 'add', 'README.md')
+    git(root, 'commit', '-qm', 'Original README')
+    upstream = git(root, 'rev-parse', 'HEAD')
+    monkeypatch.setattr(replay, 'AUTHOR_REVISION', upstream)
+    archived['author_revision'] = upstream
+    digest = sha((root / 'README.md').read_bytes())
+    archived['files']['README.md'] = digest
+    git(root, 'mv', 'README.md', replay.UPSTREAM_README)
+    (root / 'README.md').write_text('Coursework guide\n')
+    git(root, 'add', 'README.md')
+    git(root, 'commit', '-qm', 'Preserve original README')
+    reviewed = git(root, 'rev-parse', 'HEAD')
+    inventory = current()
+    inventory['author_revision'] = upstream
+    inventory['files'][replay.UPSTREAM_README] = digest
+    with pytest.raises(ReplayMismatch):
+        replay.verify_replay_sources(root, archived, inventory)
+    receipt = replay.verify_replay_sources(root, archived, inventory, support_reference=reviewed)
+    assert receipt['relocated_files'] == {'README.md': replay.UPSTREAM_README}
+    assert receipt['archived_source_sha256'] == replay.fingerprint(archived)
+    assert receipt['current_source_sha256'] == replay.fingerprint(inventory)
+    assert replay.UPSTREAM_README not in receipt['added_files']
+    archived['files']['README.md'] = '0' * 64
+    inventory['files'][replay.UPSTREAM_README] = '0' * 64
+    with pytest.raises(ReplayMismatch, match='archived README'):
+        replay.verify_replay_sources(root, archived, inventory, support_reference=reviewed)
+    archived['files']['README.md'] = digest
+    with pytest.raises(ReplayMismatch, match=replay.UPSTREAM_README):
+        replay.verify_replay_sources(root, archived, inventory, support_reference=reviewed)
+
+
 @pytest.mark.parametrize('reference',['HEAD','main','short','f'*40])
 def test_reference_must_be_existing_full_immutable_commit(repository,reference):
     root,archived,current,_,_=repository
