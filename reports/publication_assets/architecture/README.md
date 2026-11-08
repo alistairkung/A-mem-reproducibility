@@ -1,26 +1,24 @@
 # Experimental wrapper architecture
 
-The diagram is intended for Section 4.2, Wrapper Implementation and Validation. It distinguishes the wrapper controls, the author scientific workflow with its two bound action guards, and the resulting scientific and service evidence.
+The Section 4.2 asset follows the supplied Mermaid screenshot's nested composition. The outer **Experimental wrapper** contains one controls box and an inner **Frozen A-MEM workflow with experimental action gates**. Two prominent side-by-side gates follow the shared evolution decision. A single **Experimental evidence** box appears below the wrapper. The screenshot supplies layout guidance; source-verified behaviour determines the labels and connections.
 
-- [Primary vector diagram](amem_wrapper_architecture.svg)
+- [Primary SVG](amem_wrapper_architecture.svg)
 - [300-DPI PNG](amem_wrapper_architecture.png)
 - [Editable layout and reproduction source](generate_diagram.py)
 
 ## Suggested caption
 
-**Figure X. Experimental wrapper around the frozen A-MEM implementation.** The wrapper selects the configuration, binds two action gates to a copy of the original evolution method, controls model execution and records experimental evidence. The author workflow generates the shared evolution decision in every configuration and applies only selected, enabled memory mutations. Each condition–conversation cell begins with an independent store and retrieval index. Passive capture exports generations, actions, retrieval and QA to Langfuse. The local request ledger reserves and records model-call exposure, and separate provider readback verifies charges.
+**Figure X. Experimental wrapper around the frozen A-MEM implementation.** The wrapper supplies frozen configuration, provider and execution controls, isolated cell stores, observability and financial accounting. The original workflow creates a memory note, retrieves neighbours and generates a shared evolution decision in every configuration. The bound gates permit the selected memory mutations only when enabled. Note insertion follows decision processing, and QA uses the completed memory store. Local memory states, predictions and scores, together with trace and cost evidence, support experimental verification.
 
-## Reading the diagram
+## Source fidelity and intentional simplification
 
-Solid arrows indicate scientific data flow, configuration binding or model requests and responses. The double-headed boundary arrow denotes every box marked LLM: metadata, shared evolution, question keywords and answering. Dashed arrows denote observation exports and accounting evidence. The blue-grey outline identifies the wrapper's bound action guards. The original author files are preserved; the gates are Boolean additions to the original action conditions in a per-instance method copy.
+The author files remain frozen. The gates are Boolean additions to the original action conditions in a per-instance copy of the evolution method. Both the author's decision and the configuration gate must permit an action. Strengthening bundles new-note links and tags; neighbour updates bundle existing-note contexts and tags. Neither disables both, Linking Only enables strengthening, Evolution Only enables neighbour updates and Full enables both.
 
-The action stage also requires the author's decision to select the action. Strengthening bundles outgoing links and tag changes on the new note. Neighbour evolution bundles context and tag changes on existing notes. Neither disables both, Linking Only enables strengthening, Evolution Only enables neighbour updates and Full enables both. The common model decision runs under all four settings, including Neither.
+The two branches represent independent mutation scopes, not mandatory actions, mutually exclusive routes or parallel threads. If neither action applies, the note is still inserted. The author retains its decision/action order, counter, consolidation and original stale-index behaviour. Those bookkeeping details are omitted from the graphic for readability.
 
-Metadata is generated while constructing the pending MemoryNote. The author then retrieves up to five neighbours, generates the shared decision, applies any permitted actions, inserts the note, adds its retrieval document and applies the original conditional counter/consolidation logic. The diagram groups insertion and its bookkeeping for readability. The accepted original stale-index semantics are retained.
+Memory metadata is generated before retrieving up to five existing neighbours. The shared LLM decision is generated even when both gates are disabled. QA is a later phase over the completed per-cell memory and index; the vertical diagram does not imply asking all benchmark questions after each insertion. The compact QA box covers original question-keyword generation, initial top-ten retrieval, author link expansion (including possible duplicates) and answering.
 
-QA generates query keywords, retrieves an initial top ten memories with the author's subsequent link expansion and generates an answer. Link expansion can include duplicates. Saved predictions are evaluated under the authors' historical and the additional alternative-reference policies, with F1, BLEU-1 and binary adversarial correctness where applicable. The evaluation box represents wrapper reporting after generation.
-
-Memory/index snapshots and saved predictions/scores are authoritative local scientific evidence. Langfuse is the separate observability service. Its traces and Experiments reflect local execution and saved scores. Accounting is a local durable request journal plus independent OpenRouter generation/account readback. The adapter reserves exposure before transmission and records returned usage afterward. Budget and critical-observation checks can halt paid admission; the ledger and service do not choose memory content or actions.
+All four LLM stages pass through the controlled adapter under frozen settings. Langfuse capture and Experiments, provider controls, local exposure reservations and provider-charge reconciliation belong to the surrounding wrapper. They do not select memory mutations. The evidence box collects locally authoritative scientific records and separate service/accounting evidence. Scores evaluate saved predictions under the historical and alternative-reference policies, with binary adversarial correctness where applicable. The single arrow to evidence summarizes record capture throughout execution.
 
 ## Verified source references
 
@@ -44,12 +42,12 @@ The accepted configuration is dated `openai/gpt-4o-mini-2024-07-18` through Open
 
 ## Reproduce and inspect
 
-From the repository root, use the Matplotlib environment recorded by the existing publication pipeline:
+From the repository root, run in the existing publication-assets Matplotlib environment:
 
 ```sh
 python reports/publication_assets/architecture/generate_diagram.py
 ```
 
-The Python source is the editable diagram layout. Box positions and arrow routes are explicit so that regeneration preserves report-scale typography. Matplotlib 3.11.2 and DejaVu Sans were used. SVG IDs and metadata are stable. The SVG has a white 16 cm by 16.6 cm canvas and outlined lettering for consistent display across document and presentation renderers. Text and layout are editable in the Python source. PNG is exported at 300 DPI. Text is 8 pt at the intended 16 cm report width; insert at that width to preserve it. For PowerPoint, use the SVG or the 300-DPI PNG.
+The Python source is the editable layout. Matplotlib 3.11.2 and DejaVu Sans were used. The SVG has a white 16 cm by 15 cm canvas and outlined lettering for consistent rendering in LaTeX and PowerPoint. Text and positions remain editable in the source. PNG is 1889 × 1771 pixels at 300 DPI. Body text is 8.7 pt at 16 cm width, approximately 8.16 pt at 15 cm. Insert at 15–16 cm width to retain report-scale readability.
 
-Both output formats were inspected at report scale for sequence, arrow direction, overlaps and clipping. The SVG was independently rasterized with CairoSVG 2.9.1 to check consistency with the PNG; outlining lettering avoids renderer-specific font substitutions. Export regeneration is byte-identical in the recorded Matplotlib environment. Only this architecture directory is added by the PR; existing scientific figures are not regenerated.
+The final PNG and an independent CairoSVG 2.9.1 rendering of the SVG were inspected at report scale for overlaps, clipping and crossing or ambiguous arrows. Repeated generation produces byte-identical exports. The revision is confined to this architecture directory and does not regenerate existing scientific figures or change accepted experiments or results.
