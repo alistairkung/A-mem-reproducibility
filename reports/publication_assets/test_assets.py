@@ -47,7 +47,7 @@ def test_corrupted_reporting_inputs_fail(raw,damage):
 def test_output_inventory_hashes_labels_and_units(raw):
     manifest=json.loads((HERE/'source_manifest.json').read_text())
     assert manifest['inputs']=={'docs/reproducibility/'+n:hashlib.sha256(b).hexdigest() for n,b in raw.items()}
-    expected={f'figures/{n}.{ext}' for n in ['01_scoring_comparison','02_category_heatmap','03_f1_vs_cost','04_factorial_interaction','05_token_overhead','06_dual_scoring_f1_vs_cost'] for ext in ['svg','png']}
+    expected={f'figures/{n}.{ext}' for n in ['01_scoring_comparison','02_category_heatmap','03_f1_vs_cost','04_factorial_interaction','05_token_overhead','06_dual_scoring_f1_vs_cost','07_dual_policy_category_heatmap'] for ext in ['svg','png']}
     stems=['01_configurations','02_overall_results','03_factorial_contrasts','04_category_performance','05_cost_retrieval','06_conversation_results']
     expected|={f'tables/{s}.csv' for s in stems}|{f'tables/latex/{s}.tex' for s in stems}|{'tables/publication_tables.docx','tables/07_dual_scoring_cost_performance.csv','tables/latex/07_dual_scoring_cost_performance.tex'}
     assert set(manifest['generated_outputs'])==expected
@@ -129,3 +129,24 @@ def test_dual_exports_are_valid_and_old_figure_compatible():
         p=HERE/f'figures/03_f1_vs_cost.{ext}'
         old=subprocess.check_output(['git','show','bd520b1:reports/publication_assets/figures/'+p.name],cwd=g.ROOT)
         assert p.read_bytes()==old
+
+
+def test_dual_category_heatmap_matches_every_saved_question(raw):
+    from math import fsum
+    import matplotlib.pyplot as plt
+    rows, pooled, _, _ = g.validate(raw)
+    fig = g.dual_policy_category_figure(pooled)
+    try:
+        for ax, policy in zip(fig.axes[:2], ['historical', 'corrected']):
+            image, = ax.images
+            assert image.get_clim() == (0, 100)
+            assert [t.get_text().replace('\n', ' ') for t in ax.get_xticklabels()] == g.LABELS
+            for index, label in enumerate(g.CATEGORIES):
+                subset = [r for r in rows if r['category'] == index + 1]
+                assert ax.get_yticklabels()[index].get_text() == f'{label} ({len(subset)})'
+                for col, arm in enumerate(g.ORDER):
+                    value = 100 * fsum(r[policy][arm]['f1'] for r in subset) / len(subset)
+                    assert image.get_array()[index, col] == value
+                    assert ax.texts[4 * index + col].get_text() == f'{value:.2f}'
+    finally:
+        plt.close(fig)

@@ -1,9 +1,9 @@
 {
   "aggregate_rounding_tolerance_pp": 1e-12,
   "code": {
-    "captions.json": "d501e26e2f1d766ee5766d737eaa982990cdd45f8f39c3acbbd1f8ee538c9cee",
+    "captions.json": "3a8a5dd939067e864e5f177b2e4892ba6752cc6f9013b640436044ee38e8d472",
     "document_exports.py": "419103cc41fee9a548314d29d3db9b9f299609a8f56cfe41611fe22e41c74d43",
-    "generate_assets.py": "a1ca2b9fb01e896976b2fc7b522dce82a7188f3c8cc5b2096c7460c29b02688c"
+    "generate_assets.py": "08714a4abd196d779189a599b58b591b27569824a5ea5a77e62fcb61d5dd0784"
   },
   "display_decimals": 2,
   "generated_outputs": {
@@ -19,6 +19,8 @@
     "figures/05_token_overhead.svg": "bdcc120453552aa280015f6a55eb1e158bcf15180ba0c685f3ca57e043ab290e",
     "figures/06_dual_scoring_f1_vs_cost.png": "e224e1c6242d9af7aa01b2be41e2da59ff198482d2bd5186e2b87a648dc2ef1d",
     "figures/06_dual_scoring_f1_vs_cost.svg": "4644c4a23218a376e99705c1d9ae29101bcb5b5aef93a3d59f68fbbdcd13e0ec",
+    "figures/07_dual_policy_category_heatmap.png": "4c541f134b355dd1e7800728f765809868cfbb6b3342c052811b7210f4daafbd",
+    "figures/07_dual_policy_category_heatmap.svg": "b51d80f6218eef69015083e304830b5f271c721bbf1c7435c691f8a3c9ac6ee7",
     "tables/01_configurations.csv": "e4c013f0774f57926fa5a1fd92028324de479a9fa0a9cbb2f67b479ad160f9c6",
     "tables/02_overall_results.csv": "ebcd140a655f1356c4b3616cded379ee06532a62f91a14c7aa04260d06c3b240",
     "tables/03_factorial_contrasts.csv": "f3cb29b4b9b39c84c90f020d612aaa10863eb5c30a7d3ffae227a18a2111fe83",

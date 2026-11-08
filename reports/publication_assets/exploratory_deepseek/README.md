@@ -17,11 +17,15 @@ The pooled row is derived in this reporting task from all 558 unrounded saved qu
 
 ## Table caption
 
-**Table X. Exploratory DeepSeek Flash Full A-MEM results on three LoCoMo conversations.** F1 and BLEU-1 scores under both evaluation policies. Each conversation represents one completed but Degraded DeepSeek Full A-MEM lineage. These exploratory results are excluded from the primary GPT-4o-mini factorial analysis. The pooled row is a newly derived question-weighted aggregate.
+**Exploratory DeepSeek Flash Full A-MEM results on three LoCoMo conversations.** F1 and BLEU-1 scores under both evaluation policies. Each conversation represents one completed but Degraded DeepSeek Full A-MEM lineage. These exploratory results are excluded from the primary GPT-4o-mini factorial analysis. The pooled row is a newly derived question-weighted aggregate.
 
-## Optional figure caption
+## Figures
 
-**Figure X. Exploratory cross-model comparison, not a controlled model benchmark.** Question-weighted alternative-reference F1 and BLEU-1 for DeepSeek Flash and GPT-4o-mini Full A-MEM on the same 558 questions from three conversations. The bars report descriptive saved-score aggregates, with zero-based axes. Different models, generation policies, providers and execution histories, including DeepSeek's Degraded recovery lineages, preclude causal or statistical superiority claims.
+[Both evaluation policies](dual_policy_full_comparison.svg) show pooled Full A-MEM F1 and BLEU-1 on a common zero-based scale. Historical F1/BLEU-1 are 42.35/37.89 for DeepSeek Flash and 32.69/28.64 for GPT-4o-mini. Complementary scores are 50.37/45.88 and 36.91/32.81 respectively. The original [complementary-only figure](deepseek_vs_gpt4omini.svg) remains available.
+
+### Original figure caption
+
+**Exploratory cross-model comparison, not a controlled model benchmark.** Question-weighted alternative-reference F1 and BLEU-1 for DeepSeek Flash and GPT-4o-mini Full A-MEM on the same 558 questions from three conversations. The bars report descriptive saved-score aggregates, with zero-based axes. Different models, generation policies, providers and execution histories, including DeepSeek's Degraded recovery lineages, preclude causal or statistical superiority claims.
 
 DeepSeek has higher observed overlap scores here, but this does not establish that it is the better language model. Each model–conversation combination contributes one stochastic build. There are no repeated builds for estimating model-level variability. Both models use Full A-MEM, but this is a cross-lineage exploratory comparison, separate from the twelve-cell GPT-4o-mini factorial analysis.
 

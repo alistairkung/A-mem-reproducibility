@@ -13,6 +13,11 @@ ORIGINAL_COST_PARAGRAPH = 'There was also an important difference between scient
 APPROVED_COST_PARAGRAPH = 'There was also an important difference between scientific inference cost and the cost of conducting research. The twelve accepted GPT-4o-mini builds incurred approximately $4.06 in identified model charges. Campaign-wide identified model charges, including earlier failed attempts and compatibility checks, totalled approximately $4.70. Broader conservative campaign exposure, including held reservations and a conservative upper bound for Langfuse service, reached $10.46. Only the accepted-build model charges belong in Section 5’s like-for-like Pareto comparison.'
 
 
+CATEGORY_CLARIFICATION = 'Multi-hop, temporal, open-domain and single-hop F1 are identical under both policies because only the adversarial reference changes.'
+ORIGINAL_DEEPSEEK_PARAGRAPH = 'Despite these obstacles, three DeepSeek Flash Full A-MEM lineages completed in Degraded status. Table 8 summarises their saved scores, including a newly derived question-weighted pooled row. DeepSeek produced higher observed word-overlap scores than the GPT-4o-mini Full baselines (alternative F1 50.37% versus 36.91%), but this was not a controlled comparison: model, generation caps, provider, compatibility policy and recovery history differed. I eventually recognised that I was optimising a model-porting exercise rather than reproducing the paper’s mechanism experiment. I returned to GPT-4o-mini for the primary factorial study. API compatibility, I learned, is not experimental equivalence.'
+APPROVED_DEEPSEEK_PARAGRAPH = 'Three DeepSeek Flash Full A-MEM lineages completed in Degraded status. Table 8 pools their saved scores by question. On the same 558 questions, DeepSeek had higher observed F1 and BLEU-1 than GPT-4o-mini Full A-MEM under both policies. This comparison was exploratory. Each model contributed one build per conversation, and provider routes, generation caps, compatibility handling and recovery histories differed. I had spent more time porting the model than testing the memory mechanisms. I returned to GPT-4o-mini to follow the paper’s model choice more closely in the primary factorial study.'
+
+
 def decode(s):
     s=re.sub(r'\\cite\{[^}]*\}', '', s)
     s=s.replace('Throughout the figures, this complementary evaluation is labelled alternative-reference scoring. ', '')
@@ -30,6 +35,9 @@ def main():
     tex=(HERE/'main.tex').read_text();plain=decode(tex)
     code=(HERE/'listing.py').read_text().splitlines()
     missing=[];stats={'headings':0,'prose_and_title_paragraphs':0,'captions':0,'listing_lines':0,'table_cells':0}
+    assert CATEGORY_CLARIFICATION in plain
+    replacements = {ORIGINAL_COST_PARAGRAPH: APPROVED_COST_PARAGRAPH,
+                    ORIGINAL_DEEPSEEK_PARAGRAPH: APPROVED_DEEPSEEK_PARAGRAPH}
     positions=[]
     for p in source.paragraphs:
         s=p.text
@@ -49,7 +57,7 @@ def main():
         elif p.style.name.startswith('Heading'):
             expected=re.sub(r'^\d+(?:\.\d+)?\.? ', '',s);stats['headings']+=1
         else:
-            expected=APPROVED_COST_PARAGRAPH if s==ORIGINAL_COST_PARAGRAPH else s
+            expected=replacements.get(s, s)
             stats['prose_and_title_paragraphs']+=1
         if norm(expected) not in norm(plain):missing.append(s)
         if not m:positions.append(norm(plain).find(norm(expected)))
@@ -81,11 +89,12 @@ def main():
     assert '??' not in pdftext
     for key in ['xu2025amem','locomo','amemsource','reproduction','acceptedresults']:
         assert 'cite.'+key in reader.named_destinations
-    assert 'Student name:' in pdftext and 'Student ID:' in pdftext
+    assert 'Student name: Alistair Chi Chuen Kung' in norm(pdftext)
+    assert 'Student ID: 1155012046' in norm(pdftext)
     assert 'Figure 1:' in reader.pages[3].extract_text() and 'Listing 1:' in reader.pages[3].extract_text()
     log=(HERE/'main.log').read_text()
     assert not re.search(r'Overfull|Underfull|undefined references|Missing character|^!',log,re.M)
-    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; student placeholders; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'183 cells equal to DOCX; one approved Pooled (derived) label; all numerical values unchanged','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
+    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; completed student attribution; policy-invariant categories; approved exploratory comparison paragraph; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'183 cells equal to DOCX; one approved Pooled (derived) label; all numerical values unchanged','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
     (HERE/'fidelity_results.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 

@@ -2,7 +2,7 @@
 
 The PDF is a ten-page A4 typesetting of the approved manuscript. All seven sections,
 nine tables, four figures and the code listing are retained. Read
-`conversion_audit.md` for the bounded fidelity claim and unresolved source issues.
+`conversion_audit.md` for the bounded fidelity claim and authorised editorial changes.
 
 ## Build from a clean checkout
 
@@ -44,7 +44,7 @@ The archival initial converter requires `--output-dir /tmp/amem-original-convers
 and rejects writing into this report directory. It retains the original extraction
 workflow for provenance, including numerical checks against verified fragments. The independent verifier
 reads the DOCX with `python-docx`, allows only the authorised citation markers, terminology sentence and listing
-caption replacement, exact approved cost paragraph and `Pooled (derived)` label
+caption replacement, exact approved cost and DeepSeek paragraphs and `Pooled (derived)` label
 while comparing prose/headings/captions/listing and all
 184 table cells with LaTeX, and checks the compiled page count, A4 size, links and
 TeX diagnostics. It does not establish the truth of scientific claims or provide
@@ -81,5 +81,5 @@ Inspect all ten page images. They are QA intermediates and are not committed.
 
 ## Submission fields
 
-Fill `[enter name]` and `[enter ID]` in the title block in `main.tex`, then rebuild.
-See `CHANGELOG.md` and `conversion_audit.md` for exact changes and remaining author decisions.
+The title block contains the supplied student name and ID. The fidelity check verifies both in the compiled PDF.
+See `CHANGELOG.md` and `conversion_audit.md` for exact changes.
