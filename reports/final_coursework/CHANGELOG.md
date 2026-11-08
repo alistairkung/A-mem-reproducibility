@@ -9,4 +9,10 @@
 - Kept all seven sections, nine tables, four figures, scientific wording and values; final length remains ten A4 pages including references.
 - Protected the archival converter from overwriting the hand-polished source; updated build and fidelity guidance.
 
-Open author decisions: fill student metadata; adjudicate the inherited $4.70 versus ~$4.064 accepted-build cost discrepancy; decide whether `Pooled*` needs an explicit footnote.
+## Approved editorial corrections
+
+- Applied the approved Section 6.2 paragraph: accepted scientific builds approximately $4.06; campaign-wide identified model charges approximately $4.70; conservative model/service exposure $10.46.
+- Changed the DeepSeek pooled row label from `Pooled*` to `Pooled (derived)`; all values remain unchanged.
+- Updated the fidelity verifier to allow only these two exact editorial replacements.
+
+Remaining submission input: fill student name and ID.

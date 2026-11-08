@@ -8,6 +8,10 @@ from docx import Document
 from pypdf import PdfReader
 
 HERE=Path(__file__).resolve().parent
+# Explicit user-approved editorial replacements; all other DOCX content stays fixed.
+ORIGINAL_COST_PARAGRAPH = 'There was also an important difference between scientific inference cost and the cost of conducting research. The twelve accepted GPT-4o-mini builds incurred approximately $4.70 in identified model charges, while broader conservative campaign exposure, including failed attempts, held reservations and metered Langfuse service, reached $10.46. Only the accepted-build model charges belong in Section 5’s like-for-like Pareto comparison.'
+APPROVED_COST_PARAGRAPH = 'There was also an important difference between scientific inference cost and the cost of conducting research. The twelve accepted GPT-4o-mini builds incurred approximately $4.06 in identified model charges. Campaign-wide identified model charges, including earlier failed attempts and compatibility checks, totalled approximately $4.70. Broader conservative campaign exposure, including held reservations and a conservative upper bound for Langfuse service, reached $10.46. Only the accepted-build model charges belong in Section 5’s like-for-like Pareto comparison.'
+
 
 def decode(s):
     s=re.sub(r'\\cite\{[^}]*\}', '', s)
@@ -44,7 +48,9 @@ def main():
             stats['captions']+=1
         elif p.style.name.startswith('Heading'):
             expected=re.sub(r'^\d+(?:\.\d+)?\.? ', '',s);stats['headings']+=1
-        else:expected=s;stats['prose_and_title_paragraphs']+=1
+        else:
+            expected=APPROVED_COST_PARAGRAPH if s==ORIGINAL_COST_PARAGRAPH else s
+            stats['prose_and_title_paragraphs']+=1
         if norm(expected) not in norm(plain):missing.append(s)
         if not m:positions.append(norm(plain).find(norm(expected)))
     assert positions==sorted(positions),'Prose/headings reordered'
@@ -58,7 +64,8 @@ def main():
             cells=re.split(r'(?<!\\)&',lr)
             assert len(cells)==len(sr.cells)
             for a,b in zip(sr.cells,cells):
-                assert norm(a.text)==norm(decode(b)),(i,a.text,b)
+                expected_cell='Pooled (derived)' if i==8 and a.text=='Pooled*' else a.text
+                assert norm(expected_cell)==norm(decode(b)),(i,a.text,b)
                 stats['table_cells']+=1
     assert not missing,missing
     reader=PdfReader(HERE/'AMEM_FTEC5660_Report.pdf')
@@ -78,7 +85,7 @@ def main():
     assert 'Figure 1:' in reader.pages[3].extract_text() and 'Listing 1:' in reader.pages[3].extract_text()
     log=(HERE/'main.log').read_text()
     assert not re.search(r'Overfull|Underfull|undefined references|Missing character|^!',log,re.M)
-    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; student placeholders; rendered bibliography','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'all cells equal, including labels and displayed precision','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
+    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; student placeholders; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'183 cells equal to DOCX; one approved Pooled (derived) label; all numerical values unchanged','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
     (HERE/'fidelity_results.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 

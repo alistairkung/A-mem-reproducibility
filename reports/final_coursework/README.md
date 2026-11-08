@@ -44,7 +44,8 @@ The archival initial converter requires `--output-dir /tmp/amem-original-convers
 and rejects writing into this report directory. It retains the original extraction
 workflow for provenance, including numerical checks against verified fragments. The independent verifier
 reads the DOCX with `python-docx`, allows only the authorised citation markers, terminology sentence and listing
-caption replacement while comparing prose/headings/captions/listing and all
+caption replacement, exact approved cost paragraph and `Pooled (derived)` label
+while comparing prose/headings/captions/listing and all
 184 table cells with LaTeX, and checks the compiled page count, A4 size, links and
 TeX diagnostics. It does not establish the truth of scientific claims or provide
 a visual-layout check. `manuscript_extract.json`, `conversion_checks.json` and

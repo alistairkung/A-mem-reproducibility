@@ -216,7 +216,7 @@ Conversation & QA & Alt. F1 & Alt. BLEU-1 & Hist. F1 & Hist. BLEU-1 \\
 conv-44 & 158 & 54.06 & 48.37 & 42.05 & 36.24 \\
 conv-49 & 196 & 49.63 & 46.31 & 43.22 & 39.95 \\
 conv-50 & 204 & 48.22 & 43.53 & 41.74 & 37.19 \\
-Pooled* & 558 & 50.37 & 45.88 & 42.35 & 37.89 \\
+Pooled (derived) & 558 & 50.37 & 45.88 & 42.35 & 37.89 \\
 \bottomrule\end{tabular}
 \caption{Exploratory DeepSeek Flash Full A-MEM results (scores in \%). Three completed Degraded lineages; the pooled row is a derived 558-question aggregate, not part of the primary GPT-4o-mini experiment.}\label{tab8}
 \end{table}
@@ -227,7 +227,7 @@ I ultimately chose a final fresh run with broader, predeclared and financially b
 
 The lesson was not simply to make every service call succeed. Conservative accounting and provenance were necessary, but overly narrow stop rules and repeated full-history reconciliation made the experiment fragile and slow. A better design would combine immutable scientific state with bounded, failure-triggered retries and incremental financial reconciliation. Reliable engineering serves the scientific objective; it should not become a substitute for asking whether the experiment still answers the intended question.
 
-There was also an important difference between scientific inference cost and the cost of conducting research. The twelve accepted GPT-4o-mini builds incurred approximately \$4.70 in identified model charges, while broader conservative campaign exposure, including failed attempts, held reservations and metered Langfuse service, reached \$10.46. Only the accepted-build model charges belong in Section 5’s like-for-like Pareto comparison.
+There was also an important difference between scientific inference cost and the cost of conducting research. The twelve accepted GPT-4o-mini builds incurred approximately \$4.06 in identified model charges. Campaign-wide identified model charges, including earlier failed attempts and compatibility checks, totalled approximately \$4.70. Broader conservative campaign exposure, including held reservations and a conservative upper bound for Langfuse service, reached \$10.46. Only the accepted-build model charges belong in Section 5’s like-for-like Pareto comparison.
 
 The final Clean cell mattered because it yielded a complete comparison without reconstructed memories, answer imputation or cross-run mixing. I would design observability and financial safeguards into future experiments from the outset, but proportionately: their purpose is to make findings credible and recoverable, not to displace the research question.
 

@@ -8,17 +8,18 @@ This polish directly edits the existing LaTeX from `86af3cc`; it does not regene
 the manuscript. The extraction JSON retains the original editorial evidence.
 
 The final output has **10 A4 pages**, including a rendered BibTeX bibliography.
-Body text remains 11 pt TeX Gyre Termes with 22 mm margins. No scientific paragraph
-was shortened, paraphrased or removed. No accepted numerical result changed.
+Body text remains 11 pt TeX Gyre Termes with 22 mm margins. No scientific paragraph was removed or shortened to fit the page limit. The user
+subsequently approved the cost-scope paragraph correction documented below.
+No accepted experimental result changed.
 
 ## Content preserved
 
 All seven sections, 19 subsections, nine tables, four figures and the original
 16-line code abridgement remain. Independent DOCX comparison verifies 26 headings,
-43 prose/title paragraphs, 14 captions and all **184 table cells** (labels, values,
-signs and precision). The listing caption is an explicitly authorised replacement.
-The comparison removes only citation markers and the one authorised terminology
-sentence; it does not normalise away scientific wording changes. Original prose
+43 prose/title paragraphs, 14 captions and all **184 table cells** (183 unchanged cells and the approved `Pooled (derived)`
+label replacement; all numerical values, signs and precision unchanged). The listing caption is an explicitly authorised replacement.
+The comparison allows only citation markers, the one authorised terminology
+sentence, the exact approved cost paragraph and the one approved table label; it does not normalise away scientific wording changes. Original prose
 and heading order is preserved. `fidelity_results.json` records the checks.
 
 The reproduction target, fourth factorial condition, F1/BLEU-1 definitions, five
@@ -73,14 +74,30 @@ accepted scientific evidence `8485673183d7b8018c841082d075b21158002700`. No venu
 publication date or personal author identity was invented for repository entries.
 No substantive citation ambiguity was identified.
 
-## Remaining editorial decisions
+## Approved corrections following cost investigation
 
-1. Student name and ID must be filled in before submission.
-2. The preserved Section 6.2 claim of approximately **$4.70** for accepted builds
-   differs from Table 7's **$4.06401** displayed sum (**$4.06400310** unrounded).
-   This pre-existing scientific statement needs author adjudication; not changed.
-3. Table 8 retains `Pooled*` without a separate starred footnote; its caption and
-   prose explain the derived aggregate. No footnote was invented.
+The user approved the proposed replacement of Section 6.2's cost paragraph and
+requested `Pooled*` → `Pooled (derived)` in Table 8. Both are applied verbatim.
+The original DOCX/extraction and all accepted scientific assets remain immutable.
+
+The twelve accepted cells sum to **USD 4.06400310**, displayed as approximately
+**$4.06**. Campaign-wide identified charges are **USD 4.69823805**, approximately
+**$4.70**, including **USD 0.62848605** from earlier stopped attempts/continuation
+and **USD 0.00574890** from compatibility checks. Broader conservative campaign
+exposure is **USD 10.457057**, comprising USD 4.808497 conservative model exposure
+and USD 5.648560 service upper bound. It is not a final invoice total.
+
+These values were verified with Decimal arithmetic against accepted scientific
+commit `8485673183d7b8018c841082d075b21158002700` and the hash-bound receipts:
+`artifacts/gpt4omini/verification/final-eight-hour-finance/model-cost-inventory.json`
+and `final-programme-reconciliation.json`. Table 7, Figure 4 and every experimental
+score/cost cell remain unchanged. The verifier whitelists only the exact approved
+paragraph and exact Table 8 label replacement; it retains all other comparisons.
+
+## Remaining submission input
+
+Student name and ID must be filled in before submission. The cost-scope and
+`Pooled*` editorial issues are resolved by the explicit approval above.
 
 ## Validation
 
@@ -91,7 +108,7 @@ or underfull boxes, missing glyphs or unresolved references occur. No accepted
 asset, scientific pipeline, result, financial record or experimental setting changed.
 Independent final Standards and Spec reviews are recorded below.
 
-### Independent Standards review
+### Independent Standards review before approved corrections
 
 **PASS — zero unresolved findings.** A clean temporary build with all auxiliary
 and bibliography files removed reproduced PDF SHA-256
@@ -99,11 +116,22 @@ and bibliography files removed reproduced PDF SHA-256
 byte-for-byte. Updated fidelity checks and documented workflows passed; no hard
 standards violations or actionable heuristic findings were identified.
 
-### Independent Spec review
+### Independent Spec review before approved corrections
 
 **PASS — zero blocking findings.** Independently verified ten A4 pages, all five
 rendered references, all 98 unchanged source text items in the PDF (after the
 approved additions/caption changes), all 184 table cells and unchanged listing.
 All ten rendered pages were inspected. Figure 1 and Listing 1 share page 4;
 Figure 4 uses full text width; citation metadata and links pass. Reviewed PDF hash
-matches the Standards review above. Remaining author decisions are listed above.
+matches the Standards review above. The remaining submission input is listed above.
+
+### Approved-correction validation
+
+Final PDF: **10 A4 pages**, SHA-256
+`662720d75e1953d850e5c6973eedb21f78ff90119c2ec98da4e82ffcbc93bf4f`.
+The DOCX comparison passes with the two explicit replacements. No compilation
+warnings or layout diagnostics occur. Focused independent Standards and Spec re-reviews both **PASS with zero findings**.
+Standards reproduced this hash from a clean temporary build. Spec independently
+verified the exact approved paragraph, receipt-bound totals and unchanged numerical
+cells; page 8 is clean and the other nine rendered pages are pixel-identical to
+the previously inspected version. Only student name and ID remain to complete.
