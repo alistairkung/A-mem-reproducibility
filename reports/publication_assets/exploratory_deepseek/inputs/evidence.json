@@ -1,0 +1,327 @@
+{
+  "conversations": {
+    "conv-44": {
+      "acceptance": {
+        "path": "artifacts/run2/reporting-recovery/lineage-completion.json",
+        "sha256": "642414039f25532f046c974a3d38e30ed77deafa0eedd9714f63a7b652f5fc3c",
+        "status": "Degraded"
+      },
+      "classification": "Degraded",
+      "generation_binding": {
+        "config_sha256": "7152e1ef093178a43a1de38cb7ef23da885ec42383eab030282c376ca162a99b",
+        "endpoint": "https://api.deepseek.com/beta/chat/completions",
+        "max_output_tokens_by_stage": {
+          "answer": 1000,
+          "metadata": 1000,
+          "query_keywords": 1000,
+          "shared_decision": 8192
+        },
+        "model": "deepseek-flash",
+        "provider_contract_policy": "canonical-index-strings-v1",
+        "source_sha256": "fc5fc67e0a0276948b1c8ac38ec4bbd0fab2fa09b44badc4c2a517cee3503fa7"
+      },
+      "original_aggregates": {
+        "alternative": {
+          "category_1": {
+            "bleu1": 0.28019218405521557,
+            "count": 30,
+            "f1": 0.35260935143288086
+          },
+          "category_2": {
+            "bleu1": 0.3770296476773072,
+            "count": 24,
+            "f1": 0.40637811262811263
+          },
+          "category_3": {
+            "bleu1": 0.04017608341054478,
+            "count": 7,
+            "f1": 0.09527878136900693
+          },
+          "category_4": {
+            "bleu1": 0.5400274382486191,
+            "count": 62,
+            "f1": 0.6129929552007661
+          },
+          "category_5": {
+            "bleu1": 0.72019354719759,
+            "count": 35,
+            "f1": 0.75464158857016
+          },
+          "overall": {
+            "bleu1": 0.4836973732475677,
+            "count": 158,
+            "f1": 0.5406096553040967
+          }
+        },
+        "historical": {
+          "category_1": {
+            "bleu1": 0.28019218405521557,
+            "count": 30,
+            "f1": 0.35260935143288086
+          },
+          "category_2": {
+            "bleu1": 0.3770296476773072,
+            "count": 24,
+            "f1": 0.40637811262811263
+          },
+          "category_3": {
+            "bleu1": 0.04017608341054478,
+            "count": 7,
+            "f1": 0.09527878136900693
+          },
+          "category_4": {
+            "bleu1": 0.5400274382486191,
+            "count": 62,
+            "f1": 0.6129929552007661
+          },
+          "category_5": {
+            "bleu1": 0.17248011823521442,
+            "count": 35,
+            "f1": 0.2125416005221586
+          },
+          "overall": {
+            "bleu1": 0.36236844911033256,
+            "count": 158,
+            "f1": 0.4205242149137166
+          }
+        }
+      },
+      "parent_run_id": "run2-full-conv-44-r0-p1",
+      "phase_path": "artifacts/run2/runs/run2-full-conv-44-r0-p2/phase.json",
+      "phase_sha256": "e38b16965b23400205d14e64908176a31687055ffe31bf564777b55579c1db36",
+      "phase_status": "incomplete",
+      "question_count": 158,
+      "raw_scoring_path": "artifacts/run2/runs/run2-full-conv-44-r0-p2/scoring-views.json",
+      "raw_scoring_sha256": "075c26e2792eb5852b164dcbc7c699d802729f2e5964126edb4d1064ffec5b8e",
+      "run_id": "run2-full-conv-44-r0-p2",
+      "scorer_sha256": "2f4303ff0775b67f2c328fa5df88af36172596b064ea2f661924730a355fcd3c"
+    },
+    "conv-49": {
+      "acceptance": {
+        "path": "artifacts/t8/offline/review/conv49-completed-audit.json",
+        "sha256": "8b0c68044bab9f8f7e2d9d5f0deaf5bbbb6ad282179567abb2b08469a7126537",
+        "status": "degraded"
+      },
+      "classification": "Degraded",
+      "generation_binding": {
+        "config_sha256": "aaf7f9922c9485d872c40e4bd02330ea3650150be305a902086af86d2982fe1b",
+        "endpoint": "https://api.deepseek.com/beta/chat/completions",
+        "max_output_tokens_by_stage": {
+          "answer": 1000,
+          "metadata": 1000,
+          "query_keywords": 1000,
+          "shared_decision": 4000
+        },
+        "model": "deepseek-flash",
+        "provider_contract_policy": "canonical-index-strings-v1",
+        "source_sha256": "0b2287b19626da56d7bd567c6073ac15000a4f73c98e9b3510ca18d5ba6faaa9"
+      },
+      "original_aggregates": {
+        "alternative": {
+          "category_1": {
+            "bleu1": 0.2629999768656606,
+            "count": 37,
+            "f1": 0.33730216883937963
+          },
+          "category_2": {
+            "bleu1": 0.45568653432555534,
+            "count": 33,
+            "f1": 0.43906093906093907
+          },
+          "category_3": {
+            "bleu1": 0.2609688494464676,
+            "count": 13,
+            "f1": 0.27142505710028947
+          },
+          "category_4": {
+            "bleu1": 0.5070142411997873,
+            "count": 73,
+            "f1": 0.555063515250251
+          },
+          "category_5": {
+            "bleu1": 0.6399563756784586,
+            "count": 40,
+            "f1": 0.6562719913134312
+          },
+          "overall": {
+            "bleu1": 0.46312012476683506,
+            "count": 196,
+            "f1": 0.4962664961437621
+          }
+        },
+        "historical": {
+          "category_1": {
+            "bleu1": 0.2629999768656606,
+            "count": 37,
+            "f1": 0.33730216883937963
+          },
+          "category_2": {
+            "bleu1": 0.45568653432555534,
+            "count": 33,
+            "f1": 0.43906093906093907
+          },
+          "category_3": {
+            "bleu1": 0.2609688494464676,
+            "count": 13,
+            "f1": 0.27142505710028947
+          },
+          "category_4": {
+            "bleu1": 0.5070142411997873,
+            "count": 73,
+            "f1": 0.555063515250251
+          },
+          "category_5": {
+            "bleu1": 0.3284170408294239,
+            "count": 40,
+            "f1": 0.3421605339105339
+          },
+          "overall": {
+            "bleu1": 0.3995406686751953,
+            "count": 196,
+            "f1": 0.43216211708194635
+          }
+        }
+      },
+      "parent_run_id": "t8-full-conv49-r0-20261102",
+      "phase_path": "artifacts/runs/t8-full-conv49-checkpoint-child/phase.json",
+      "phase_sha256": "b94572b488e34a8f5d87fb05217545345a2733cc669a8e1bc0637de4bba393c3",
+      "phase_status": "degraded",
+      "question_count": 196,
+      "raw_scoring_path": "artifacts/runs/t8-full-conv49-checkpoint-child/scoring-views.json",
+      "raw_scoring_sha256": "835c702c1a4d72226a7ab38d2f79d257714aec68b10b126129676dfca4bc8bdd",
+      "run_id": "t8-full-conv49-checkpoint-child",
+      "scorer_sha256": "2f4303ff0775b67f2c328fa5df88af36172596b064ea2f661924730a355fcd3c"
+    },
+    "conv-50": {
+      "acceptance": {
+        "path": "artifacts/checkpoint-child-final-verification.json",
+        "sha256": "3abcd78be2435768020e88d722b78942ab081f482021b9bc948acad3bcf37866",
+        "status": "degraded"
+      },
+      "classification": "Degraded",
+      "generation_binding": {
+        "config_sha256": "aaf7f9922c9485d872c40e4bd02330ea3650150be305a902086af86d2982fe1b",
+        "endpoint": "https://api.deepseek.com/beta/chat/completions",
+        "max_output_tokens_by_stage": {
+          "answer": 1000,
+          "metadata": 1000,
+          "query_keywords": 1000,
+          "shared_decision": 4000
+        },
+        "model": "deepseek-flash",
+        "provider_contract_policy": "canonical-index-strings-v1",
+        "source_sha256": "a0f43a95bf523d8194908ec10612e97ce28daf5700754f651e95c53e0afad8e2"
+      },
+      "original_aggregates": {
+        "alternative": {
+          "category_1": {
+            "bleu1": 0.2203444104802769,
+            "count": 32,
+            "f1": 0.2987543435129542
+          },
+          "category_2": {
+            "bleu1": 0.3471309212619097,
+            "count": 32,
+            "f1": 0.3177256771006771
+          },
+          "category_3": {
+            "bleu1": 0.059462091288128155,
+            "count": 7,
+            "f1": 0.0952228717573986
+          },
+          "category_4": {
+            "bleu1": 0.48956755467366214,
+            "count": 87,
+            "f1": 0.5619285363381225
+          },
+          "category_5": {
+            "bleu1": 0.6008246750340465,
+            "count": 46,
+            "f1": 0.6322286188506371
+          },
+          "overall": {
+            "bleu1": 0.4353223409948118,
+            "count": 204,
+            "f1": 0.4821775484827645
+          }
+        },
+        "historical": {
+          "category_1": {
+            "bleu1": 0.2203444104802769,
+            "count": 32,
+            "f1": 0.2987543435129542
+          },
+          "category_2": {
+            "bleu1": 0.3471309212619097,
+            "count": 32,
+            "f1": 0.3177256771006771
+          },
+          "category_3": {
+            "bleu1": 0.059462091288128155,
+            "count": 7,
+            "f1": 0.0952228717573986
+          },
+          "category_4": {
+            "bleu1": 0.48956755467366214,
+            "count": 87,
+            "f1": 0.5619285363381225
+          },
+          "category_5": {
+            "bleu1": 0.3195227536690951,
+            "count": 46,
+            "f1": 0.34482108901994996
+          },
+          "overall": {
+            "bleu1": 0.3718915155889895,
+            "count": 204,
+            "f1": 0.4173699682268252
+          }
+        }
+      },
+      "parent_run_id": "pilot-conv50-d9a",
+      "phase_path": "artifacts/runs/pilot-conv50-checkpoint-child/phase.json",
+      "phase_sha256": "2cffc264ce81242f985cd018784f683e64b57dfabaf0675a5d87c20a164bddb1",
+      "phase_status": "degraded",
+      "question_count": 204,
+      "raw_scoring_path": "artifacts/runs/pilot-conv50-checkpoint-child/scoring-views.json",
+      "raw_scoring_sha256": "fbda62088c71be6123a67c39bcae6c7a8cc6033781b2ec22f6e6e36287113218",
+      "run_id": "pilot-conv50-checkpoint-child",
+      "scorer_sha256": "2f4303ff0775b67f2c328fa5df88af36172596b064ea2f661924730a355fcd3c"
+    }
+  },
+  "derived_pooled_percent": {
+    "alternative": {
+      "bleu1": 45.8784026864439,
+      "f1": 50.36716463668613
+    },
+    "historical": {
+      "bleu1": 37.89069089604385,
+      "f1": 42.345891473602336
+    }
+  },
+  "documents": {
+    "docs/reproducibility/run2-conv44-reporting-complete-20261104.md": {
+      "commit": "8485673183d7b8018c841082d075b21158002700",
+      "last_changed_commit": "144ca79cdc7a38cd731ed89ca053ed40ba8dd972",
+      "sha256": "c99e59ee58dc85e0c9f4b96388196e68e1a2552611e92b8e1f5c661eb5a5b465"
+    },
+    "docs/reproducibility/t5-conv50-baseline-20261101.md": {
+      "commit": "8485673183d7b8018c841082d075b21158002700",
+      "last_changed_commit": "800ff4dfef0e905b29eb0fd5a22771fa4beba354",
+      "sha256": "9af9e150c0add03867a0a607d1543d6ed7fae39940772ff8f17099dc3f6af1ee"
+    },
+    "docs/reproducibility/t8-conv49-baseline-20261103.md": {
+      "commit": "8485673183d7b8018c841082d075b21158002700",
+      "last_changed_commit": "7d193d8aa633f44c90826b369f028d69072646e3",
+      "sha256": "1add1ae27e4eba59eadb6b46f508a7a4096c12ac8287e044a85b1dbfdb0c2cb2"
+    }
+  },
+  "gpt4omini_selection_sha256": "3ef0dd2d935d61937c9086ab9915730414aec3a0a4d3aa6a0c0c12e6cfd68315",
+  "policy_names": {
+    "alternative": "author-corrected-v1",
+    "historical": "author-legacy-c5-v1"
+  },
+  "pooled_status": "Derived question-weighted aggregate; not a previously accepted campaign total",
+  "snapshot_sha256": "33bd943ce97e219fdd0700395192628536bd4617bc9109d130fcb4aba8603e3c",
+  "source_commit": "8485673183d7b8018c841082d075b21158002700"
+}
