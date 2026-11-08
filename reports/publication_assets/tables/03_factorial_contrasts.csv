@@ -1,0 +1,6 @@
+Contrast,F1 difference (pp),BLEU-1 difference (pp)
+Linking Only − Neither,-1.66053138,-1.43657802
+Evolution Only − Neither,-3.14686279,-2.72255035
+Full − Linking Only,-0.43071526,-0.76204129
+Full − Evolution Only,1.05561615,0.52393104
+Four-term interaction,2.71614753,1.96050906

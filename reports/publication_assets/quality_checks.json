@@ -1,0 +1,28 @@
+{
+  "all_docx_pages_visually_inspected": true,
+  "all_latex_pages_visually_inspected": true,
+  "docx_pages": 6,
+  "docx_title_border_removed": true,
+  "figure_pngs_inspected": 5,
+  "files": {
+    "document_exports.py": "419103cc41fee9a548314d29d3db9b9f299609a8f56cfe41611fe22e41c74d43",
+    "tables/latex/01_configurations.tex": "fd7ec61989429390e0b0bd406a4fa2178dcf48b4e19e4120724837bfd289620b",
+    "tables/latex/02_overall_results.tex": "d701c2b6b305102a368af65023d3a944f0624d9210ec01418130e2389642a26b",
+    "tables/latex/03_factorial_contrasts.tex": "8b9bc9883f119733f4b7f7efbea6bb472a3b214139f02b56f46740dea163ebd7",
+    "tables/latex/04_category_performance.tex": "ee9759bf0cca07b9bdf3faba40714b1457e9f06b0248314b47b6686169811cd9",
+    "tables/latex/05_cost_retrieval.tex": "7fc00f4ea4da142307e6b4fb651f0433efe33223e5dea8c6517d31a30c55ab9c",
+    "tables/latex/06_conversation_results.tex": "87500f69cc1169c15273f83234a61c96fd2a778a8f019a1914f4ce9a5db7299b",
+    "tables/publication_tables.docx": "d636be13dfae930af9674714a0cee454130855b098c16c2368633a60bcb697a1"
+  },
+  "latex_errors_or_overfull_boxes": 0,
+  "latex_packages_required": [
+    "booktabs",
+    "array"
+  ],
+  "latex_pages": 6,
+  "offline_tests_passed": 13,
+  "repeat_generation_byte_identical": true,
+  "table4_two_panels": true,
+  "verified": true,
+  "word_style": "Explicit black text, grey/white shading and black rules; no theme attributes on active table cells"
+}

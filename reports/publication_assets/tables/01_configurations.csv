@@ -1,0 +1,5 @@
+Configuration,Strengthening,Neighbour evolution,Affected state
+Neither,No,No,Original insertion; no gated memory changes
+Linking Only,Yes,No,New-note links and tags
+Evolution Only,No,Yes,Existing-neighbour contexts and tags
+Full A-MEM,Yes,Yes,New-note links/tags and existing-neighbour contexts/tags
