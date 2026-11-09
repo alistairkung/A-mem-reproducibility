@@ -30,7 +30,7 @@
 \section{Project summary and research questions}
 A-MEM is an agentic memory system that turns conversational turns into structured notes, creates links to related memories and can revise contextual metadata of older notes. The original paper~\cite{xu2025amem} reports an ablation of Neither, Linking Only and Full A-MEM. I set out to reproduce the mechanism-level comparison and investigate a missing fourth condition: Evolution Only, in which older memories can be updated without strengthening new memories.
 
-The fourth condition completes a two-factor design and permits two questions: does neighbour evolution improve answers independently of linking, and do the additional memory operations justify their computational cost? Inspired by Professor Nguyen’s Pareto-oriented approach, I measured answer quality, retrieval expansion, token use and identified model charges. I also reproduced the paper-compatible evaluation and added a complementary measure for questions that require acknowledging missing information.
+The fourth condition completes a two-factor design and permits two questions: does neighbour evolution improve answers independently of linking, and do the additional memory operations justify their computational cost? Inspired by Professor Nguyen’s Pareto-oriented approach, I measured answer quality, retrieval expansion, token use and identified model charges. I compared the two upstream Category 5 reference policies on the same saved answers across all four configurations.
 
 \subsection{Cost-aware scope}
 The released LoCoMo sample~\cite{locomo} contains ten conversations, 5,882 turns and 1,986 questions. I selected three conversations before inspecting their performance, stratifying by length with a fixed seed (42). This retained matched questions under all four experimental configurations while reducing the required independent memory builds from forty to twelve. The subset limits generalisation but avoids choosing conversations on the basis of observed scores.
@@ -82,7 +82,9 @@ Adversarial & 121 & Recognise when the conversation does not supply the requeste
 \caption{The five LoCoMo question categories in the selected 558-question population.}\label{tab2}
 \end{table}
 \subsection{Historical and complementary adversarial evaluation}
-In category 5, the agent chooses between an unsupported distractor and “Not mentioned in the conversation.” I reproduced the authors’ historical scoring method, which compares the generated answer against the supplied distractor. I also introduced a complementary evaluation to examine the agent’s ability to recognise missing information. Throughout the figures, this complementary evaluation is labelled alternative-reference scoring. This uses the same F1 and BLEU-1 calculations but compares against the no-information response. Binary adversarial correctness separately records whether that response was selected.
+In March 2025, the released runner scored Category 5 predictions against the distractor offered in the prompt (\href{https://github.com/WujiangXu/A-mem/commit/236670fefd1407ac63bcae29dd0de7fb206f569a}{236670f}). On 22 October 2026 (UTC), the upstream authors made “Not mentioned in the conversation” the default reference and retained the distractor through the legacy option (\href{https://github.com/WujiangXu/A-mem/commit/b31a1dddf56f87ec762cce3539418602d7e2ffb1}{b31a1dd}). The upstream revision we pinned, dated 28 October (\href{https://github.com/WujiangXu/A-mem/commit/f9a173dec325d84fcc97e7828775c7b241c33466}{f9a173d}), contains that correction. Our 1 November input freeze (\href{https://github.com/alistairkung/A-mem-reproducibility/commit/5aaa5f693b7315bf2e668d7540cebbe7523f96b7}{5aaa5f6}) already cited it and specified both scoring views.
+
+I retained historical evaluation for comparison with the paper. Complementary adversarial evaluation is my parallel analysis using the upstream no-information reference, labelled alternative-reference in the figures. Across all four configurations I applied the authors’ F1 and BLEU-1 implementations to the same saved predictions, changing only the Category 5 reference. Binary adversarial correctness separately records appropriate abstention.
 
 \begin{table}[H]\centering\small
 \begin{tabular}{@{}lrr@{}}
@@ -155,7 +157,7 @@ Full A-MEM & 32.69 & 28.64 & 36.91 & 32.81 & 71/121 \\
 \includegraphics[width=0.92\linewidth]{assets/01_scoring_comparison.pdf}
 \caption{Historical versus alternative-reference F1; the same 558 predictions yield different configuration rankings.}\label{fig2}
 \end{figure}
-Full A-MEM ranks first under the paper-compatible scoring (F1 32.69), with Linking Only slightly above Neither. This reproduces the published overall ordering, although not its full category-level direction. Under the additional no-information reference, Neither scores highest (F1 39.00; BLEU-1 35.01) and also gives the most appropriate adversarial answers (86/121). Full has 71/121. Therefore the evaluation-reference choice has a material effect on what counts as success, not merely on cosmetic presentation of results.
+Full A-MEM ranks first under the paper-compatible scoring (F1 32.69), with Linking Only slightly above Neither. The three configurations shared with the paper follow its ordering on this subset, although individual categories differ. Under the upstream no-information reference, Neither scores highest (F1 39.00; BLEU-1 35.01) and also gives the most appropriate adversarial answers (86/121). Full has 71/121. Therefore the evaluation-reference choice has a material effect on what counts as success, not merely on cosmetic presentation of results.
 
 \subsection{Mechanisms and factorial contrasts}
 \begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
@@ -251,16 +253,16 @@ Linking \ensuremath{-} Neither & +0.18 pp & \ensuremath{-}1.66 pp \\
 Full \ensuremath{-} Linking & +2.49 pp & \ensuremath{-}0.43 pp \\
 Evolution Only \ensuremath{-} Neither & \ensuremath{-}0.74 pp & \ensuremath{-}3.15 pp \\
 \bottomrule\end{tabular}
-\caption{Identical 558-question predictions evaluated using the authors’ historical reference and our complementary adversarial reference; values are F1 unless marked as percentage-point differences.}\label{tab9}
+\caption{Identical 558-question predictions evaluated using the authors’ historical reference and the upstream no-information reference; values are F1 unless marked as percentage-point differences.}\label{tab9}
 \end{table}
-The original absolute scores are not replicated: our preselected sample contains three of ten released conversations, uses a fixed initial retrieval depth of ten, and reconstructs the published ablations from separate action boundaries. The exact Table 3 question identities and retrieval settings are not fully specified. These differences prevent attributing numerical gaps solely to the memory mechanisms.
+The original absolute scores are not replicated: our preselected sample contains three of ten released conversations, uses a fixed initial retrieval depth of ten, and reconstructs the published ablations from separate action boundaries. The March code establishes the historical implementation. The records do not independently establish the exact questions, retrieval settings and execution behind each published Table 3 result. These differences prevent attributing numerical gaps solely to the memory mechanisms.
 
 \subsection{Additional findings and limitations}
 Evolution Only did not improve complementary F1 over Neither (\ensuremath{-}3.15 pp). The positive 2.72-point factorial interaction indicates that neighbour evolution’s observed effect is less negative with linking enabled; it does not mean Full ranks first. Linking improved multi-hop F1 by 3.40 points but expanded retrieval and roughly doubled answer input tokens. Under historical F1, Neither, Linking Only and Full lie on the observed cost–performance frontier; under complementary F1, only Neither does.
 
 These are descriptive results, not statistical significance claims. Each condition has one stochastic memory build per conversation, and the three-conversation subset limits generalisability. Moreover, strengthening bundles links with new-note tag updates, while evolution bundles existing-note contexts with tag updates. Future studies should repeat independent builds, broaden the evaluation population, vary retrieval depth and isolate the bundled operations.
 
-The methodological lesson is that reproducing an algorithm and reproducing a conclusion are distinct. The experiment recovers the original aggregate ordering under its own evaluation, while complementary measurement reveals how the conclusion depends on what answer quality is intended to reward.
+The methodological lesson is that reproducing an algorithm and reproducing a conclusion are distinct. My contribution was to measure how the upstream reference choice changes the category scores, the ranking of the four memory configurations and the cost–performance frontier on the same saved answers.
 
 \subsection{Sources and development evidence}
 Xu et al. (2025), A-MEM: Agentic Memory for LLM Agents, \href{https://arxiv.org/abs/2502.12110v11}{arXiv:2502.12110 (v11)}; original implementation \href{https://github.com/WujiangXu/A-mem/tree/f9a173dec325d84fcc97e7828775c7b241c33466}{WujiangXu/A-mem} (frozen f9a173d); \href{https://snap-research.github.io/locomo/}{LoCoMo benchmark data} distributed with the release. Source, results and commit history: \href{https://github.com/alistairkung/A-mem-reproducibility}{github.com/alistairkung/A-mem-reproducibility}.
