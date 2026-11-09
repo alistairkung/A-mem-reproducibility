@@ -84,18 +84,18 @@ Adversarial & 121 & Recognise when the conversation does not supply the requeste
 \subsection{Historical and complementary adversarial evaluation}
 In category 5, the agent chooses between an unsupported distractor and “Not mentioned in the conversation.” I reproduced the authors’ historical scoring method, which compares the generated answer against the supplied distractor. I also introduced a complementary evaluation to examine the agent’s ability to recognise missing information. Throughout the figures, this complementary evaluation is labelled alternative-reference scoring. This uses the same F1 and BLEU-1 calculations but compares against the no-information response. Binary adversarial correctness separately records whether that response was selected.
 
-\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.26\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.36\linewidth-5.333333333333333pt\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.38\linewidth-5.333333333333333pt\relax}@{}}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrr@{}}
 \toprule
- & Historical (paper-compatible) & Complementary adversarial \\
+Saved response & Historical F1 / BLEU-1 & Complementary F1 / BLEU-1 \\
 \midrule
-F1/BLEU-1 calculation & Original author scorer & Identical author scorer \\
-Category 5 reference & Supplied distractor & “Not mentioned in the conversation” \\
-Saved predictions & Unchanged & Unchanged \\
-Purpose & Reproduce the paper’s evaluation & Assess recognition of missing information \\
+Audrey (Full A-MEM), abstained & 18.18 / 16.37 & 100 / 100 \\
+Dave (Evolution Only), chose distractor & 100 / 100 & 0 / 0 \\
 \bottomrule\end{tabular}
-\caption{The two evaluation perspectives use identical predictions and calculations; only the adversarial reference changes. Neither is presented as universally superior.}\label{tab3}
+\caption{Two verified Category 5 predictions from the accepted GPT-4o-mini experiment. Each row scores one saved answer under both references (percent). The cases illustrate the scoring rule; aggregate estimates use the full question population.}\label{tab3}
 \end{table}
+Audrey described a pet-bonding workshop. Asked why she had signed up for a car maintenance workshop, Full A-MEM answered “Not mentioned in the conversation”. Only “the” overlaps the historical reference “Strengthen the bond with her pets”. Dave described restoring old cars. Asked what he found satisfying about destroying them, Evolution Only gave the distractor verbatim: “Transforming something old and beat-up into something beautiful”. The binary abstention scores are 1 for Audrey’s question and 0 for Dave’s under either view. The \href{https://github.com/alistairkung/A-mem-reproducibility/blob/930254d9c4c1c430899a25fe42a94fa164a85812/reports/adversarial_scoring_audit/five_examples.md}{five-example audit} gives the derivations for conv-44:qa:126 and conv-50:qa:183, respectively.
+
 Because adversarial questions contribute to overall F1 and BLEU-1, the selected reference can also change the aggregate ranking of memory configurations. Reporting both perspectives preserves the historical comparison while providing complementary evidence about unsupported answers. The binary measure is the more direct test of appropriate abstention.
 
 \section{Modification, experimental wrapper and verification}

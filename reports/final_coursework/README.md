@@ -42,12 +42,12 @@ python reports/final_coursework/verify_fidelity.py /path/to/AMEM_FTEC5660_Sectio
 The final source is maintained directly in `main.tex`; do not regenerate it.
 The archival initial converter requires `--output-dir /tmp/amem-original-conversion`
 and rejects writing into this report directory. It retains the original extraction
-workflow for provenance, including numerical checks against verified fragments. The independent verifier
-reads the DOCX with `python-docx`, allows only the authorised citation markers, terminology sentence and listing
-caption replacement, exact approved cost and DeepSeek paragraphs and `Pooled (derived)` label
-while comparing prose/headings/captions/listing and all
-184 table cells with LaTeX, and checks the compiled page count, A4 size, links and
-TeX diagnostics. It does not establish the truth of scientific claims or provide
+workflow for provenance, including numerical checks against verified fragments. The independent verifier compares the original DOCX prose, headings,
+captions, listing and eight retained tables (169 cells) against the LaTeX, allowing
+the editorial changes recorded in the conversion audit. For the replacement
+Section 3.4 table it checks all nine cells against the reviewed worked examples.
+It also checks the audit link in the compiled PDF, page count, A4 size and TeX
+diagnostics. It does not establish the truth of scientific claims or provide
 a visual-layout check. `manuscript_extract.json`, `conversion_checks.json` and
 `fidelity_results.json` retain machine-readable evidence. Do not edit the report
 text independently of its editorial source without a new editorial decision.

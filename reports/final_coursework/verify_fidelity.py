@@ -1,4 +1,4 @@
-"""Independently compare DOCX paragraphs, captions, listing and all 184 table cells."""
+"""Independently compare DOCX paragraphs, captions, listing and the approved example table alongside the retained DOCX tables."""
 import argparse
 import hashlib
 import json
@@ -16,6 +16,18 @@ APPROVED_COST_PARAGRAPH = 'There was also an important difference between scient
 CATEGORY_CLARIFICATION = 'Multi-hop, temporal, open-domain and single-hop F1 are identical under both policies because only the adversarial reference changes.'
 ORIGINAL_DEEPSEEK_PARAGRAPH = 'Despite these obstacles, three DeepSeek Flash Full A-MEM lineages completed in Degraded status. Table 8 summarises their saved scores, including a newly derived question-weighted pooled row. DeepSeek produced higher observed word-overlap scores than the GPT-4o-mini Full baselines (alternative F1 50.37% versus 36.91%), but this was not a controlled comparison: model, generation caps, provider, compatibility policy and recovery history differed. I eventually recognised that I was optimising a model-porting exercise rather than reproducing the paper’s mechanism experiment. I returned to GPT-4o-mini for the primary factorial study. API compatibility, I learned, is not experimental equivalence.'
 APPROVED_DEEPSEEK_PARAGRAPH = 'Three DeepSeek Flash Full A-MEM lineages completed in Degraded status. Table 8 pools their saved scores by question. On the same 558 questions, DeepSeek had higher observed F1 and BLEU-1 than GPT-4o-mini Full A-MEM under both policies. This comparison was exploratory. Each model contributed one build per conversation, and provider routes, generation caps, compatibility handling and recovery histories differed. I had spent more time porting the model than testing the memory mechanisms. I returned to GPT-4o-mini to follow the paper’s model choice more closely in the primary factorial study.'
+
+
+AUDIT_URL = ('https://github.com/alistairkung/A-mem-reproducibility/blob/'
+             '930254d9c4c1c430899a25fe42a94fa164a85812/reports/adversarial_scoring_audit/five_examples.md')
+EXAMPLE_CAPTION = ('Two verified Category 5 predictions from the accepted GPT-4o-mini experiment. '
+                   'Each row scores one saved answer under both references (percent). '
+                   'The cases illustrate the scoring rule; aggregate estimates use the full question population.')
+EXAMPLE_ROWS = [
+    ['Saved response', 'Historical F1 / BLEU-1', 'Complementary F1 / BLEU-1'],
+    ['Audrey (Full A-MEM), abstained', '18.18 / 16.37', '100 / 100'],
+    ['Dave (Evolution Only), chose distractor', '100 / 100', '0 / 0'],
+]
 
 
 def decode(s):
@@ -53,6 +65,8 @@ def main():
             continue
         if m:
             expected=m[3].replace(' (PR #57)','').replace('PR #54; ','').replace('PR #56; ','')
+            if m[1] == 'Table' and m[2] == '3':
+                expected = EXAMPLE_CAPTION
             stats['captions']+=1
         elif p.style.name.startswith('Heading'):
             expected=re.sub(r'^\d+(?:\.\d+)?\.? ', '',s);stats['headings']+=1
@@ -67,6 +81,10 @@ def main():
     for i,(table,content) in enumerate(zip(source.tables,latex_tables),1):
         content=re.sub(r'\\midrule','',content)
         rows=[line.strip() for line in content.split(r'\\') if line.strip()]
+        if i == 3:
+            assert [[norm(cell) for cell in row.split('&')] for row in rows] == EXAMPLE_ROWS
+            stats['verified_example_table_cells'] = sum(map(len, EXAMPLE_ROWS))
+            continue
         assert len(rows)==len(table.rows),(i,len(rows))
         for sr,lr in zip(table.rows,rows):
             cells=re.split(r'(?<!\\)&',lr)
@@ -86,6 +104,10 @@ def main():
     assert all(str(d) in reader.named_destinations for d in internal)
     for url in ['https://arxiv.org/abs/2502.12110v11','https://snap-research.github.io/locomo/','https://github.com/alistairkung/A-mem-reproducibility/commit/8485673183d7b8018c841082d075b21158002700']:
         assert any(a.get('/A',{}).get('/URI')==url for a in links),url
+    assert any(a.get('/A', {}).get('/URI') == AUDIT_URL for a in links)
+    for phrase in ['conv-44:qa:126', 'conv-50:qa:183', 'Not mentioned in the conversation',
+                   'Strengthen the bond with her pets', 'Transforming something old and beat-up into something beautiful']:
+        assert phrase in norm(pdftext), phrase
     assert '??' not in pdftext
     for key in ['xu2025amem','locomo','amemsource','reproduction','acceptedresults']:
         assert 'cite.'+key in reader.named_destinations
@@ -94,7 +116,7 @@ def main():
     assert 'Figure 1:' in reader.pages[3].extract_text() and 'Listing 1:' in reader.pages[3].extract_text()
     log=(HERE/'main.log').read_text()
     assert not re.search(r'Overfull|Underfull|undefined references|Missing character|^!',log,re.M)
-    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; completed student attribution; policy-invariant categories; approved exploratory comparison paragraph; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'183 cells equal to DOCX; one approved Pooled (derived) label; all numerical values unchanged','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
+    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; completed student attribution; policy-invariant categories; approved exploratory comparison paragraph; audited Table 3 and explanation; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'169 retained DOCX table cells checked (including the approved pooled label); all nine cells of replacement Table 3 checked against the verified examples','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
     (HERE/'fidelity_results.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 

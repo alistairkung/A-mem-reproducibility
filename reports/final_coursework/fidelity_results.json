@@ -6,13 +6,14 @@
     "prose_and_title_paragraphs": 43,
     "captions": 14,
     "listing_lines": 16,
-    "table_cells": 184
+    "table_cells": 169,
+    "verified_example_table_cells": 9
   },
   "prose_order": "preserved",
-  "authorized_changes": "citation markers; one terminology clarification; listing caption explicitly abridged/pinned; completed student attribution; policy-invariant categories; approved exploratory comparison paragraph; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label",
+  "authorized_changes": "citation markers; one terminology clarification; listing caption explicitly abridged/pinned; completed student attribution; policy-invariant categories; approved exploratory comparison paragraph; audited Table 3 and explanation; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label",
   "pdf_pages": 10,
   "internal_links_checked": 8,
   "missing_paragraphs": [],
-  "table_comparison": "183 cells equal to DOCX; one approved Pooled (derived) label; all numerical values unchanged",
+  "table_comparison": "169 retained DOCX table cells checked (including the approved pooled label); all nine cells of replacement Table 3 checked against the verified examples",
   "log_checks": "no overfull/underfull boxes, missing glyphs or undefined references"
 }
