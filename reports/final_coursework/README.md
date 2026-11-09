@@ -9,6 +9,8 @@ adversarial answers in place of the original conceptual comparison. Read
 
 The [T4 planning ticket](https://github.com/alistairkung/A-mem-reproducibility/issues/4) specified two scoring views on 1 November 2026. The [protocol committed at the T1 freeze](https://github.com/alistairkung/A-mem-reproducibility/blob/5aaa5f693b7315bf2e668d7540cebbe7523f96b7/docs/reproducibility/experimental-protocol.md#discovery-references-and-limits) already identified the [upstream reference correction](https://github.com/WujiangXu/A-mem/commit/b31a1dddf56f87ec762cce3539418602d7e2ffb1). The [T4 implementation](https://github.com/alistairkung/A-mem-reproducibility/commit/60e109ef4de25db97f3f0fea6bd65fffc276515c) passed each saved prediction to the author scorer under both policies. These records date the study design and implementation. They establish awareness of the upstream change by the freeze, without dating anyone’s first personal discovery.
 
+The report uses **updated author evaluation** for the primary view and **historical evaluation** for the secondary view. In earlier publication assets, “complementary” and “alternative-reference” refer to parallel reporting of that same updated author policy. The archived scoring IDs are `author-corrected-v1` and `author-legacy-c5-v1`, respectively.
+
 ## Build from a clean checkout
 
 Requires Tectonic 0.17.0 (XeTeX), with internet access on its first run to cache
@@ -68,9 +70,9 @@ python reports/final_coursework/convert_assets.py
 
 On macOS with Homebrew Cairo, prefix that command with
 `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib` if the dynamic loader needs it.
-The converter uses the committed SVGs directly, fixes creation/modification dates
+The converter reads the committed SVGs, relabels the updated policy in text elements, fixes creation/modification dates
 and restricts output to PDF 1.5;
-no raster image is substituted. `asset_manifest.json` records source/output hashes.
+no raster image is substituted. `asset_manifest.json` records source/output hashes and the display-label substitutions.
 The PDFs are committed so compilation does not depend on native Cairo or font
 substitution in an SVG converter. Regeneration on another Cairo/font stack may
 change binary bytes; inspect the result before accepting it.
