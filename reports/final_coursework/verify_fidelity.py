@@ -32,10 +32,6 @@ EXAMPLE_ROWS = [
 
 PROVENANCE_EDITS = [
     (
-        'I also reproduced the paper-compatible evaluation and added a complementary measure for questions that require acknowledging missing information.',
-        'I compared the two upstream Category 5 reference policies on the same saved answers across all four configurations.',
-    ),
-    (
         'In category 5, the agent chooses between an unsupported distractor and “Not mentioned in the conversation.” I reproduced the authors’ historical scoring method, which compares the generated answer against the supplied distractor. I also introduced a complementary evaluation to examine the agent’s ability to recognise missing information. This uses the same F1 and BLEU-1 calculations but compares against the no-information response. Binary adversarial correctness separately records whether that response was selected.',
         'In March 2025, the released runner scored Category 5 predictions against the distractor offered in the prompt (236670f). On 22 October 2026 (UTC), the upstream authors made “Not mentioned in the conversation” the default reference and retained the distractor through the legacy option (b31a1dd). The upstream revision we pinned, dated 28 October (f9a173d), contains that correction. Our 1 November input freeze (5aaa5f6) already cited it and specified both scoring views. I retained historical evaluation for comparison with the paper. Complementary adversarial evaluation is my parallel analysis using the upstream no-information reference, labelled alternative-reference in the figures. Across all four configurations I applied the authors’ F1 and BLEU-1 implementations to the same saved predictions, changing only the Category 5 reference. Binary adversarial correctness separately records appropriate abstention.',
     ),
@@ -52,13 +48,34 @@ PROVENANCE_EDITS = [
         'The March code establishes the historical implementation. The records do not independently establish the exact questions, retrieval settings and execution behind each published Table 3 result.',
     ),
     (
-        'The experiment recovers the original aggregate ordering under its own evaluation, while complementary measurement reveals how the conclusion depends on what answer quality is intended to reward.',
-        'My contribution was to measure how the upstream reference choice changes the category scores, the ranking of the four memory configurations and the cost–performance frontier on the same saved answers.',
+        'I set out to reproduce the mechanism-level comparison and investigate a missing fourth condition: Evolution Only, in which older memories can be updated without strengthening new memories.',
+        'I reproduced the frozen Full workflow in deterministic replay and added the missing Evolution Only condition, which updates older memories without strengthening new notes.',
+    ),
+    (
+        'The fourth condition completes a two-factor design and permits two questions: does neighbour evolution improve answers independently of linking, and do the additional memory operations justify their computational cost? Inspired by Professor Nguyen’s Pareto-oriented approach, I measured answer quality, retrieval expansion, token use and identified model charges. I also reproduced the paper-compatible evaluation and added a complementary measure for questions that require acknowledging missing information.',
+        'Does neighbour evolution help independently of linking, and does the gain justify the cost? Following Professor Nguyen’s Pareto approach, I measured answer quality, retrieval, token use and identified model charges. Changing only the Category 5 reference reversed the aggregate F1 winner. Across the same 558 questions per configuration, Full led under historical scoring (32.69%) and Neither led under the complementary reference (39.00%). I verified that the authors had already changed the default before our input freeze and measured the consequences on identical saved predictions from all four configurations.',
+    ),
+    (
+        'Historical versus alternative-reference F1; the same 558 predictions yield different configuration rankings.',
+        'Across 558 matched questions per configuration, the historical distractor puts Full first (32.69% F1). Scoring the same answers against the no-information reference puts Neither first (39.00%). Only the 121 Category 5 references change.',
+    ),
+    (
+        'Therefore the evaluation-reference choice has a material effect on what counts as success, not merely on cosmetic presentation of results.',
+        'All 437 questions in Categories 1–4 contribute identical scores under both policies. The change in the aggregate leader comes entirely from rescoring the 121 adversarial answers per configuration.',
+    ),
+    (
+        'Evolution Only did not improve complementary F1 over Neither (−3.15 pp).',
+        'Evolution Only scored below Neither on both aggregate complementary F1 (-3.15 pp) and temporal F1 (-2.44 pp), contrary to the independent temporal-benefit hypothesis.',
+    ),
+    (
+        'The methodological lesson is that reproducing an algorithm and reproducing a conclusion are distinct. The experiment recovers the original aggregate ordering under its own evaluation, while complementary measurement reveals how the conclusion depends on what answer quality is intended to reward.',
+        'The authors corrected the reference before our experiment. My paired analysis shows what that choice means for the ablation: on these three conversations Full led under the historical reference, while Neither led under the complementary reference. Every saved prediction stayed fixed.',
     ),
 ]
 
 
 def decode(s):
+    s=re.sub(r'\\textbf\{([^}]+)\}',r'\1',s)
     s=re.sub(r'\\cite\{[^}]*\}', '', s)
     s=s.replace('Throughout the figures, this complementary evaluation is labelled alternative-reference scoring. ', '')
     s=re.sub(r'\\href\{[^}]*\}\{([^}]*)\}',r'\1',s)
@@ -153,7 +170,7 @@ def main():
     assert 'Figure 1:' in reader.pages[3].extract_text() and 'Listing 1:' in reader.pages[3].extract_text()
     log=(HERE/'main.log').read_text()
     assert not re.search(r'Overfull|Underfull|undefined references|Missing character|^!',log,re.M)
-    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; completed student attribution; policy-invariant categories; approved exploratory comparison paragraph; audited Table 3 and explanation; bounded policy attribution and chronology updates; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'169 retained DOCX table cells checked (including the approved pooled label); all nine cells of replacement Table 3 checked against the verified examples','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
+    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; completed student attribution; policy-invariant categories; approved exploratory comparison paragraph; audited Table 3 and explanation; evaluation provenance and sample-bounded ranking reversal; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'169 retained DOCX table cells checked (including the approved pooled label); all nine cells of replacement Table 3 checked against the verified examples','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
     (HERE/'fidelity_results.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
