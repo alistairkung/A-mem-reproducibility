@@ -1,7 +1,8 @@
 # Final FTEC5660 coursework report
 
-The PDF is a ten-page A4 typesetting of the approved manuscript. All seven sections,
-nine tables, four figures and the code listing are retained. Read
+The PDF is a ten-page A4 typesetting of the approved manuscript. It contains seven sections,
+nine tables, four figures and the code listing. Table 3 now presents two verified
+adversarial answers in place of the original conceptual comparison. Read
 `conversion_audit.md` for the bounded fidelity claim and authorised editorial changes.
 
 ## Build from a clean checkout
