@@ -37,6 +37,10 @@ HEADER_LABELS = {
 
 PROVENANCE_EDITS = [
     (
+        'I reproduce the authors’ evaluation procedure and examine whether the same directional conclusions hold.',
+        'I reconstruct the historical scoring convention for comparison with the paper and apply the authors’ updated reference policy to the same saved predictions.',
+    ),
+    (
         'This reproduces the published overall ordering, although not its full category-level direction. Under the additional no-information reference,',
         'The three configurations shared with the paper follow its ordering on this subset, although individual categories differ. Under the upstream no-information reference,',
     ),
@@ -63,11 +67,11 @@ PROVENANCE_EDITS = [
     ),
     (
         'The fourth condition completes a two-factor design and permits two questions: does neighbour evolution improve answers independently of linking, and do the additional memory operations justify their computational cost? Inspired by Professor Nguyen’s Pareto-oriented approach, I measured answer quality, retrieval expansion, token use and identified model charges. I also reproduced the paper-compatible evaluation and added a complementary measure for questions that require acknowledging missing information.',
-        'Does neighbour evolution help independently of linking, and does the gain justify the cost? Following Professor Nguyen’s Pareto approach, I measured answer quality, retrieval, token use and identified model charges. The authors’ October 2026 update made the no-information reference the default. In the initial specification I selected updated author evaluation as primary and retained the historical distractor reference for comparison with the paper. Changing only the Category 5 reference reversed the aggregate F1 winner. Across 558 matched questions per configuration, identical saved answers placed Full first under historical F1 (32.69%) and Neither first under updated F1 (39.00%).',
+        'Does neighbour evolution help independently of linking, and does the gain justify the cost? Following Professor Nguyen’s Pareto approach, I measured answer quality, retrieval, token use and identified model charges. The authors’ October 2026 update made the no-information reference the default. In the initial specification I selected updated author evaluation as primary and retained the historical distractor reference for comparison with the paper. Within this sample, changing only the Category 5 reference reversed the aggregate F1 winner. Across 558 matched questions per configuration, identical saved answers placed Full first under historical F1 (32.69%) and Neither first under updated F1 (39.00%).',
     ),
     (
         'In category 5, the agent chooses between an unsupported distractor and “Not mentioned in the conversation.” I reproduced the authors’ historical scoring method, which compares the generated answer against the supplied distractor. I also introduced a complementary evaluation to examine the agent’s ability to recognise missing information. This uses the same F1 and BLEU-1 calculations but compares against the no-information response. Binary adversarial correctness separately records whether that response was selected.',
-        'The historical evaluator scored Category 5 answers against the supplied distractor. On 22 October 2026, the A-MEM authors made “Not mentioned in the conversation” the default reference and kept the historical option. Our initial specification (D11) chose updated author evaluation as primary to measure agreement with the no-information response. We retained historical evaluation as secondary for comparison with the published ablation. The T4 implementation applies the authors’ original F1 and BLEU-1 functions to the same saved predictions under both policies, changing only the Category 5 reference. Binary adversarial correctness separately measures recognition of missing information and is identical in both views for each answer.',
+        'The historical evaluator scored Category 5 answers against the supplied distractor. On 22 October 2026, the A-MEM authors made “Not mentioned in the conversation” the default reference and retained historical scoring through --legacy_c5_reference. Our initial specification (D11) chose updated author evaluation as primary to measure agreement with the no-information response. We retained historical evaluation as secondary for comparison with the published ablation. The T4 implementation applies the authors’ original F1 and BLEU-1 functions to the same saved predictions under both policies, changing only the Category 5 reference. Binary adversarial correctness separately measures recognition of missing information and is identical in both views for each answer.',
     ),
     (
         'Because adversarial questions contribute to overall F1 and BLEU-1, the selected reference can also change the aggregate ranking of memory configurations. Reporting both perspectives preserves the historical comparison while providing complementary evidence about unsupported answers. The binary measure is the more direct test of appropriate abstention.',
@@ -98,6 +102,7 @@ PROVENANCE_EDITS = [
 
 
 def decode(s):
+    s=s.replace(r'\verb|--legacy_c5_reference|', '--legacy_c5_reference')
     s=re.sub(r'\\textbf\{([^}]+)\}',r'\1',s)
     s=re.sub(r'\\cite\{[^}]*\}', '', s)
     s=re.sub(r'\\href\{[^}]*\}\{([^}]*)\}',r'\1',s)
@@ -188,14 +193,16 @@ def main():
         assert phrase in norm(pdftext), phrase
     assert not re.search(r'\b(complementary|alternative-reference|alternative F1|Alt\. (?:F1|BLEU-1))\b', pdftext, re.I)
     assert '??' not in pdftext
-    for key in ['xu2025amem','locomo','amemsource','reproduction','acceptedresults']:
+    for key in ['xu2025amem','locomo','amemsource','reproduction','acceptedresults','xu2026scoring']:
         assert 'cite.'+key in reader.named_destinations
+    assert 'cite.xu2026scoring' in {str(d) for d in internal}
+    assert '--legacy_c5_reference' in pdftext
     assert 'Student name: Alistair Chi Chuen Kung' in norm(pdftext)
     assert 'Student ID: 1155012046' in norm(pdftext)
     assert 'Figure 1:' in reader.pages[3].extract_text() and 'Listing 1:' in reader.pages[3].extract_text()
     log=(HERE/'main.log').read_text()
     assert not re.search(r'Overfull|Underfull|undefined references|Missing character|^!',log,re.M)
-    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; completed student attribution; policy-invariant categories; approved exploratory comparison paragraph; audited Table 3 and explanation; D11 primary/secondary policy attribution, display labels and sample-bounded ranking reversal; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'169 retained DOCX table cells checked (including the approved pooled label); all nine cells of replacement Table 3 checked against the verified examples','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
+    result={'manuscript_sha256':hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),'comparison':'pass','counts':stats,'prose_order':'preserved','authorized_changes':'citation markers; one terminology clarification; listing caption explicitly abridged/pinned; completed student attribution; policy-invariant categories; approved exploratory comparison paragraph; audited Table 3 and explanation; D11 primary/secondary policy attribution, formal upstream citation, bounded comparison with Table 3, display labels and sample-bounded ranking reversal; rendered bibliography; approved cost-scope paragraph; Pooled (derived) label','pdf_pages':len(reader.pages),'internal_links_checked':len(internal),'missing_paragraphs':missing,'table_comparison':'169 retained DOCX table cells checked (including the approved pooled label); all nine cells of replacement Table 3 checked against the verified examples','log_checks':'no overfull/underfull boxes, missing glyphs or undefined references'}
     (HERE/'fidelity_results.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 

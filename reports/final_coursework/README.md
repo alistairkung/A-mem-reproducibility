@@ -28,7 +28,7 @@ asset generation, credentials and paid APIs are not involved. The fixed Tectonic
 bundle used here is `6ffe055852f8faf66c0acbe1a7fb27f87b869a90bad1204f3bf4d9683f597c7c`.
 `main.log` is generated locally; auxiliary files are ignored. Section 7.4 retains the
 approved source wording and working links.
-`references.bib` is cited in Sections 1–2 and rendered as a numbered bibliography
+`references.bib` is cited in Sections 1–3 and rendered as a numbered bibliography
 after Section 7.4. The original source paragraphs are retained for editorial fidelity.
 
 ## Audit the polished report against the approved DOCX
