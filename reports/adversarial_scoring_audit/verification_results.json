@@ -1,0 +1,358 @@
+{
+  "accepted_commit": "8485673183d7b8018c841082d075b21158002700",
+  "local_comparison": "Exact equality of parsed numeric values. Full offline validator checks the pinned Git records and the twelve sealed local scoring views.",
+  "pooled_f1_percent": {
+    "historical": {
+      "evolution_only": 29.286820376843675,
+      "full": 32.69135404008839,
+      "linking_only": 30.20564880400863,
+      "neither": 30.027129146486946
+    },
+    "corrected": {
+      "evolution_only": 35.856145410748084,
+      "full": 36.91176156378498,
+      "linking_only": 37.342476824770856,
+      "neither": 39.00300819984861
+    }
+  },
+  "langfuse_method": "Fresh authenticated Langfuse CLI GET list requests for A-MEM/question filtered by trace ID and Experiment items filtered by experiment and item IDs. Both policy items are linked to the original trace. Each metric value and its observation subject were compared before projection. Only selected fields retained.",
+  "examples": [
+    {
+      "label": "A",
+      "saved_record": "pass",
+      "frozen_scorer": "pass",
+      "independent_arithmetic": "pass",
+      "langfuse_readback": {
+        "question_id": "conv-44:qa:126",
+        "run_id": "gpt4omini-full-conv44-r0-p0",
+        "question_trace": {
+          "trace_id": "c5cb3bb5bedc45a58bee3c3f53d0d768",
+          "observation_id": "bb70b2797bee74d2",
+          "status": "pass",
+          "prediction": "Not mentioned in the conversation",
+          "input_reference": "Strengthen the bond with her pets",
+          "output_reference": "Not mentioned in the conversation",
+          "output_policy": "author-corrected-v1",
+          "scores": {
+            "f1": 1.0,
+            "bleu1": 1.0,
+            "adversarial_correct": 1
+          }
+        },
+        "experiment_items": {
+          "author-corrected-v1": {
+            "status": "pass",
+            "experiment_item_id": "43dbde0c48205991",
+            "observation_id": "b5f7c085a44b6835",
+            "score_ids": {
+              "bleu1": "c094a233aa3a1b60",
+              "f1": "94cbd7ca9b324a3e",
+              "adversarial_correct": "4449d61cb673e6ba"
+            },
+            "prediction": "Not mentioned in the conversation",
+            "reference": "Not mentioned in the conversation",
+            "scoring_policy": "author-corrected-v1",
+            "original_trace_id": "c5cb3bb5bedc45a58bee3c3f53d0d768",
+            "scores": {
+              "adversarial_correct": 1,
+              "f1": 1,
+              "bleu1": 1
+            }
+          },
+          "author-legacy-c5-v1": {
+            "status": "pass",
+            "experiment_item_id": "43dbde0c48205991",
+            "observation_id": "0ca42d433367a22f",
+            "score_ids": {
+              "bleu1": "86674b3aab151a3d",
+              "f1": "c72886dfe303abff",
+              "adversarial_correct": "6c3775c4bb92ed35"
+            },
+            "prediction": "Not mentioned in the conversation",
+            "reference": "Strengthen the bond with her pets",
+            "scoring_policy": "author-legacy-c5-v1",
+            "original_trace_id": "c5cb3bb5bedc45a58bee3c3f53d0d768",
+            "scores": {
+              "f1": 0.1818181818181818,
+              "adversarial_correct": 1,
+              "bleu1": 0.1637461506155964
+            }
+          }
+        },
+        "checked_utc": "2026-11-09T00:43:49.568851+00:00"
+      }
+    },
+    {
+      "label": "B",
+      "saved_record": "pass",
+      "frozen_scorer": "pass",
+      "independent_arithmetic": "pass",
+      "langfuse_readback": {
+        "question_id": "conv-50:qa:183",
+        "run_id": "gpt4omini-evolution_only-conv50-r0-p0",
+        "question_trace": {
+          "trace_id": "fa25afbdd45948dc9a91f6224608719c",
+          "observation_id": "c88e06373e9d23d9",
+          "status": "pass",
+          "prediction": "Transforming something old and beat-up into something beautiful",
+          "input_reference": "Transforming something old and beat-up into something beautiful",
+          "output_reference": "Not mentioned in the conversation",
+          "output_policy": "author-corrected-v1",
+          "scores": {
+            "f1": 0.0,
+            "bleu1": 0,
+            "adversarial_correct": 0
+          }
+        },
+        "experiment_items": {
+          "author-corrected-v1": {
+            "status": "pass",
+            "experiment_item_id": "6e364b94f8c03122",
+            "observation_id": "78d23b47ebc60216",
+            "score_ids": {
+              "bleu1": "0cea2012d3cf5113",
+              "f1": "88d7c1f0e59e5a01",
+              "adversarial_correct": "48dfab965190fa8b"
+            },
+            "prediction": "Transforming something old and beat-up into something beautiful",
+            "reference": "Not mentioned in the conversation",
+            "scoring_policy": "author-corrected-v1",
+            "original_trace_id": "fa25afbdd45948dc9a91f6224608719c",
+            "scores": {
+              "f1": 0,
+              "bleu1": 0,
+              "adversarial_correct": 0
+            }
+          },
+          "author-legacy-c5-v1": {
+            "status": "pass",
+            "experiment_item_id": "6e364b94f8c03122",
+            "observation_id": "d7d0c556706a2647",
+            "score_ids": {
+              "bleu1": "ea0787b504b593c1",
+              "f1": "19f94ec97b24f628",
+              "adversarial_correct": "328e25ed7d2d6267"
+            },
+            "prediction": "Transforming something old and beat-up into something beautiful",
+            "reference": "Transforming something old and beat-up into something beautiful",
+            "scoring_policy": "author-legacy-c5-v1",
+            "original_trace_id": "fa25afbdd45948dc9a91f6224608719c",
+            "scores": {
+              "f1": 1,
+              "bleu1": 1,
+              "adversarial_correct": 0
+            }
+          }
+        },
+        "checked_utc": "2026-11-09T00:43:52.510885+00:00"
+      }
+    },
+    {
+      "label": "C",
+      "saved_record": "pass",
+      "frozen_scorer": "pass",
+      "independent_arithmetic": "pass",
+      "langfuse_readback": {
+        "question_id": "conv-49:qa:166",
+        "run_id": "gpt4omini-neither-conv49-r0-p0",
+        "question_trace": {
+          "trace_id": "5f408264227541b7b04aad4d93318819",
+          "observation_id": "f75752c4b6ce9870",
+          "status": "pass",
+          "prediction": "Not mentioned in the conversation or his keys",
+          "input_reference": "his keys",
+          "output_reference": "Not mentioned in the conversation",
+          "output_policy": "author-corrected-v1",
+          "scores": {
+            "f1": 0.7692307692307693,
+            "bleu1": 0.625,
+            "adversarial_correct": 0
+          }
+        },
+        "experiment_items": {
+          "author-corrected-v1": {
+            "status": "pass",
+            "experiment_item_id": "5b8bd5b55c1425b9",
+            "observation_id": "06ec3a8603dfb552",
+            "score_ids": {
+              "bleu1": "8ee1f55dc91c4560",
+              "f1": "6ef784a08f548dac",
+              "adversarial_correct": "e10924eb81cdcfeb"
+            },
+            "prediction": "Not mentioned in the conversation or his keys",
+            "reference": "Not mentioned in the conversation",
+            "scoring_policy": "author-corrected-v1",
+            "original_trace_id": "5f408264227541b7b04aad4d93318819",
+            "scores": {
+              "f1": 0.7692307692307693,
+              "bleu1": 0.625,
+              "adversarial_correct": 0
+            }
+          },
+          "author-legacy-c5-v1": {
+            "status": "pass",
+            "experiment_item_id": "5b8bd5b55c1425b9",
+            "observation_id": "ac6f471c226406f1",
+            "score_ids": {
+              "bleu1": "7005b67fbe7a5bec",
+              "f1": "9b9929f54f2cf5c1",
+              "adversarial_correct": "9765ed9277e357fc"
+            },
+            "prediction": "Not mentioned in the conversation or his keys",
+            "reference": "his keys",
+            "scoring_policy": "author-legacy-c5-v1",
+            "original_trace_id": "5f408264227541b7b04aad4d93318819",
+            "scores": {
+              "f1": 0.4,
+              "bleu1": 0.25,
+              "adversarial_correct": 0
+            }
+          }
+        },
+        "checked_utc": "2026-11-09T00:43:55.371129+00:00"
+      }
+    },
+    {
+      "label": "D",
+      "saved_record": "pass",
+      "frozen_scorer": "pass",
+      "independent_arithmetic": "pass",
+      "langfuse_readback": {
+        "question_id": "conv-49:qa:157",
+        "run_id": "gpt4omini-neither-conv49-r0-p0",
+        "question_trace": {
+          "trace_id": "862f6109716c469f81d2a9ee738ff5d8",
+          "observation_id": "681ea92ecb8ebdca",
+          "status": "pass",
+          "prediction": "Not mentioned in the conversation.",
+          "input_reference": "friend's advice",
+          "output_reference": "Not mentioned in the conversation",
+          "output_policy": "author-corrected-v1",
+          "scores": {
+            "f1": 1.0,
+            "bleu1": 0.8333333333333334,
+            "adversarial_correct": 1
+          }
+        },
+        "experiment_items": {
+          "author-corrected-v1": {
+            "status": "pass",
+            "experiment_item_id": "cce4c700e30cc68b",
+            "observation_id": "5228dda70c6e7c49",
+            "score_ids": {
+              "bleu1": "91bb7d19f1c0f696",
+              "f1": "295df65932c8e76d",
+              "adversarial_correct": "91bba6e2ba653c76"
+            },
+            "prediction": "Not mentioned in the conversation.",
+            "reference": "Not mentioned in the conversation",
+            "scoring_policy": "author-corrected-v1",
+            "original_trace_id": "862f6109716c469f81d2a9ee738ff5d8",
+            "scores": {
+              "f1": 1,
+              "bleu1": 0.8333333333333334,
+              "adversarial_correct": 1
+            }
+          },
+          "author-legacy-c5-v1": {
+            "status": "pass",
+            "experiment_item_id": "cce4c700e30cc68b",
+            "observation_id": "57960470a0daab68",
+            "score_ids": {
+              "bleu1": "43c63602ff63a133",
+              "f1": "97a4a96c970da31f",
+              "adversarial_correct": "43bbb6706803461f"
+            },
+            "prediction": "Not mentioned in the conversation.",
+            "reference": "friend's advice",
+            "scoring_policy": "author-legacy-c5-v1",
+            "original_trace_id": "862f6109716c469f81d2a9ee738ff5d8",
+            "scores": {
+              "f1": 0,
+              "bleu1": 0,
+              "adversarial_correct": 1
+            }
+          }
+        },
+        "checked_utc": "2026-11-09T00:43:58.408856+00:00"
+      }
+    },
+    {
+      "label": "E",
+      "saved_record": "pass",
+      "frozen_scorer": "pass",
+      "independent_arithmetic": "pass",
+      "langfuse_readback": {
+        "question_id": "conv-49:qa:185",
+        "run_id": "gpt4omini-linking_only-conv49-r0-p0",
+        "question_trace": {
+          "trace_id": "683a1326239f430da280d9955415a172",
+          "observation_id": "ea76963787797f79",
+          "status": "pass",
+          "prediction": "Bring it on Home",
+          "input_reference": "'Bring it on Home'",
+          "output_reference": "Not mentioned in the conversation",
+          "output_policy": "author-corrected-v1",
+          "scores": {
+            "f1": 0.0,
+            "bleu1": 0,
+            "adversarial_correct": 0
+          }
+        },
+        "experiment_items": {
+          "author-corrected-v1": {
+            "status": "pass",
+            "experiment_item_id": "902e71efc8b486d7",
+            "observation_id": "fd59df8badd53f09",
+            "score_ids": {
+              "bleu1": "8545935a1bdf6bd6",
+              "f1": "cf15cdb3676b65fb",
+              "adversarial_correct": "b690f8d4b9a39647"
+            },
+            "prediction": "Bring it on Home",
+            "reference": "Not mentioned in the conversation",
+            "scoring_policy": "author-corrected-v1",
+            "original_trace_id": "683a1326239f430da280d9955415a172",
+            "scores": {
+              "f1": 0,
+              "bleu1": 0,
+              "adversarial_correct": 0
+            }
+          },
+          "author-legacy-c5-v1": {
+            "status": "pass",
+            "experiment_item_id": "902e71efc8b486d7",
+            "observation_id": "922a00ed97652f19",
+            "score_ids": {
+              "bleu1": "96f6ec358b4afb7b",
+              "f1": "196a31a23fd52f33",
+              "adversarial_correct": "ae6483085f9ab7d9"
+            },
+            "prediction": "Bring it on Home",
+            "reference": "'Bring it on Home'",
+            "scoring_policy": "author-legacy-c5-v1",
+            "original_trace_id": "683a1326239f430da280d9955415a172",
+            "scores": {
+              "f1": 0.5,
+              "bleu1": 0.6065306597126334,
+              "adversarial_correct": 0
+            }
+          }
+        },
+        "checked_utc": "2026-11-09T00:44:01.571861+00:00"
+      }
+    }
+  ],
+  "independent_review": {
+    "standards": {
+      "status": "pass",
+      "remaining_findings": 0,
+      "changes_verified": "Explicit policy IDs in manifest and comparison tables, readable selection predicates, and checked response inventory. Full offline verifier passed."
+    },
+    "spec": {
+      "status": "pass",
+      "remaining_findings": 0,
+      "checks": "Separate checks of the ten policy derivations and complete response inventory, inspection of the saved remote projections, and final offline verifier run."
+    }
+  }
+}

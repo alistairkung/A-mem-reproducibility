@@ -1,0 +1,137 @@
+{
+  "accepted_commit": "8485673183d7b8018c841082d075b21158002700",
+  "scoring_policies": {
+    "historical": "author-legacy-c5-v1",
+    "complementary": "author-corrected-v1"
+  },
+  "population": {
+    "questions": 558,
+    "adversarial_questions": 121,
+    "conditions": 4,
+    "adversarial_predictions": 484
+  },
+  "criteria": {
+    "A": "Exact canonical response, binary 1, historical F1 at most 0.25.",
+    "B": "Exact supplied distractor, binary 0, complementary F1 at most 0.25.",
+    "C": "Prediction differs byte-for-byte from both references and both F1 values lie strictly between 0 and 1.",
+    "D": "Binary-correct abstention with text different from the canonical response, excluding the terminal-period variant. The exhaustive response inventory in README also checks for abstentions the binary rule could miss.",
+    "D_punctuation": "Closest substitute, a binary-correct abstention with just a final period added.",
+    "E": "Prediction equals neither raw reference and at least one within-policy absolute F1/BLEU-1 gap is at least 0.05."
+  },
+  "counting": "Pools overlap. Count all accepted condition–question pairs, and separately count distinct question IDs within each pool. No ranking or aggregate effect is used in selection.",
+  "selected": {
+    "A": {
+      "question_id": "conv-44:qa:126",
+      "configuration": "full",
+      "pool": "A",
+      "reason": "The source turn identifies a different workshop, and one common article earns historical credit."
+    },
+    "B": {
+      "question_id": "conv-50:qa:183",
+      "configuration": "evolution_only",
+      "pool": "B",
+      "reason": "The altered verb changes the premise. A repeated word illustrates set versus count behaviour."
+    },
+    "C": {
+      "question_id": "conv-49:qa:166",
+      "configuration": "neither",
+      "pool": "C",
+      "reason": "The model names both options. This leaves the punctuation-only occurrence of qa:157 available for D."
+    },
+    "D": {
+      "question_id": "conv-49:qa:157",
+      "configuration": "neither",
+      "pool": "D_punctuation",
+      "reason": "Only a terminal-period variation occurs among noncanonical, binary-correct responses."
+    },
+    "E": {
+      "question_id": "conv-49:qa:185",
+      "configuration": "linking_only",
+      "pool": "E",
+      "reason": "Missing outer quotation marks expose two tokenisers and a brevity penalty within one short answer."
+    }
+  },
+  "cells": [
+    {
+      "directory": "artifacts/gpt4omini/cells/conv-49/runs/gpt4omini-full-conv49-r0-p0",
+      "scoring_views_sha256": "2525c1a78542db67a1dc11710487c0fb1477bffe04d55c4169ba36cccd5e95fc"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/conv-50/runs/gpt4omini-full-conv50-r0-p0",
+      "scoring_views_sha256": "6f2819a597ec27a53235c4b63913a63bb4da97780c88bfd391a28883ccae0bff"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/evolution_only-conv-44/runs/gpt4omini-evolution_only-conv44-r0-p0",
+      "scoring_views_sha256": "0a3674c827bdc3e0478f11f9faf65c41f3f36b1a621ba3d8ae8600fb7b6a4014"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/evolution_only-conv-49/runs/gpt4omini-evolution_only-conv49-r0-p0",
+      "scoring_views_sha256": "7442d289362b28027a5e480cfb2499d049ced3e123654db348cd359a0cbb23a7"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/evolution_only-conv-50/runs/gpt4omini-evolution_only-conv50-r0-p0",
+      "scoring_views_sha256": "bc89df7680145d30a93ffea73ee4d323d5c4b3097668c91f71c699fdb9bb7d05"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/linking_only-conv-44/final-eight-hour/attempt-1/runs/gpt4omini-linking_only-conv44-final-r1",
+      "scoring_views_sha256": "cb5a67bba20b78942b446acce9ed87501d47a7183de0f3f5a151b2d31e39aa06"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/linking_only-conv-49/runs/gpt4omini-linking_only-conv49-r0-p0",
+      "scoring_views_sha256": "42608d432503b1a22f33b20fec1045565e745ad4470ade1023519f63f03696bd"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/linking_only-conv-50/runs/gpt4omini-linking_only-conv50-r0-p0",
+      "scoring_views_sha256": "49e6d4069bdc5d93a75c019d8f683195c9d21a79a47a72a7ce52d15e8103e1e1"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/neither-conv-44/runs/gpt4omini-neither-conv44-r0-p0",
+      "scoring_views_sha256": "f3ad1014b88e92cf88279a88c6e09bb4f4f1d1c0aac547faa2e1c6c0dbe393de"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/neither-conv-49/runs/gpt4omini-neither-conv49-r0-p0",
+      "scoring_views_sha256": "c9212dac4b1f3534a392d9cb1df1852daae456b051eb3fd8d80086ae8a32cb54"
+    },
+    {
+      "directory": "artifacts/gpt4omini/cells/neither-conv-50/runs/gpt4omini-neither-conv50-r0-p0",
+      "scoring_views_sha256": "513314af40bf4a18370ab0dfcbce78846952057a0fe5f695f49ddfffc0015ddd"
+    },
+    {
+      "directory": "artifacts/gpt4omini/runs/gpt4omini-full-conv44-r0-p0",
+      "scoring_views_sha256": "3a07b95dd3d39b323ff33825db075f5c9fdf34d808ddab46911229631a3131ee"
+    }
+  ],
+  "candidates": {
+    "A": {
+      "predictions": 305,
+      "questions": 93
+    },
+    "B": {
+      "predictions": 154,
+      "questions": 62
+    },
+    "C": {
+      "predictions": 5,
+      "questions": 2
+    },
+    "D": {
+      "predictions": 0,
+      "questions": 0
+    },
+    "D_punctuation": {
+      "predictions": 1,
+      "questions": 1
+    },
+    "E": {
+      "predictions": 9,
+      "questions": 4
+    }
+  },
+  "response_inventory": {
+    "canonical": 315,
+    "distractor": 160,
+    "both_options": 5,
+    "abstention_final_period": 1,
+    "distractor_punctuation": 3
+  }
+}

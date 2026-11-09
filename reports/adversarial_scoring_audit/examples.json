@@ -1,0 +1,895 @@
+[
+  {
+    "label": "A",
+    "configuration": "full",
+    "run_id": "gpt4omini-full-conv44-r0-p0",
+    "conversation_id": "conv-44",
+    "question_id": "conv-44:qa:126",
+    "original_qa_index": 126,
+    "category": 5,
+    "question": "Why did Audrey sign up for a workshop about car maintenance?",
+    "prediction": "Not mentioned in the conversation",
+    "binary": 1,
+    "directory": "artifacts/gpt4omini/runs/gpt4omini-full-conv44-r0-p0",
+    "trace_id": "c5cb3bb5bedc45a58bee3c3f53d0d768",
+    "question_observation_id": "bb70b2797bee74d2",
+    "views": {
+      "author-corrected-v1": {
+        "reference": "Not mentioned in the conversation",
+        "f1": 1.0,
+        "bleu1": 1.0,
+        "experiment_id": "b4a39a3e02e2f361",
+        "experiment_item_id": "43dbde0c48205991",
+        "observation_id": "b5f7c085a44b6835",
+        "item_trace_id": "ed74259d0e9b33e791aa1ecfce4dc644",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "prediction_set": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "reference_set": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "intersection": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "precision": 1.0,
+            "recall": 1.0,
+            "value": 1.0
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "clipped_counts": {
+              "not": 1,
+              "mentioned": 1,
+              "in": 1,
+              "the": 1,
+              "conversation": 1
+            },
+            "matches": 5,
+            "precision": 1.0,
+            "prediction_length": 5,
+            "reference_length": 5,
+            "brevity_penalty": 1.0,
+            "value": 1.0
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=b4a39a3e02e2f361"
+      },
+      "author-legacy-c5-v1": {
+        "reference": "Strengthen the bond with her pets",
+        "f1": 0.1818181818181818,
+        "bleu1": 0.1637461506155964,
+        "experiment_id": "bd8af7375fe2248e",
+        "experiment_item_id": "43dbde0c48205991",
+        "observation_id": "0ca42d433367a22f",
+        "item_trace_id": "8b598bf8a3f30534ef3375a797b7721a",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "reference_tokens": [
+              "strengthen",
+              "the",
+              "bond",
+              "with",
+              "her",
+              "pets"
+            ],
+            "prediction_set": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "reference_set": [
+              "bond",
+              "her",
+              "pets",
+              "strengthen",
+              "the",
+              "with"
+            ],
+            "intersection": [
+              "the"
+            ],
+            "precision": 0.2,
+            "recall": 0.16666666666666666,
+            "value": 0.1818181818181818
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "reference_tokens": [
+              "strengthen",
+              "the",
+              "bond",
+              "with",
+              "her",
+              "pets"
+            ],
+            "clipped_counts": {
+              "the": 1
+            },
+            "matches": 1,
+            "precision": 0.2,
+            "prediction_length": 5,
+            "reference_length": 6,
+            "brevity_penalty": 0.8187307530779819,
+            "value": 0.1637461506155964
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=bd8af7375fe2248e"
+      }
+    },
+    "evidence": {
+      "turn_id": "D6:2",
+      "speaker": "Audrey",
+      "excerpt": "I signed up for a workshop about bonding with my pet next month."
+    }
+  },
+  {
+    "label": "B",
+    "configuration": "evolution_only",
+    "run_id": "gpt4omini-evolution_only-conv50-r0-p0",
+    "conversation_id": "conv-50",
+    "question_id": "conv-50:qa:183",
+    "original_qa_index": 183,
+    "category": 5,
+    "question": "What does Dave find satisfying about destroying old cars?",
+    "prediction": "Transforming something old and beat-up into something beautiful",
+    "binary": 0,
+    "directory": "artifacts/gpt4omini/cells/evolution_only-conv-50/runs/gpt4omini-evolution_only-conv50-r0-p0",
+    "trace_id": "fa25afbdd45948dc9a91f6224608719c",
+    "question_observation_id": "c88e06373e9d23d9",
+    "views": {
+      "author-corrected-v1": {
+        "reference": "Not mentioned in the conversation",
+        "f1": 0.0,
+        "bleu1": 0,
+        "experiment_id": "946a968c94ade465",
+        "experiment_item_id": "6e364b94f8c03122",
+        "observation_id": "78d23b47ebc60216",
+        "item_trace_id": "bf09fc2e2dd577efde1d77cb00b1f62b",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "transforming",
+              "something",
+              "old",
+              "and",
+              "beat-up",
+              "into",
+              "something",
+              "beautiful"
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "prediction_set": [
+              "and",
+              "beat-up",
+              "beautiful",
+              "into",
+              "old",
+              "something",
+              "transforming"
+            ],
+            "reference_set": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "intersection": [],
+            "precision": 0.0,
+            "recall": 0.0,
+            "value": 0.0
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "transforming",
+              "something",
+              "old",
+              "and",
+              "beat-up",
+              "into",
+              "something",
+              "beautiful"
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "clipped_counts": {},
+            "matches": 0,
+            "precision": 0.0,
+            "prediction_length": 8,
+            "reference_length": 5,
+            "brevity_penalty": 1.0,
+            "value": 0.0
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=946a968c94ade465"
+      },
+      "author-legacy-c5-v1": {
+        "reference": "Transforming something old and beat-up into something beautiful",
+        "f1": 1.0,
+        "bleu1": 1.0,
+        "experiment_id": "8e18ba9b4c3bdaf1",
+        "experiment_item_id": "6e364b94f8c03122",
+        "observation_id": "d7d0c556706a2647",
+        "item_trace_id": "11fa9ac2166d6047bd48b3a4fdf45049",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "transforming",
+              "something",
+              "old",
+              "and",
+              "beat-up",
+              "into",
+              "something",
+              "beautiful"
+            ],
+            "reference_tokens": [
+              "transforming",
+              "something",
+              "old",
+              "and",
+              "beat-up",
+              "into",
+              "something",
+              "beautiful"
+            ],
+            "prediction_set": [
+              "and",
+              "beat-up",
+              "beautiful",
+              "into",
+              "old",
+              "something",
+              "transforming"
+            ],
+            "reference_set": [
+              "and",
+              "beat-up",
+              "beautiful",
+              "into",
+              "old",
+              "something",
+              "transforming"
+            ],
+            "intersection": [
+              "and",
+              "beat-up",
+              "beautiful",
+              "into",
+              "old",
+              "something",
+              "transforming"
+            ],
+            "precision": 1.0,
+            "recall": 1.0,
+            "value": 1.0
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "transforming",
+              "something",
+              "old",
+              "and",
+              "beat-up",
+              "into",
+              "something",
+              "beautiful"
+            ],
+            "reference_tokens": [
+              "transforming",
+              "something",
+              "old",
+              "and",
+              "beat-up",
+              "into",
+              "something",
+              "beautiful"
+            ],
+            "clipped_counts": {
+              "transforming": 1,
+              "something": 2,
+              "old": 1,
+              "and": 1,
+              "beat-up": 1,
+              "into": 1,
+              "beautiful": 1
+            },
+            "matches": 8,
+            "precision": 1.0,
+            "prediction_length": 8,
+            "reference_length": 8,
+            "brevity_penalty": 1.0,
+            "value": 1.0
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=8e18ba9b4c3bdaf1"
+      }
+    },
+    "evidence": {
+      "turn_id": "D21:10",
+      "speaker": "Dave",
+      "excerpt": "I love being able to transform something old and beat-up into something beautiful."
+    }
+  },
+  {
+    "label": "C",
+    "configuration": "neither",
+    "run_id": "gpt4omini-neither-conv49-r0-p0",
+    "conversation_id": "conv-49",
+    "question_id": "conv-49:qa:166",
+    "original_qa_index": 166,
+    "category": 5,
+    "question": "What did Sam mention he had been searching for fruitlessly for half an hour?",
+    "prediction": "Not mentioned in the conversation or his keys",
+    "binary": 0,
+    "directory": "artifacts/gpt4omini/cells/neither-conv-49/runs/gpt4omini-neither-conv49-r0-p0",
+    "trace_id": "5f408264227541b7b04aad4d93318819",
+    "question_observation_id": "f75752c4b6ce9870",
+    "views": {
+      "author-corrected-v1": {
+        "reference": "Not mentioned in the conversation",
+        "f1": 0.7692307692307693,
+        "bleu1": 0.625,
+        "experiment_id": "ffb8015ce0c3a1fb",
+        "experiment_item_id": "5b8bd5b55c1425b9",
+        "observation_id": "06ec3a8603dfb552",
+        "item_trace_id": "70d98b618bce27f1e221b8effb1af7cc",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation",
+              "or",
+              "his",
+              "keys"
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "prediction_set": [
+              "conversation",
+              "his",
+              "in",
+              "keys",
+              "mentioned",
+              "not",
+              "or",
+              "the"
+            ],
+            "reference_set": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "intersection": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "precision": 0.625,
+            "recall": 1.0,
+            "value": 0.7692307692307693
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation",
+              "or",
+              "his",
+              "keys"
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "clipped_counts": {
+              "not": 1,
+              "mentioned": 1,
+              "in": 1,
+              "the": 1,
+              "conversation": 1
+            },
+            "matches": 5,
+            "precision": 0.625,
+            "prediction_length": 8,
+            "reference_length": 5,
+            "brevity_penalty": 1.0,
+            "value": 0.625
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=ffb8015ce0c3a1fb"
+      },
+      "author-legacy-c5-v1": {
+        "reference": "his keys",
+        "f1": 0.4,
+        "bleu1": 0.25,
+        "experiment_id": "210a29a1178dde3d",
+        "experiment_item_id": "5b8bd5b55c1425b9",
+        "observation_id": "ac6f471c226406f1",
+        "item_trace_id": "0eb89b86e9e108156801ffddd363b3cb",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation",
+              "or",
+              "his",
+              "keys"
+            ],
+            "reference_tokens": [
+              "his",
+              "keys"
+            ],
+            "prediction_set": [
+              "conversation",
+              "his",
+              "in",
+              "keys",
+              "mentioned",
+              "not",
+              "or",
+              "the"
+            ],
+            "reference_set": [
+              "his",
+              "keys"
+            ],
+            "intersection": [
+              "his",
+              "keys"
+            ],
+            "precision": 0.25,
+            "recall": 1.0,
+            "value": 0.4
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation",
+              "or",
+              "his",
+              "keys"
+            ],
+            "reference_tokens": [
+              "his",
+              "keys"
+            ],
+            "clipped_counts": {
+              "his": 1,
+              "keys": 1
+            },
+            "matches": 2,
+            "precision": 0.25,
+            "prediction_length": 8,
+            "reference_length": 2,
+            "brevity_penalty": 1.0,
+            "value": 0.25
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=210a29a1178dde3d"
+      }
+    },
+    "evidence": {
+      "turn_id": "D6:13",
+      "speaker": "Evan",
+      "excerpt": "I've been searching for my keys for the last half hour with no luck!"
+    }
+  },
+  {
+    "label": "D",
+    "configuration": "neither",
+    "run_id": "gpt4omini-neither-conv49-r0-p0",
+    "conversation_id": "conv-49",
+    "question_id": "conv-49:qa:157",
+    "original_qa_index": 157,
+    "category": 5,
+    "question": "How did Sam get into watercolor painting?",
+    "prediction": "Not mentioned in the conversation.",
+    "binary": 1,
+    "directory": "artifacts/gpt4omini/cells/neither-conv-49/runs/gpt4omini-neither-conv49-r0-p0",
+    "trace_id": "862f6109716c469f81d2a9ee738ff5d8",
+    "question_observation_id": "681ea92ecb8ebdca",
+    "views": {
+      "author-corrected-v1": {
+        "reference": "Not mentioned in the conversation",
+        "f1": 1.0,
+        "bleu1": 0.8333333333333334,
+        "experiment_id": "ffb8015ce0c3a1fb",
+        "experiment_item_id": "cce4c700e30cc68b",
+        "observation_id": "5228dda70c6e7c49",
+        "item_trace_id": "870e6f4eba718086675e9990b7e0300b",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "prediction_set": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "reference_set": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "intersection": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "precision": 1.0,
+            "recall": 1.0,
+            "value": 1.0
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation",
+              "."
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "clipped_counts": {
+              "not": 1,
+              "mentioned": 1,
+              "in": 1,
+              "the": 1,
+              "conversation": 1
+            },
+            "matches": 5,
+            "precision": 0.8333333333333334,
+            "prediction_length": 6,
+            "reference_length": 5,
+            "brevity_penalty": 1.0,
+            "value": 0.8333333333333334
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=ffb8015ce0c3a1fb"
+      },
+      "author-legacy-c5-v1": {
+        "reference": "friend's advice",
+        "f1": 0.0,
+        "bleu1": 0,
+        "experiment_id": "210a29a1178dde3d",
+        "experiment_item_id": "cce4c700e30cc68b",
+        "observation_id": "57960470a0daab68",
+        "item_trace_id": "e6e5832ac7dfab49e6df5db17de4aa5b",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "reference_tokens": [
+              "friend's",
+              "advice"
+            ],
+            "prediction_set": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "reference_set": [
+              "advice",
+              "friend's"
+            ],
+            "intersection": [],
+            "precision": 0.0,
+            "recall": 0.0,
+            "value": 0.0
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation",
+              "."
+            ],
+            "reference_tokens": [
+              "friend",
+              "'s",
+              "advice"
+            ],
+            "clipped_counts": {},
+            "matches": 0,
+            "precision": 0.0,
+            "prediction_length": 6,
+            "reference_length": 3,
+            "brevity_penalty": 1.0,
+            "value": 0.0
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=210a29a1178dde3d"
+      }
+    },
+    "evidence": {
+      "turn_id": "D1:16",
+      "speaker": "Evan",
+      "excerpt": "My friend got me into it and gave me some advice"
+    }
+  },
+  {
+    "label": "E",
+    "configuration": "linking_only",
+    "run_id": "gpt4omini-linking_only-conv49-r0-p0",
+    "conversation_id": "conv-49",
+    "question_id": "conv-49:qa:185",
+    "original_qa_index": 185,
+    "category": 5,
+    "question": "What is the motto of Sam's family?",
+    "prediction": "Bring it on Home",
+    "binary": 0,
+    "directory": "artifacts/gpt4omini/cells/linking_only-conv-49/runs/gpt4omini-linking_only-conv49-r0-p0",
+    "trace_id": "683a1326239f430da280d9955415a172",
+    "question_observation_id": "ea76963787797f79",
+    "views": {
+      "author-corrected-v1": {
+        "reference": "Not mentioned in the conversation",
+        "f1": 0.0,
+        "bleu1": 0,
+        "experiment_id": "3e0ff28564f58b74",
+        "experiment_item_id": "902e71efc8b486d7",
+        "observation_id": "fd59df8badd53f09",
+        "item_trace_id": "ea7cf26fd8224f3c6c74475a4dd3945b",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "bring",
+              "it",
+              "on",
+              "home"
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "prediction_set": [
+              "bring",
+              "home",
+              "it",
+              "on"
+            ],
+            "reference_set": [
+              "conversation",
+              "in",
+              "mentioned",
+              "not",
+              "the"
+            ],
+            "intersection": [],
+            "precision": 0.0,
+            "recall": 0.0,
+            "value": 0.0
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "bring",
+              "it",
+              "on",
+              "home"
+            ],
+            "reference_tokens": [
+              "not",
+              "mentioned",
+              "in",
+              "the",
+              "conversation"
+            ],
+            "clipped_counts": {},
+            "matches": 0,
+            "precision": 0.0,
+            "prediction_length": 4,
+            "reference_length": 5,
+            "brevity_penalty": 0.7788007830714049,
+            "value": 0.0
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=3e0ff28564f58b74"
+      },
+      "author-legacy-c5-v1": {
+        "reference": "'Bring it on Home'",
+        "f1": 0.5,
+        "bleu1": 0.6065306597126334,
+        "experiment_id": "a8f94a670e20e9e7",
+        "experiment_item_id": "902e71efc8b486d7",
+        "observation_id": "922a00ed97652f19",
+        "item_trace_id": "0150c621a51fcedb136fcbac366b2101",
+        "arithmetic": {
+          "f1": {
+            "prediction_tokens": [
+              "bring",
+              "it",
+              "on",
+              "home"
+            ],
+            "reference_tokens": [
+              "'bring",
+              "it",
+              "on",
+              "home'"
+            ],
+            "prediction_set": [
+              "bring",
+              "home",
+              "it",
+              "on"
+            ],
+            "reference_set": [
+              "'bring",
+              "home'",
+              "it",
+              "on"
+            ],
+            "intersection": [
+              "it",
+              "on"
+            ],
+            "precision": 0.5,
+            "recall": 0.5,
+            "value": 0.5
+          },
+          "bleu1": {
+            "prediction_tokens": [
+              "bring",
+              "it",
+              "on",
+              "home"
+            ],
+            "reference_tokens": [
+              "'",
+              "bring",
+              "it",
+              "on",
+              "home",
+              "'"
+            ],
+            "clipped_counts": {
+              "bring": 1,
+              "it": 1,
+              "on": 1,
+              "home": 1
+            },
+            "matches": 4,
+            "precision": 1.0,
+            "prediction_length": 4,
+            "reference_length": 6,
+            "brevity_penalty": 0.6065306597126334,
+            "value": 0.6065306597126334
+          }
+        },
+        "experiment_url": "https://cloud.langfuse.com/project/cmvxd2aby005wad0ei7wt2d5o/experiments/results?baseline=a8f94a670e20e9e7"
+      }
+    },
+    "evidence": {
+      "turn_id": "D19:7",
+      "speaker": "Evan",
+      "excerpt": "We have this sign in the frame that says 'Bring it on Home' - it's our family's motto"
+    }
+  }
+]
