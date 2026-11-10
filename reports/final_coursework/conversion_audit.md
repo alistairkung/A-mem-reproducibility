@@ -1,6 +1,14 @@
 # Final submission fidelity audit
 
-## Source and scope
+## Current Section 3.4
+
+Table 3 now compares two verified predictions from the accepted GPT-4o-mini
+builds. The current verifier checks its nine cells separately from the 169 cells
+of the eight retained tables. The 184-cell comparisons below describe earlier
+manuscript revisions. The [current fidelity receipt](fidelity_results.json)
+records the checks on the ten-page report.
+
+## Original conversion and scope
 
 The approved DOCX remains `/Users/alistair/Downloads/AMEM_FTEC5660_Sections_3_7_Updated.docx`,
 SHA-256 `c433d42629e62eb70b050785c40ac691df4ec7a4e20d5315857ad870a2d642a5`.

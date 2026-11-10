@@ -2,25 +2,52 @@
   {
     "source": "architecture/amem_wrapper_architecture.svg",
     "source_sha256": "c3f43e42a7de824a733fbeef1da36d3e5d63588227dd1dd8fc02a0cbe92a9c34",
+    "label_changes": [],
     "output": "assets/amem_wrapper_architecture.pdf",
     "output_sha256": "9e6c7599c2f34966a81ce6c60c655408573ee8345c72b4d76417c62492fa2ccb"
   },
   {
     "source": "figures/01_scoring_comparison.svg",
     "source_sha256": "7478a3f230cf72016b218be11e812514ec5ef885adb349cc82161eb3ce4eee80",
+    "label_changes": [
+      {
+        "from": "Alternative-reference",
+        "to": "Updated"
+      }
+    ],
     "output": "assets/01_scoring_comparison.pdf",
-    "output_sha256": "94ab49571b4b680b6fca9c59d8052e9cf5a28ded82296d5a3b5b07500614ebdd"
+    "output_sha256": "0e8a7cfa0a7325359be048bdc5fd7a281dae4b5f9a3f0a0922bc702b6577142a"
   },
   {
     "source": "figures/02_category_heatmap.svg",
     "source_sha256": "49bd0ac49db8b110009f08738e8019f7b7318c94944da3de5fbc8bcf9b42fd9d",
+    "label_changes": [
+      {
+        "from": "Alternative-reference F1 by category",
+        "to": "Updated F1 by category"
+      },
+      {
+        "from": "Alternative-reference F1 (%)",
+        "to": "Updated F1 (%)"
+      }
+    ],
     "output": "assets/02_category_heatmap.pdf",
-    "output_sha256": "6399e465dca024464902aca8ed135916371a073ce0d6c75a3e51a1f860210187"
+    "output_sha256": "8e02cfe1d5b8d7d430a1bf2684c78b3d21ab342109aa92111cf87dbaa9222ada"
   },
   {
     "source": "figures/06_dual_scoring_f1_vs_cost.svg",
     "source_sha256": "4644c4a23218a376e99705c1d9ae29101bcb5b5aef93a3d59f68fbbdcd13e0ec",
+    "label_changes": [
+      {
+        "from": "Alternative-reference F1 (%)",
+        "to": "Updated F1 (%)"
+      },
+      {
+        "from": "B  Alternative-reference F1",
+        "to": "B  Updated F1"
+      }
+    ],
     "output": "assets/06_dual_scoring_f1_vs_cost.pdf",
-    "output_sha256": "cce16bc393fe29f678497e93c54ceb1119f87b1abe997379f7f11da8e1cd25b0"
+    "output_sha256": "bd912026e32e4dabf1e961a889ad792850a882bfe9d200ea01f5652c1c2802f1"
   }
 ]
